@@ -1,0 +1,13 @@
+1. This deployment manage three containers, you can get the logs
+  of the agent by running:
+    kubectl logs -l app.kubernetes.io/name={{ .Chart.Name }} -c agent
+  of the lambda server by running:
+     kubectl logs -l app.kubernetes.io/name={{ .Chart.Name }} -c lambda
+  of the get layer container:
+     kubectl logs -l app.kubernetes.io/name={{ .Chart.Name }} -c get-layer
+2. You can get the pods deployed by running
+    kubectl get po -l app.kubernetes.io/name={{ .Chart.Name }}
+3. You can delete the pods deployed by running
+    kubectl delete po -l app.kubernetes.io/name={{ .Chart.Name }}
+4. You can delete the pods deployed by running (without graceful termination)
+    kubectl delete po -l app.kubernetes.io/name={{ .Chart.Name }} --force --grace-period=0

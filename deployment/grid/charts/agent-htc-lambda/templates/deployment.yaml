@@ -1,0 +1,120 @@
+# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: LicenseRef-.amazon.com.-AmznSL-1.0
+# Licensed under the Amazon Software License  http://aws.amazon.com/asl/
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "agent-htc-lambda.fullname" . }}
+  labels:
+    {{- include "agent-htc-lambda.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "agent-htc-lambda.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "agent-htc-lambda.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "agent-htc-lambda.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: agent
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.imageAgent.repository }}:{{ .Values.imageAgent.version  }}"
+          imagePullPolicy: {{ .Values.imageAgent.pullPolicy }}
+          resources:
+            {{- toYaml .Values.resourcesAgent | nindent 12 }}
+          env:
+          - name: LAMBDA_ENDPOINT_URL
+            value: "{{.Values.lambda.protocolEndpoint}}://{{.Values.lambda.hostEndpoint}}:{{.Values.lambda.port}}"
+          - name: LAMBDA_FONCTION_NAME
+            value: {{.Values.lambda.functionName}}
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: HOST_IP
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.hostIP
+          - name: AWS_XRAY_METRICS_DAEMON_ADDRESS
+            value: xray-service.kube-system:2000
+          - name: INTRA_VPC
+            value: "1"
+          volumeMounts:
+          - name: {{ .Chart.Name }}-agent-config
+            mountPath: /etc/agent
+        - name: lambda
+          image: "{{ .Values.imageLambdaServer.repository }}:{{ .Values.imageLambdaServer.runtime  }}"
+          imagePullPolicy: {{ .Values.imageLambdaServer.pullPolicy }}
+          ports:
+          - containerPort: {{.Values.lambda.port}}
+          resources:
+            {{- toYaml .Values.resourcesLambdaServer | nindent 12 }}
+          env:
+          - name: DOCKER_LAMBDA_STAY_OPEN
+            value: "1"
+          - name: AWS_LAMBDA_FUNCTION_TIMEOUT
+            value: {{.Values.lambda.timeout | quote }}
+          - name: AWS_LAMBDA_GRACEFUL_TERMINATION_DELAY
+            value: {{.Values.terminationGracePeriodSeconds | quote}}
+          - name: INTRA_VPC
+            value: "1"
+          - name: AWS_LAMBDA_FUNCTION_HANDLER
+            value: {{ .Values.lambda.handler }}
+          livenessProbe:
+            httpGet:
+              path: /2018-06-01/ping
+              port: {{.Values.lambda.port}}
+            initialDelaySeconds: 3
+            periodSeconds: 3
+          volumeMounts:
+          - name: {{ .Chart.Name }}-agent-config
+            mountPath: /etc/agent
+          - name: {{ .Chart.Name }}-lambda-task-root
+            mountPath: /var/task
+      initContainers:
+        - command: ["./download-layer.sh"]
+          {{- if eq .Values.storage "S3" }}
+          args: ["-s" , {{ .Values.lambda.s3Location  | quote }} , "-r" , {{ .Values.lambda.region | quote }} ,"-d", {{ .Values.lambda.mountPoint | quote }},"--storage","S3"]
+          {{- else }}
+          args: ["-l", {{ .Values.lambda.layerName | quote }} ,"-v", {{ .Values.lambda.layerVersion | quote }}, "-r", {{ .Values.lambda.region | quote }},"-d", {{ .Values.lambda.mountPoint | quote }} ,"--storage","Layer"]
+          {{- end }}
+          env:
+          - name: LAYER_ROOT
+            value: /var/task
+          image: "{{ .Values.imageGetLayer.repository }}:{{ .Values.imageGetLayer.version  }}"
+          imagePullPolicy: {{ .Values.imageGetLayer.pullPolicy }}
+          name: get-layer
+          volumeMounts:
+          - name: {{ .Chart.Name }}-lambda-task-root
+            mountPath: /var/task
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      terminationGracePeriodSeconds: {{.Values.terminationGracePeriodSeconds}}
+      volumes:
+        - name: {{ .Chart.Name }}-agent-config
+          configMap:
+            name: {{ .Values.htcConfig }}
+        - name: {{ .Chart.Name }}-lambda-task-root
+          emptyDir: {}

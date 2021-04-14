@@ -1,0 +1,18 @@
+FROM lambci/lambda:build-provided
+
+RUN mkdir -p /app
+WORKDIR /app
+
+COPY mock_compute_engine.cpp .
+
+COPY Makefile .
+
+RUN make main
+RUN mkdir -p /app/build
+ADD https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 jq
+RUN chmod a+x ./jq
+COPY bootstrap .
+RUN zip -9yr lambda.zip .
+CMD cp lambda.zip /app/build
+
+

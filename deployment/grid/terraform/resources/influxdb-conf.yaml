@@ -1,0 +1,26 @@
+# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
+nodeSelector:
+  grid/type: "Operator"
+
+tolerations:
+  - key: "grid/type"
+    operator: "Equal"
+    value: "Operator"
+    effect: "NoSchedule"
+
+resources: 
+  requests:
+    memory: 2048Mi
+    cpu: 2
+  limits:
+    memory: 4096Gi
+    cpu: 4
+
+initScripts:
+  enabled: true
+  scripts:
+    init.iql: |+
+      CREATE DATABASE "measurementsdb"

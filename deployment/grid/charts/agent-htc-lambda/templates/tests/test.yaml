@@ -1,0 +1,58 @@
+# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "agent-htc-lambda.fullname" . }}-test
+  labels:
+    {{- include "agent-htc-lambda.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook : test
+    helm.sh/hook-delete-policy: hook-succeeded
+spec:
+  {{- with .Values.imagePullSecrets }}
+    imagePullSecrets:
+      {{- toYaml . | nindent 6 }}
+  {{- end }}
+    serviceAccountName: {{ include "agent-htc-lambda.serviceAccountName" . }}
+    securityContext:
+      {{- toYaml .Values.podSecurityContext | nindent 6 }}
+    containers:
+    - name: {{ include "agent-htc-lambda.fullname" . }}-test
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 10 }}
+      image: "{{ .Values.imageTestAgent.repository }}:{{ .Values.imageTestAgent.version  }}"
+      imagePullPolicy: {{ .Values.imageTestAgent.pullPolicy }}
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+      command: ["python3","./client.py", "-n", "1",   "--worker_arguments", "1000 1 1","--job_size","1","--job_batch_size","1","--log","warning"]
+      env:
+        - name: INTRA_VPC
+          value: "1"
+      volumeMounts:
+        - name: {{ .Chart.Name }}-agent-config
+          mountPath: /etc/agent
+    {{- with .Values.testNodeSelector }}
+    nodeSelector:
+    {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.testAffinity }}
+    affinity:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.testTolerations }}
+    tolerations:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    restartPolicy: Never
+    volumes:
+      - name: {{ .Chart.Name }}-agent-config
+        configMap:
+          name: {{ .Values.htcConfig }}

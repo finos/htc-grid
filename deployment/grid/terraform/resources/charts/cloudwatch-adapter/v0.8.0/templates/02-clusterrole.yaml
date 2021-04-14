@@ -1,0 +1,40 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: k8s-cloudwatch-adapter:external-metrics-reader
+rules:
+- apiGroups:
+  - external.metrics.k8s.io
+  resources: ["*"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: k8s-cloudwatch-adapter-resource-reader
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - pods
+  - services
+  verbs:
+  - get
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: k8s-cloudwatch-adapter:crd-metrics-reader
+  labels:
+    app: k8s-cloudwatch-adapter
+rules:
+- apiGroups:
+  - metrics.aws
+  resources:
+  - "externalmetrics"
+  verbs:
+  - list
+  - get
+  - watch

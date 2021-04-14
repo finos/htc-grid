@@ -1,0 +1,10 @@
+requests
+responses
+pytest
+moto[all]
+sure
+redis
+fakeredis
+flake8
+boto3
+pytest-cov

@@ -1,0 +1,8 @@
+boto3
+redis
+responses
+requests
+moto[all]
+sure
+warrant-lite
+apscheduler

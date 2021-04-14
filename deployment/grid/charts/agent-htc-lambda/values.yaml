@@ -1,0 +1,107 @@
+# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
+htcConfig: agent-configmap
+
+replicaCount: 1
+
+terminationGracePeriodSeconds: 1500
+
+storage: S3
+
+imageAgent:
+  version: latest
+  pullPolicy: IfNotPresent
+
+imageLambdaServer:
+  runtime: provided
+  pullPolicy: IfNotPresent
+
+imageGetLayer:
+  pullPolicy: IfNotPresent
+
+imageTestAgent:
+  pullPolicy: IfNotPresent
+
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+lambda:
+  protocolEndpoint: http
+  hostEndpoint: localhost
+  port: 9001
+  timeout: 86400
+  region: eu-west-1
+  mountPoint: /var/task
+#  s3Location : s3://mylambda.zip
+#  layerName: myLambdaLayer
+#  layerVersion: myLayerVersion
+  handler: bootstrap.main
+
+
+
+resourcesAgent:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+   cpu: 100m
+   memory: 128Mi
+
+resourcesLambdaServer:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  limits:
+    cpu: 920m
+    memory: 3966Mi
+  requests:
+    cpu: 700m
+    memory: 3966Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+testNodeSelector:
+  grid/type: Operator
+
+testTolerations:
+  - effect: NoSchedule
+    key: grid/type
+    operator: Equal
+    value: Operator
+
+testAffinity: {}
+
+

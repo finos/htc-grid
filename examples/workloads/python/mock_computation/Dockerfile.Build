@@ -1,0 +1,16 @@
+FROM lambci/lambda:build-python3.8
+
+RUN mkdir -p /app
+WORKDIR /app
+
+COPY mock_compute_engine.py .
+
+
+
+RUN mkdir -p /app/build
+
+
+RUN zip -9yr lambda.zip .
+CMD cp lambda.zip /app/build
+
+

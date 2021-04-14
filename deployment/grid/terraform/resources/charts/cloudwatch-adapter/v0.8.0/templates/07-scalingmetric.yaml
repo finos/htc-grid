@@ -1,0 +1,22 @@
+apiVersion: metrics.aws/v1alpha1
+kind: ExternalMetric
+metadata:
+  name: htc-scaling-metrics
+  namespace: {{ .Values.hpa.deploymentNamespace }}
+spec:
+  name: htc-scaling-metrics
+  resource:
+    resource: "deployment"
+  queries:
+    - id: htc_scaling_metrics
+      metricStat:
+        metric:
+          namespace:  {{ .Values.metric.namespace }}
+          metricName: {{ .Values.metric.name }}
+          dimensions:
+            - name: {{ .Values.metric.dimensionName }}
+              value: {{ .Values.metric.dimensionValue }}
+        period: {{ .Values.metric.averagePeriod }}
+        stat: Average
+        unit: Count
+      returnData: true

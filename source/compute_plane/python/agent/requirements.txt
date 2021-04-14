@@ -1,0 +1,7 @@
+boto3
+redis
+influxdb
+requests
+aws-xray-sdk
+../../dist/api-0.1-py3-none-any.whl
+../../dist/utils-0.1-py3-none-any.whl
