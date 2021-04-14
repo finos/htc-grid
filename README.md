@@ -12,7 +12,7 @@ HTC-Grid should be used when the following criteria are meet:
 ### When should I not use the HTC-Grid ?
 HTC-Grid might not be the best choice if :
 1. The required task throughput is below 250 tasks per second. Consider [AWS Batch](https://aws.amazon.com/batch/) instead.
-2. The tasks are tightly coupled, or use MPI. Consider [AWS Paralell Cluster](https://aws.amazon.com/hpc/parallelcluster/) or [AWS Batch Multi-Node workloads](https://docs.aws.amazon.com/batch/latest/userguide/multi-node-parallel-jobs.html)
+2. The tasks are tightly coupled, or use MPI. Consider [AWS Parallel Cluster](https://aws.amazon.com/hpc/parallelcluster/) or [AWS Batch Multi-Node workloads](https://docs.aws.amazon.com/batch/latest/userguide/multi-node-parallel-jobs.html)
 3. The tasks used third party licensed software.
 
 ### How do I use HTC-Grid ?
