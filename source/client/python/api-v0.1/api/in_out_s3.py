@@ -11,7 +11,6 @@ logging.basicConfig(format="%(asctime)s - %(levelname)s - %(filename)s - %(funcN
                     datefmt='%H:%M:%S', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-boto3.set_stream_logger('boto3.resources', logging.DEBUG)
 
 INPUT_POSTFIX = '-input'
 OUTPUT_POSTFIX = '-output'
