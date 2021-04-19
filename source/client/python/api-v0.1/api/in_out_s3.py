@@ -5,6 +5,13 @@
 import boto3
 import sys
 import io
+import logging
+
+logging.basicConfig(format="%(asctime)s - %(levelname)s - %(filename)s - %(funcName)s  - %(lineno)d - %(message)s",
+                    datefmt='%H:%M:%S', level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+boto3.set_stream_logger('boto3.resources', logging.DEBUG)
 
 INPUT_POSTFIX = '-input'
 OUTPUT_POSTFIX = '-output'
@@ -35,8 +42,10 @@ class InOutS3:
         self.subnamespace = subnamespace
         if s3_custom_resource is None:
             self.s3 = boto3.resource('s3')
+            logger.warning('using s3 resource from AWS')
         else:
             self.s3 = s3_custom_resource
+            logger.warning('using s3 resource from other provider')
         self.bucket = self.s3.Bucket(self.namespace)
 
     def put_input_from_file(self, task_id, file_name):
