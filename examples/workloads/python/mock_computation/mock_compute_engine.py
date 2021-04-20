@@ -8,6 +8,4 @@ def lambda_handler(event, context):
     message = 'Hellrint(args[0]) {}!'.format(event)
     args = event['worker_arguments']
     time.sleep(int(args[0])/1000)
-    return {
-        'message' : message
-    }
+    return int(args[0])
