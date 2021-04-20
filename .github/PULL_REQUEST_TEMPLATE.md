@@ -17,6 +17,6 @@ A good, clear description == a faster review :)
 - [ ] Made sure the title of the PR is a good description that can go into the release notes
 - [ ] (Core team) Added labels for change area (e.g. `area/controlplane`) and kind (e.g. `kind/improvement`)
 
-### BONUS POINTS checklist: complete for good vibes and maybe prizes?! :exploding_head:
-- [ ] Backfilled missing tests for code in same general area :tada:
-- [ ] Refactored something and made the world a better place :star2:
+### BONUS POINTS checklist:
+- [ ] Backfilled missing tests for code in same general area
+- [ ] Refactored something and made the world a better place
