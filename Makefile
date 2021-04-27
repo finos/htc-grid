@@ -62,10 +62,10 @@ serve: import
 import: packages $(PACKAGES)
 	pip install --force-reinstall $(PACKAGES)
 
-upload-c++:
+upload-c++: config-c++
 	$(MAKE) -C ./examples/workloads/c++/mock_computation upload
 
-upload-python:
+upload-python: config-python
 	$(MAKE) -C ./examples/workloads/python/mock_computation upload
 
 config-c++:
@@ -74,6 +74,8 @@ config-c++:
 config-python:
 	$(MAKE) -C ./examples/configurations generated-python
 
+config-s3-c++:
+	$(MAKE) -C ./examples/configurations generated-s3-c++
 
 happy-path: all upload-c++ config-c++
 

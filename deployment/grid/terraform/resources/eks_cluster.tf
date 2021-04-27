@@ -28,7 +28,7 @@ resource "helm_release" "eks-charts" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "14.0.0"
+  version = "15.1.0"
 
   cluster_name    = var.cluster_name
   cluster_version = var.kubernetes_version

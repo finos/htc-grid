@@ -95,11 +95,11 @@ resource "aws_api_gateway_deployment" "htc_grid_public_deployment" {
   depends_on = [aws_api_gateway_method.htc_grid_public_submit_proxy_method,aws_api_gateway_method.htc_grid_public_result_proxy_method]
   rest_api_id = aws_api_gateway_rest_api.htc_grid_public_rest_api.id
   triggers = {
-    redeployment = sha1(join(",", list(
+    redeployment = sha1(join(",", tolist([
       jsonencode(aws_api_gateway_integration.htc_grid_public_submit_proxy_integration),
       jsonencode(aws_api_gateway_integration.htc_grid_public_result_proxy_integration),
       jsonencode(aws_api_gateway_integration.htc_grid_public_cancel_proxy_integration)
-    )))
+    ])))
   }
 
   stage_name = var.api_gateway_version

@@ -16,6 +16,7 @@ output "certificate_authority" {
 output "token" {
   description = "authentication token for EKS"
   value       = data.aws_eks_cluster_auth.cluster.token
+  sensitive   = true
 }
 
 
