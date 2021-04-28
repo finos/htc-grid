@@ -84,6 +84,7 @@ EOF
 
 module "submit_task" {
   source  = "terraform-aws-modules/lambda/aws"
+  version = "v1.48.0"
   source_path = [
     "../../../source/control_plane/python/lambda/submit_tasks",
     {
@@ -143,6 +144,7 @@ module "submit_task" {
 
 module  "get_results" {
   source  = "terraform-aws-modules/lambda/aws"
+  version = "v1.48.0"
   source_path = [
     "../../../source/control_plane/python/lambda/get_results",
     {
@@ -198,6 +200,7 @@ module  "get_results" {
 
 module "cancel_tasks" {
   source  = "terraform-aws-modules/lambda/aws"
+  version = "v1.48.0"
   source_path = [
     "../../../source/control_plane/python/lambda/cancel_tasks",
     {
@@ -259,6 +262,7 @@ module "cancel_tasks" {
 
 module "ttl_checker" {
   source  = "terraform-aws-modules/lambda/aws"
+  version = "v1.48.0"
   source_path = [
     "../../../source/control_plane/python/lambda/ttl_checker",
     {
