@@ -141,6 +141,7 @@ def test_init_connector(mock_cognitoidp_client, mock_user_pool, mock_s3_resource
         AWSConnector: an instance of HTC Grid connector
     """
     mock_agent_config = {
+        "region": DEFAULT_REGION_NAME,
         "grid_storage_service": "S3",
         "s3_bucket": "test_bucket",
         "redis_url": "redis_url.eu-west-1.amazonaws.com",
