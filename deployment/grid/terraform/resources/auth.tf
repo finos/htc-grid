@@ -57,6 +57,6 @@ resource "null_resource" "modify_ingress" {
 
 
 resource "aws_cognito_user_pool_domain" "domain" {
-  domain       = "${lower(var.suffix)}-${random_string.random_resources.result}"
+  domain       = replace("${lower(var.suffix)}-${random_string.random_resources.result}","aws","")
   user_pool_id = aws_cognito_user_pool.htc_pool.id
 }
