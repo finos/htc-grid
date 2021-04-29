@@ -28,11 +28,12 @@ class InOutS3:
 
     s3 = None
 
-    def __init__(self, namespace, subnamespace=None, s3_custom_resource=None):
+    def __init__(self, namespace, region, subnamespace=None, s3_custom_resource=None):
         """Initialize a dataplane backed by an S3 bucket
 
         Args:
             namespace(string): namespace of the S3 Bucket
+            region(string): region where the s3 bucket has been created
             subnamespace(string): subnamespace of the S3 bucket
             s3_custom_resource(object): override default S3 resource
         """
@@ -40,7 +41,7 @@ class InOutS3:
         self.namespace = namespace
         self.subnamespace = subnamespace
         if s3_custom_resource is None:
-            self.s3 = boto3.resource('s3')
+            self.s3 = boto3.resource('s3', region_name=region)
             logger.warning('using s3 resource from AWS')
         else:
             self.s3 = s3_custom_resource

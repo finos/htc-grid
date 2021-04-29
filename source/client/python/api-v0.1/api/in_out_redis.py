@@ -30,6 +30,7 @@ class InOutRedis:
                  cache_url,
                  subnamespace=None,
                  use_S3=False,
+                 region=None,
                  s3_custom_resource=None,
                  redis_custom_connection=None):
         """
@@ -39,6 +40,7 @@ class InOutRedis:
             cache_url(string): URL of the redis cluster
             subnamespace(string): subnamespace of the S3 bucket
             use_S3(bool): add S3  as additional backend for the dataplane
+            region(string): region where the s3 bucket has been created
             s3_custom_resource(object): override default S3 resource
             redis_custom_connection(object): override default redis connection
         """
@@ -48,7 +50,7 @@ class InOutRedis:
 
         if use_S3:
             if s3_custom_resource is None:
-                self.s3 = boto3.resource('s3')
+                self.s3 = boto3.resource('s3', region_name=region)
             else:
                 self.s3 = s3_custom_resource
             self.bucket = self.s3.Bucket(self.namespace)

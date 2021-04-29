@@ -26,6 +26,7 @@ EOF
 module "scaling_metrics" {
 
   source  = "terraform-aws-modules/lambda/aws"
+  version = "v1.48.0"
   source_path = "../../../source/compute_plane/python/lambda/scaling_metrics/"
   function_name = var.lambda_name_scaling_metrics
   handler = "scaling_metrics.lambda_handler"
