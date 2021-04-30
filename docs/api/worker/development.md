@@ -2,7 +2,7 @@
 
 This section outlines how to approach the operations and development of the HTC Grid.
 
-![Test](./images/development.png)
+![Test](../../images/development.png)
 
 HTC-Grid comes with a mock execution engine mock_compute_engine.cpp. This is the executable that is invoked for every submitted task. In real deployments this executable will need to be replaced with a real implementation. Steps below outline how to modify and apply changes to the custom execution code.
 

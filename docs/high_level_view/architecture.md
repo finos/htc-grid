@@ -32,7 +32,7 @@ Internally, each of the 4 functional components (API, Data & Control Planes, and
 
 
 
-![Test](./images/high_level_architecture.png)
+![Test](../images/high_level_architecture.png)
 
 
 
@@ -42,7 +42,7 @@ Internally, each of the 4 functional components (API, Data & Control Planes, and
 
 Figure below demonstrates high level steps involved in the task submission and result retrieval.
 
-![Test](./images/job_submission_steps.png)
+![Test](../images/job_submission_steps.png)
 
 
 HTC-Grid allows client applications to submit a session (job) containing a single task, or a vector of tasks. Each submission generates a system-wide unique session_id which is associated with the submission, the session_id is returned to the client application. Successful reception of a session_id indicates that all the tasks of the job are in the system and eventually will be executed.
@@ -71,7 +71,7 @@ Depending on the job definition, failed tasks can be retried up to a fixed numbe
 
 When the task is completed, the Engine updates DynamoDB for the last time and sets task status to “completed”. Afterwards, the Engine tries to acquire a next task from an SQS queue.
 
-![Test](./images/simplified-flow-failure.png)
+![Test](../images/simplified-flow-failure.png)
 
 ## Data Plane
 
@@ -83,7 +83,7 @@ HTC Grid can use S3 or Redis as backend for the data plane depending on the requ
 
 HTC-Grid utilises Amazon Elastic Kubernetes Service (Amazon EKS) as a computational backend. Each engine is a pod containing two containers an Agent and a Lambda. The Lambda container executes lambda locally within the container (there are no calls made to AWS lambda service, the execution is done within the node Lambda container). The agent provides a connectivity layer between the HTC-Grid and the Lambda container.  The Agent pulls new tasks from the task queues in the Control Plane, once a new task is acquired the agent invokes the Lambda container and passes the task definition. The Lambda container contains custom executable that perform the work. It is responsibility of the Lambda container to connect to the Data Plane and retrieve associated task payload. Once the task is complete, the results is uploaded to the Data Plane. The Grid Agent updates the task’s state to “completed” and pulls the next task from the Control Plane.
 
-![Test](./images/worker.png)
+![Test](../images/worker.png)
 
 ## Other Functions
 
