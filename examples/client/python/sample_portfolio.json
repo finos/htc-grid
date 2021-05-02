@@ -1,0 +1,442 @@
+{
+    "portfolio": [
+        {
+            "tradeType": "option",
+            "exercise": "European",
+            "engineName": "AnalyticEuropeanEngine",
+            "engineParameters": {},
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 8.0,
+                "underlying": 7.0,
+                "dividendYield": 0.05,
+                "volatility": 0.10,
+                "riskFreeRate": 0.05
+            }
+        },
+        {
+            "tradeType": "option",
+            "exercise": "European",
+            "engineName": "AnalyticHestonEngine",
+            "engineParameters": {},
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 8.0,
+                "underlying": 7.0,
+                "dividendYield": 0.05,
+                "volatility": 0.10,
+                "riskFreeRate": 0.05
+            }
+        },
+        {
+            "tradeType": "option",
+            "exercise": "European",
+            "engineName": "COSHestonEngine",
+            "engineParameters": {},
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 8.0,
+                "underlying": 7.0,
+                "dividendYield": 0.05,
+                "volatility": 0.10,
+                "riskFreeRate": 0.05
+            }
+        },
+        {
+            "tradeType": "option",
+            "exercise": "European",
+            "engineName": "IntegralEngine",
+            "engineParameters": {},
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 8.0,
+                "underlying": 7.0,
+                "dividendYield": 0.05,
+                "volatility": 0.10,
+                "riskFreeRate": 0.05
+            }
+        },
+        {
+            "tradeType": "option",
+            "exercise": "European",
+            "engineName": "FdBlackScholesVanillaEngine",
+            "engineParameters": {
+                "timeSteps": 801,
+                "gridPoints": 800
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 8.0,
+                "underlying": 7.0,
+                "dividendYield": 0.05,
+                "volatility": 0.10,
+                "riskFreeRate": 0.05
+            }
+        },
+
+        {
+            "tradeType": "option",
+            "exercise": "European",
+            "engineName": "BinomialVanillaEngine",
+            "engineParameters": {
+                "timeSteps" : 801,
+                "tree": "JR"
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 8.0,
+                "underlying": 7.0,
+                "dividendYield": 0.05,
+                "volatility": 0.10,
+                "riskFreeRate": 0.05
+            }
+        },
+
+        {
+            "tradeType": "option",
+            "exercise": "European",
+            "engineName": "BinomialVanillaEngine",
+            "engineParameters": {
+                "timeSteps" : 801,
+                "tree": "CRR"
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 8.0,
+                "underlying": 7.0,
+                "dividendYield": 0.05,
+                "volatility": 0.10,
+                "riskFreeRate": 0.05
+            }
+        },
+
+        {
+            "tradeType": "option",
+            "exercise": "European",
+            "engineName": "BinomialVanillaEngine",
+            "engineParameters": {
+                "timeSteps" : 801,
+                "tree": "EQP"
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 8.0,
+                "underlying": 7.0,
+                "dividendYield": 0.05,
+                "volatility": 0.10,
+                "riskFreeRate": 0.05
+            }
+        },
+
+
+        {
+            "tradeType": "option",
+            "exercise": "European",
+            "engineName": "BinomialVanillaEngine",
+            "engineParameters": {
+                "timeSteps" : 801,
+                "tree": "Trigeorgis"
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 8.0,
+                "underlying": 7.0,
+                "dividendYield": 0.05,
+                "volatility": 0.10,
+                "riskFreeRate": 0.05
+            }
+        },
+
+        {
+            "tradeType": "option",
+            "exercise": "European",
+            "engineName": "BinomialVanillaEngine",
+            "engineParameters": {
+                "timeSteps" : 801,
+                "tree": "Tian"
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 8.0,
+                "underlying": 7.0,
+                "dividendYield": 0.05,
+                "volatility": 0.10,
+                "riskFreeRate": 0.05
+            }
+        },
+
+
+        {
+            "tradeType": "option",
+            "exercise": "European",
+            "engineName": "BinomialVanillaEngine",
+            "engineParameters": {
+                "timeSteps" : 801,
+                "tree": "LR"
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 8.0,
+                "underlying": 7.0,
+                "dividendYield": 0.05,
+                "volatility": 0.10,
+                "riskFreeRate": 0.05
+            }
+        },
+
+
+        {
+            "tradeType": "option",
+            "exercise": "European",
+            "engineName": "BinomialVanillaEngine",
+            "engineParameters": {
+                "timeSteps" : 801,
+                "tree": "Joshi4"
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 8.0,
+                "underlying": 7.0,
+                "dividendYield": 0.05,
+                "volatility": 0.10,
+                "riskFreeRate": 0.05
+            }
+        },
+
+        {
+            "tradeType": "option",
+            "exercise": "European",
+            "engineName": "MCEuropeanEngine",
+            "engineParameters": {
+                "random_source": "pseudorandom",
+                "timeSteps" : 1,
+                "requiredTolerance": 0.02,
+                "seed" : 42
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 8.0,
+                "underlying": 7.0,
+                "dividendYield": 0.05,
+                "volatility": 0.10,
+                "riskFreeRate": 0.05
+            }
+        },
+
+
+        {
+            "tradeType": "option",
+            "exercise": "European",
+            "engineName": "MCEuropeanEngine",
+            "engineParameters": {
+                "random_source": "lowdiscrepancy",
+                "timeSteps" : 1,
+                "requiredSamples": 32768
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 8.0,
+                "underlying": 7.0,
+                "dividendYield": 0.05,
+                "volatility": 0.10,
+                "riskFreeRate": 0.05
+            }
+        },
+
+
+        {
+            "tradeType": "option",
+            "exercise": "American",
+            "engineName": "BaroneAdesiWhaleyApproximationEngine",
+            "engineParameters": {
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 40.0,
+                "underlying": 36.0,
+                "dividendYield": 0.00,
+                "volatility": 0.20,
+                "riskFreeRate": 0.06
+            }
+        },
+
+        {
+            "tradeType": "option",
+            "exercise": "American",
+            "engineName": "BjerksundStenslandApproximationEngine",
+            "engineParameters": {
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 40.0,
+                "underlying": 36.0,
+                "dividendYield": 0.00,
+                "volatility": 0.20,
+                "riskFreeRate": 0.06
+            }
+        },
+
+
+        {
+            "tradeType": "option",
+            "exercise": "American",
+            "engineName": "FdBlackScholesVanillaEngine",
+            "engineParameters": {
+                "timeSteps" : 801,
+                "gridPoints" : 800
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 40.0,
+                "underlying": 36.0,
+                "dividendYield": 0.00,
+                "volatility": 0.20,
+                "riskFreeRate": 0.06
+            }
+        },
+
+        {
+            "tradeType": "option",
+            "exercise": "American",
+            "engineName": "BinomialVanillaEngine",
+            "engineParameters": {
+                "timeSteps" : 801,
+                "tree" : "JR"
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 40.0,
+                "underlying": 36.0,
+                "dividendYield": 0.00,
+                "volatility": 0.20,
+                "riskFreeRate": 0.06
+            }
+        },
+        {
+            "tradeType": "option",
+            "exercise": "American",
+            "engineName": "BinomialVanillaEngine",
+            "engineParameters": {
+                "timeSteps" : 801,
+                "tree" : "CRR"
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 40.0,
+                "underlying": 36.0,
+                "dividendYield": 0.00,
+                "volatility": 0.20,
+                "riskFreeRate": 0.06
+            }
+        },
+        {
+            "tradeType": "option",
+            "exercise": "American",
+            "engineName": "BinomialVanillaEngine",
+            "engineParameters": {
+                "timeSteps" : 801,
+                "tree" : "EQP"
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 40.0,
+                "underlying": 36.0,
+                "dividendYield": 0.00,
+                "volatility": 0.20,
+                "riskFreeRate": 0.06
+            }
+        },
+        {
+            "tradeType": "option",
+            "exercise": "American",
+            "engineName": "BinomialVanillaEngine",
+            "engineParameters": {
+                "timeSteps" : 801,
+                "tree" : "Trigeorgis"
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 40.0,
+                "underlying": 36.0,
+                "dividendYield": 0.00,
+                "volatility": 0.20,
+                "riskFreeRate": 0.06
+            }
+        },
+        {
+            "tradeType": "option",
+            "exercise": "American",
+            "engineName": "BinomialVanillaEngine",
+            "engineParameters": {
+                "timeSteps" : 801,
+                "tree" : "Tian"
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 40.0,
+                "underlying": 36.0,
+                "dividendYield": 0.00,
+                "volatility": 0.20,
+                "riskFreeRate": 0.06
+            }
+        },
+        {
+            "tradeType": "option",
+            "exercise": "American",
+            "engineName": "BinomialVanillaEngine",
+            "engineParameters": {
+                "timeSteps" : 801,
+                "tree" : "LR"
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 40.0,
+                "underlying": 36.0,
+                "dividendYield": 0.00,
+                "volatility": 0.20,
+                "riskFreeRate": 0.06
+            }
+        },
+        {
+            "tradeType": "option",
+            "exercise": "American",
+            "engineName": "BinomialVanillaEngine",
+            "engineParameters": {
+                "timeSteps" : 801,
+                "tree" : "Joshi4"
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 40.0,
+                "underlying": 36.0,
+                "dividendYield": 0.00,
+                "volatility": 0.20,
+                "riskFreeRate": 0.06
+            }
+        }
+    ]
+}

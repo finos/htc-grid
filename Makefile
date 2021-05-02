@@ -68,11 +68,17 @@ upload-c++: config-c++
 upload-python: config-python
 	$(MAKE) -C ./examples/workloads/python/mock_computation upload
 
+upload-python-ql: config-python
+	$(MAKE) -C ./examples/workloads/python/quant_lib upload
+
 config-c++:
 	$(MAKE) -C ./examples/configurations generated-c++
 
 config-python:
-	$(MAKE) -C ./examples/configurations generated-python
+	$(MAKE) -C ./examples/configurations generated-python FILE_HANDLER=mock_compute_engine FUNCTION_HANDLER=lambda_handler
+
+config-python-ql:
+	$(MAKE) -C ./examples/configurations generated-python FILE_HANDLER=portfolio_pricing_engine FUNCTION_HANDLER=lambda_handler
 
 config-s3-c++:
 	$(MAKE) -C ./examples/configurations generated-s3-c++
@@ -81,4 +87,5 @@ happy-path: all upload-c++ config-c++
 
 python-happy-path: all upload-python config-python
 
+python-quant-lib-path: all upload-python-ql config-python-ql
 
