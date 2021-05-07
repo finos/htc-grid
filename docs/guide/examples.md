@@ -3,7 +3,7 @@
 This example demonstrates the use of the [QuantLib](https://www.quantlib.org/) with its [SWIG Python bindigs](https://github.com/lballabio/QuantLib-SWIG).
 
 Components:
-- /examples/workloads/python/quant_lib/portfolio_pricing_client.py client application that generates a portfolio of trades using simple scenario generator. Trades then being split into individual tasks and sent to the HTC-Grid for computation. Once all tasks are completed, the client application merges results together to determine total value of the portfolio.
+- /examples/workloads/python/quant_lib/portfolio_pricing_client.py client application that generates a portfolio of trades using simple portfolio generator. Trades then being split into individual tasks and sent to the HTC-Grid for computation. Once all tasks are completed, the client application merges results together to determine total value of the portfolio.
 
 - /examples/workloads/python/quant_lib/portfolio_pricing_engine.py computate engine that receives a list of trades to evaluate (coudl be entire portfolio or just a single trade). The engine uses QuantLib to evaluate the value of the portfolio.
 

@@ -19,10 +19,10 @@ with open(client_config_file, 'r') as file:
     client_config_file = json.loads(file.read())
 
 
-class ScenarioGenerator:
+class PortfolioGenerator:
     """
-    A simple scenario generator that builds a portfolio of trades based on a list of existing trades (seed_trades).
-    ScenarioGenerator randomly select one of the known trades and puts it into generated portfolio. Duplicates may occur.
+    A simple portfolio generator that builds a portfolio of trades based on a list of existing trades (seed_trades).
+    PortfolioGenerator randomly select one of the known trades and puts it into generated portfolio. Duplicates may occur.
     """
 
     def __init__(self, config=None):
@@ -218,9 +218,9 @@ if __name__ == "__main__":
             "portfolio_target_size": FLAGS.portfolio_size
         }
 
-        sc = ScenarioGenerator(configuration)
+        pg = PortfolioGenerator(configuration)
 
-        sample_portfolio = sc.generate_portfolio()
+        sample_portfolio = pg.generate_portfolio()
 
         logging.info(sample_portfolio)
 
