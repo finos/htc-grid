@@ -8,3 +8,7 @@ fakeredis
 flake8
 boto3
 pytest-cov
+mkdocs
+mkdocs-awesome-pages-plugin
+mkdocs-material
+mkdocs-material-extensions
