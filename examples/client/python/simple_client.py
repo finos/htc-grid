@@ -6,6 +6,7 @@ from api.connector import AWSConnector
 
 import os
 import json
+import logging
 
 try:
     client_config_file = os.environ['AGENT_CONFIG_FILE']
@@ -18,8 +19,19 @@ with open(client_config_file, 'r') as file:
 
 if __name__ == "__main__":
 
+    logging.info("Simple Client")
+    gridConnector = AWSConnector()
+    
+    try:
+        username = os.environ['USERNAME']
+    except KeyError:
+        username = ""
+    try:
+        password = os.environ['PASSWORD']
+    except KeyError:
+        password = ""
 
-    gridConnector = AWSConnector(client_config_file)
+    gridConnector.init(client_config_file, username=username, password=password)    
     gridConnector.authenticate()
 
     task_1_definition = {
@@ -31,8 +43,8 @@ if __name__ == "__main__":
     }
 
     submission_resp = gridConnector.send([task_1_definition, task_2_definition])
-    print(submission_resp)
+    logging.info(submission_resp)
 
 
     results = gridConnector.get_results(submission_resp, timeout_sec=100)
-    print(results)
+    logging.info(results)
