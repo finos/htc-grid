@@ -11,7 +11,7 @@
         "grafana/grafana:7.4.2" :"grafana",
         "chankh/k8s-cloudwatch-adapter:v0.8.0" :"k8s-cloudwatch-adapter",
         "kiwigrid/k8s-sidecar:1.10.7" :"k8s-sidecar",
-        "k8s.gcr.io/kube-state-metrics/kube-state-metrics:v1.9.8" :"kube-state-metrics",
+        "k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.0.0" :"kube-state-metrics",
         "quay.io/prometheus/node-exporter:v1.1.2" :"node-exporter",
         "quay.io/prometheus/prometheus:v2.26.0" :"prometheus",
         "prom/pushgateway:v1.3.1" :"pushgateway",
