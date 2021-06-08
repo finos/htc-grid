@@ -372,10 +372,10 @@ variable "prometheus_configuration" {
 
   })
   default = {
-    node_exporter_tag = "v1.0.1"
-    server_tag = "v2.24.0"
-    alertmanager_tag = "v0.21.0"
-    kube_state_metrics_tag = "v1.9.8"
+    node_exporter_tag = "v1.1.2"
+    server_tag = "v2.26.0"
+    alertmanager_tag = "v0.22.0"
+    kube_state_metrics_tag = "v2.0.0"
     pushgateway_tag = "v1.3.1"
     configmap_reload_tag = "v0.5.0"
   }
