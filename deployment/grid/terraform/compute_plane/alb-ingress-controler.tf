@@ -5,7 +5,7 @@
 
 resource "helm_release" "alb_ingress_controller" {
   name       = "alb-controller"
-  chart      = "./resources/charts/aws-load-balancer-controller"
+  chart      = "./compute_plane/charts/aws-load-balancer-controller"
   #repository = "https://aws.github.io/eks-charts"
   namespace  = "kube-system"
 
@@ -20,7 +20,7 @@ resource "helm_release" "alb_ingress_controller" {
   }
 
   values = [
-    file("resources/alb-ingress-controller-conf.yaml")
+    file("compute_plane/alb-ingress-controller-conf.yaml")
   ]
 
   depends_on = [

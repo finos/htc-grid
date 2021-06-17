@@ -31,7 +31,7 @@ resource "helm_release" "cluster_autoscaler" {
   }
 
   values = [
-    file("resources/ca_placement_conf.yaml"),
+    file("compute_plane/ca_placement_conf.yaml"),
   ]
 
 }

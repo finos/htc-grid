@@ -62,11 +62,21 @@ module "vpc" {
   elasticloadbalancing_endpoint_security_group_ids = var.enable_private_subnet == true ? [module.vpc.default_security_group_id] : []
   elasticloadbalancing_endpoint_subnet_ids = var.enable_private_subnet == true ? module.vpc.private_subnets : []
 
+
   enable_apigw_endpoint = true
   apigw_endpoint_private_dns_enabled = true
   apigw_endpoint_security_group_ids =  [module.vpc.default_security_group_id]
   apigw_endpoint_subnet_ids =  module.vpc.private_subnets
 
+  enable_ssm_endpoint = true
+  ssm_endpoint_private_dns_enabled = true
+  ssm_endpoint_security_group_ids =  [module.vpc.default_security_group_id]
+  ssm_endpoint_subnet_ids =  module.vpc.private_subnets
+
+  enable_ssmmessages_endpoint = true
+  ssmmessages_endpoint_private_dns_enabled = true
+  ssmmessages_endpoint_security_group_ids =  [module.vpc.default_security_group_id]
+  ssmmessages_endpoint_subnet_ids =  module.vpc.private_subnets
 
   tags = {
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"

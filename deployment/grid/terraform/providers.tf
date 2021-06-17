@@ -54,18 +54,18 @@ provider "archive" {
 }
 
 provider "kubernetes" {
-  host                   = module.resources.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.resources.certificate_authority.0.data)
-  token                  = module.resources.token
+  host                   = module.compute_plane.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.compute_plane.certificate_authority.0.data)
+  token                  = module.compute_plane.token
 }
 
 # package manager for kubernetes
 provider "helm" {
   helm_driver = "configmap"
   kubernetes {
-    host                   = module.resources.cluster_endpoint
-    cluster_ca_certificate = base64decode(module.resources.certificate_authority.0.data)
-    token                  = module.resources.token
+    host                   = module.compute_plane.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.compute_plane.certificate_authority.0.data)
+    token                  = module.compute_plane.token
   }
 }
 

@@ -136,8 +136,8 @@ resource "helm_release" "grafana" {
   }
 
   values = [
-    file("resources/grafana_placement_conf.yaml"),
-    file("resources/grafana_dashboard_k8s.yaml")
+    file("compute_plane/grafana_placement_conf.yaml"),
+    file("compute_plane/grafana_dashboard_k8s.yaml")
   ]
 
   depends_on = [
