@@ -114,21 +114,16 @@ resource "aws_iam_role_policy_attachment" "workers_xray_attach" {
 }
 
 
-resource "aws_iam_role_policy_attachment" "appmesh_attach" {
-  policy_arn = "arn:aws:iam::aws:policy/AWSAppMeshFullAccess"
-  role       = module.eks.worker_iam_role_name
-}
 
-
-resource "aws_iam_role_policy_attachment" "cloudmap_attach" {
-  policy_arn = "arn:aws:iam::aws:policy/AWSCloudMapFullAccess"
+resource "aws_iam_role_policy_attachment" "ssm_agent" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   role       = module.eks.worker_iam_role_name
 }
 
 resource "aws_iam_policy" "alb_policy" {
    # ... other configuration ...
 
-   policy = file("resources/iam-policy-alb.json")
+   policy = file("compute_plane/iam-policy-alb.json")
  }
 
 resource "aws_iam_role_policy_attachment" "alb_policy_attach" {

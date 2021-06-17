@@ -112,7 +112,7 @@ resource "helm_release" "prometheus" {
   }
 
   values = [
-    file("resources/prometheus-conf.yaml")
+    file("compute_plane/prometheus-conf.yaml")
   ]
 
   depends_on = [

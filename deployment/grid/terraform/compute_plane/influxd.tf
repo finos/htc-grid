@@ -49,7 +49,7 @@ resource "helm_release" "influxdb" {
   }
 
   values = [
-    file("resources/influxdb-conf.yaml")
+    file("compute_plane/influxdb-conf.yaml")
   ]
 
 

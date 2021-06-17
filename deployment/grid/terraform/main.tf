@@ -81,8 +81,8 @@ module "vpc" {
     enable_private_subnet = var.enable_private_subnet
 
 }
-module "resources" {
-    source = "./resources"
+module "compute_plane" {
+    source = "./compute_plane"
 
     vpc_id = module.vpc.vpc_id
     vpc_private_subnet_ids = module.vpc.private_subnet_ids
@@ -142,8 +142,8 @@ module "resources" {
     }
 }
 
-module "scheduler" {
-    source = "./scheduler"
+module "control_plane" {
+    source = "./control_plane"
 
     vpc_id = module.vpc.vpc_id
     vpc_private_subnet_ids = module.vpc.private_subnet_ids
@@ -180,9 +180,9 @@ module "scheduler" {
     dynamodb_gsi_parent_table_write_capacity = var.dynamodb_default_write_capacity
     dynamodb_gsi_parent_table_read_capacity = var.dynamodb_default_read_capacity
     agent_use_congestion_control = var.agent_use_congestion_control
-    nlb_influxdb = module.resources.nlb_influxdb
+    nlb_influxdb = module.compute_plane.nlb_influxdb
     cluster_name = local.cluster_name
-    cognito_userpool_arn = module.resources.cognito_userpool_arn
+    cognito_userpool_arn = module.compute_plane.cognito_userpool_arn
     api_gateway_version = var.api_gateway_version
 
 
@@ -222,8 +222,8 @@ module "htc_agent" {
     lambda_handler_file_name = lookup(lookup(var.agent_configuration,"lambda",local.default_agent_configuration.lambda),"lambda_handler_file_name",local.default_agent_configuration.lambda.lambda_handler_file_name)
     lambda_handler_function_name = lookup(lookup(var.agent_configuration,"lambda",local.default_agent_configuration.lambda),"lambda_handler_function_name",local.default_agent_configuration.lambda.lambda_handler_function_name)
     depends_on = [
-        module.resources,
-        module.scheduler,
+        module.compute_plane,
+        module.control_plane,
         module.vpc,
         kubernetes_config_map.htcagentconfig
     ]

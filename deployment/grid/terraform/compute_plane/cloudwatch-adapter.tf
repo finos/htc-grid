@@ -17,7 +17,7 @@ resource "kubernetes_namespace" "cloudwatch-adapter" {
 
 resource "helm_release" "cloudwatch-adapter" {
   name       = "cloudwatch-adapter"
-  chart      = "./resources/charts/cloudwatch-adapter/${var.cwa_version}"
+  chart      = "./compute_plane/charts/cloudwatch-adapter/${var.cwa_version}"
   namespace  = "custom-metrics"
   depends_on = [
     module.eks,
