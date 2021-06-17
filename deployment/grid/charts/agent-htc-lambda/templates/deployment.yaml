@@ -89,7 +89,7 @@ spec:
           args: ["-s" , {{ .Values.lambda.s3Location  | quote }} , "-r" , {{ .Values.lambda.region | quote }} ,"-d", {{ .Values.lambda.mountPoint | quote }},"--storage","S3"]
           {{- else }}
           args: ["-l", {{ .Values.lambda.layerName | quote }} ,"-v", {{ .Values.lambda.layerVersion | quote }}, "-r", {{ .Values.lambda.region | quote }},"-d", {{ .Values.lambda.mountPoint | quote }} ,"--storage","Layer"]
-          kbgl3
+          {{- end }}
           env:
           - name: LAYER_ROOT
             value: /var/task
