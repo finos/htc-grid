@@ -24,7 +24,7 @@ resource "aws_api_gateway_integration" "htc_grid_private_submit_proxy_integratio
   http_method              = aws_api_gateway_method.htc_grid_private_submit_proxy_method.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = module.submit_task.this_lambda_function_invoke_arn
+  uri                     = module.submit_task.lambda_function_invoke_arn
 }
 
 
@@ -61,7 +61,7 @@ resource "aws_api_gateway_integration" "htc_grid_private_result_proxy_integratio
   http_method              = aws_api_gateway_method.htc_grid_private_result_proxy_method.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = module.get_results.this_lambda_function_invoke_arn
+  uri                     = module.get_results.lambda_function_invoke_arn
 }
 
 
@@ -97,7 +97,7 @@ resource "aws_api_gateway_integration" "htc_grid_private_cancel_proxy_integratio
   http_method              = aws_api_gateway_method.htc_grid_private_cancel_proxy_method.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = module.cancel_tasks.this_lambda_function_invoke_arn
+  uri                     = module.cancel_tasks.lambda_function_invoke_arn
 }
 
 
@@ -165,7 +165,7 @@ resource "aws_api_gateway_usage_plan_key" "htc_grid_usage_plan_key" {
 resource "aws_lambda_permission" "htc_grid_apigw_private_lambda_permission_submit" {
   statement_id  = "AllowPrivateSubmitAPIGatewayInvoke-${local.suffix}"
   action        = "lambda:InvokeFunction"
-  function_name = module.submit_task.this_lambda_function_name
+  function_name = module.submit_task.lambda_function_name
   principal     = "apigateway.amazonaws.com"
 
   # The "/*/*" portion grants access from any method on any resource
@@ -176,7 +176,7 @@ resource "aws_lambda_permission" "htc_grid_apigw_private_lambda_permission_submi
 resource "aws_lambda_permission" "htc_grid_private_apigw_lambda_permission_result" {
   statement_id  = "AllowPrivateResultAPIGatewayInvoke-${local.suffix}"
   action        = "lambda:InvokeFunction"
-  function_name = module.get_results.this_lambda_function_name
+  function_name = module.get_results.lambda_function_name
   principal     = "apigateway.amazonaws.com"
 
   # The "/*/*" portion grants access from any method on any resource
@@ -187,7 +187,7 @@ resource "aws_lambda_permission" "htc_grid_private_apigw_lambda_permission_resul
 resource "aws_lambda_permission" "htc_grid_apigw_private_lambda_permission_cancel" {
   statement_id  = "AllowPrivateCancelAPIGatewayInvoke-${local.suffix}"
   action        = "lambda:InvokeFunction"
-  function_name = module.cancel_tasks.this_lambda_function_name
+  function_name = module.cancel_tasks.lambda_function_name
   principal     = "apigateway.amazonaws.com"
 
   # The "/*/*" portion grants access from any method on any resource

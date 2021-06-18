@@ -13,15 +13,15 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.37"
+      version = "~> 3.46.0"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "~> 2.1.0"
+      version = "~> 2.3.2"
     }
     helm = {
       source  = "hashicorp/helm"
-      version = "~> 2.1.0"
+      version = "~> 2.2.0"
     }
     tls = {
       source  = "hashicorp/tls"
@@ -29,7 +29,7 @@ terraform {
     }
     archive = {
       source = "hashicorp/archive"
-      version = "2.1.0"
+      version = "2.2.0"
     }
     template = {
       source = "hashicorp/template"

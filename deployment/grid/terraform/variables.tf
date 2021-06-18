@@ -33,12 +33,12 @@ variable "lambda_runtime" {
 }
 
 variable "kubernetes_version" {
-  default = "1.19"
+  default = "1.20"
   description = "Name of EKS cluster in AWS"
 }
 
 variable "k8s_ca_version" {
-  default  = "v1.19.1"
+  default  = "v1.20.0"
   description = "Cluster autoscaler version"
 }
 

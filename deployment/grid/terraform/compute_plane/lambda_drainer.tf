@@ -8,7 +8,7 @@
 # Create zip-archive of a single directory where "pip install" will also be executed (default for python runtime)
 module "lambda_drainer" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "v1.48.0"
+  version = "v2.4.0"
   source_path = "../../../source/compute_plane/python/lambda/drainer"
   function_name =  "lambda_drainer-${local.suffix}"
   handler = "handler.lambda_handler"
@@ -92,7 +92,7 @@ resource "aws_cloudwatch_event_target" "terminate_instance_event" {
   rule      = "event-lifecyclehook-${count.index}-${local.suffix}"
   target_id = "lambda"
   #arn       = aws_lambda_function.drainer.arn
-  arn       = module.lambda_drainer.this_lambda_function_arn
+  arn       = module.lambda_drainer.lambda_function_arn
   depends_on =[
     aws_cloudwatch_event_rule.lifecycle_hook_event_rule
   ]
@@ -103,7 +103,7 @@ resource "aws_lambda_permission" "allow_cloudwatch_to_call_lambda_drainer" {
   statement_id  = "AllowDrainerExecutionFromCloudWatch-${count.index}"
   action        = "lambda:InvokeFunction"
   #function_name = aws_lambda_function.drainer.function_name
-  function_name = module.lambda_drainer.this_lambda_function_name
+  function_name = module.lambda_drainer.lambda_function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.lifecycle_hook_event_rule[count.index].arn
 }

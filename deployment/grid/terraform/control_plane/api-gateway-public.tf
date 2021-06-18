@@ -30,7 +30,7 @@ resource "aws_api_gateway_integration" "htc_grid_public_submit_proxy_integration
   http_method              = aws_api_gateway_method.htc_grid_public_submit_proxy_method.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = module.submit_task.this_lambda_function_invoke_arn
+  uri                     = module.submit_task.lambda_function_invoke_arn
 }
 
 
@@ -67,7 +67,7 @@ resource "aws_api_gateway_integration" "htc_grid_public_result_proxy_integration
   http_method              = aws_api_gateway_method.htc_grid_public_result_proxy_method.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = module.get_results.this_lambda_function_invoke_arn
+  uri                     = module.get_results.lambda_function_invoke_arn
 }
 
 
@@ -127,7 +127,7 @@ resource "aws_api_gateway_integration" "htc_grid_public_cancel_proxy_integration
   http_method              = aws_api_gateway_method.htc_grid_public_cancel_proxy_method.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = module.cancel_tasks.this_lambda_function_invoke_arn
+  uri                     = module.cancel_tasks.lambda_function_invoke_arn
 }
 
 
@@ -157,7 +157,7 @@ resource "aws_api_gateway_account" "htc_grid_account" {
 resource "aws_lambda_permission" "htc_grid_apigw_lambda_permission_submit" {
   statement_id  = "AllowAPIGatewayInvoke-${local.suffix}"
   action        = "lambda:InvokeFunction"
-  function_name = module.submit_task.this_lambda_function_name
+  function_name = module.submit_task.lambda_function_name
   principal     = "apigateway.amazonaws.com"
 
   # The "/*/*" portion grants access from any method on any resource
@@ -168,7 +168,7 @@ resource "aws_lambda_permission" "htc_grid_apigw_lambda_permission_submit" {
 resource "aws_lambda_permission" "htc_grid_apigw_lambda_permission_result" {
   statement_id  = "AllowAPIGatewayInvoke-${local.suffix}"
   action        = "lambda:InvokeFunction"
-  function_name = module.get_results.this_lambda_function_name
+  function_name = module.get_results.lambda_function_name
   principal     = "apigateway.amazonaws.com"
 
   # The "/*/*" portion grants access from any method on any resource
@@ -179,7 +179,7 @@ resource "aws_lambda_permission" "htc_grid_apigw_lambda_permission_result" {
 resource "aws_lambda_permission" "htc_grid_apigw_lambda_permission_cancel" {
   statement_id  = "AllowAPIGatewayInvoke-${local.suffix}"
   action        = "lambda:InvokeFunction"
-  function_name = module.cancel_tasks.this_lambda_function_name
+  function_name = module.cancel_tasks.lambda_function_name
   principal     = "apigateway.amazonaws.com"
 
   # The "/*/*" portion grants access from any method on any resource

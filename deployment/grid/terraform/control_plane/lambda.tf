@@ -84,7 +84,7 @@ EOF
 
 module "submit_task" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "v1.48.0"
+  version = "v2.4.0"
   source_path = [
     "../../../source/control_plane/python/lambda/submit_tasks",
     {
@@ -144,7 +144,7 @@ module "submit_task" {
 
 module  "get_results" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "v1.48.0"
+  version = "v2.4.0"
   source_path = [
     "../../../source/control_plane/python/lambda/get_results",
     {
@@ -200,7 +200,7 @@ module  "get_results" {
 
 module "cancel_tasks" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "v1.48.0"
+  version = "v2.4.0"
   source_path = [
     "../../../source/control_plane/python/lambda/cancel_tasks",
     {
@@ -262,7 +262,7 @@ module "cancel_tasks" {
 
 module "ttl_checker" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "v1.48.0"
+  version = "v2.4.0"
   source_path = [
     "../../../source/control_plane/python/lambda/ttl_checker",
     {
@@ -334,13 +334,13 @@ resource "aws_cloudwatch_event_rule" "ttl_checker_event_rule" {
 resource "aws_cloudwatch_event_target" "ttl_checker_event_target" {
   rule      = aws_cloudwatch_event_rule.ttl_checker_event_rule.name
   target_id = "lambda"
-  arn       = module.ttl_checker.this_lambda_function_arn
+  arn       = module.ttl_checker.lambda_function_arn
 }
 
 resource "aws_lambda_permission" "allow_cloudwatch_to_call_ttl_checker_lambda" {
   statement_id  = "AllowExecutionFromCloudWatch"
   action        = "lambda:InvokeFunction"
-  function_name = module.ttl_checker.this_lambda_function_name
+  function_name = module.ttl_checker.lambda_function_arn
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.ttl_checker_event_rule.arn
 }
