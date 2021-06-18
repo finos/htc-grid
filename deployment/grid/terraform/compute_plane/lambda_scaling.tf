@@ -26,7 +26,7 @@ EOF
 module "scaling_metrics" {
 
   source  = "terraform-aws-modules/lambda/aws"
-  version = "v1.48.0"
+  version = "v2.4.0"
   source_path = "../../../source/compute_plane/python/lambda/scaling_metrics/"
   function_name = var.lambda_name_scaling_metrics
   handler = "scaling_metrics.lambda_handler"
@@ -72,13 +72,13 @@ resource "aws_cloudwatch_event_rule" "scaling_metrics_event_rule" {
 resource "aws_cloudwatch_event_target" "check_scaling_metrics_lambda" {
   rule      = aws_cloudwatch_event_rule.scaling_metrics_event_rule.name
   target_id = "lambda"
-  arn       = module.scaling_metrics.this_lambda_function_arn
+  arn       = module.scaling_metrics.lambda_function_arn
 }
 
 resource "aws_lambda_permission" "allow_cloudwatch_to_call_check_scaling_metrics_lambda" {
   statement_id  = "AllowExecutionFromCloudWatch"
   action        = "lambda:InvokeFunction"
-  function_name = module.scaling_metrics.this_lambda_function_name
+  function_name = module.scaling_metrics.lambda_function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.scaling_metrics_event_rule.arn
 }

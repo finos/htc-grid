@@ -54,21 +54,6 @@ variable "cluster_name" {
   description = "Name of EKS cluster in AWS"
 }
 
-# variable "aws_asg_min_instances" {
-#   default  = "1"
-#   description = "Minimum number of instances for autoscaling group"
-# }
-
-# variable "aws_asg_max_instances" {
-#   default  = "5"
-#   description = "Max number of instances for autoscaling group"
-# }
-
-# variable "instance_type" {
-#   default = "t2.small"
-#   description = "instance type for worker nodes"
-# }
-
 variable "k8s_ca_version" {
   description = "Cluster autoscaler version"
 }
