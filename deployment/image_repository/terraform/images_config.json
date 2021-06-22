@@ -1,6 +1,6 @@
 {
     "image_to_copy": {
-        "quay.io/prometheus/alertmanager:v0.22.1":"alertmanager",
+        "quay.io/prometheus/alertmanager:v0.22.0":"alertmanager",
         "amazonlinux:latest": "amazonlinux",
         "amazon/aws-node-termination-handler:v1.10.0":"amazon/aws-node-termination-handler",
         "amazon/cloudwatch-agent:1.247347.5b250583":"amazon/cloudwatch-agent",
