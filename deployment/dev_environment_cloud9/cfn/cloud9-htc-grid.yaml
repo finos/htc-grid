@@ -30,12 +30,12 @@ Parameters:
   C9KubectlVersion:
     Description: kubectl Version to install on Cloud9
     Type: String
-    Default: v1.19.9
+    Default: v1.21.0
     ConstraintDescription: Must be a valid kubectl version
   C9TerraformVersion:
     Description: Terraform Version to install on Cloud9
     Type: String
-    Default: 0.14.9
+    Default: 1.0.0
     ConstraintDescription: Must be a valid terraform version
   C9EKSctlVersion:
     Description: Cloud9 instance eksctl version
@@ -285,7 +285,7 @@ Resources:
             - echo "IAM Authenticator installed at /usr/local/bin/aws-iam-authenticator"
             - echo '=== Install Terraform ==='
             - !Sub 'export TERRAFORM_VERSION=${C9TerraformVersion}'
-            - curl --silent --location -o /tmp/terraform.zip "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_0.13.4_linux_386.zip"
+            - curl --silent --location -o /tmp/terraform.zip "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_386.zip"
             - unzip /tmp/terraform.zip -d /tmp/terraform
             - sudo chmod +x /tmp/terraform/terraform
             - sudo mv -v /tmp/terraform/terraform /usr/local/bin/terraform
