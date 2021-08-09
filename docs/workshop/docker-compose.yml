@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   hugo:
-    image: awslabs/ec2-spot-workshops:build
+    image: awslabs/aws-htc-grid:build
     build:
       context: .
     ports:
