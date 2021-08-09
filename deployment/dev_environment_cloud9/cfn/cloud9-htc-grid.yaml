@@ -302,6 +302,7 @@ Resources:
             - echo "=== Downloading HTC-Grid project ==="
             - curl --silent --location -o /home/ec2-user/environment/aws-htc-grid.tar.gz "https://github.com/awslabs/aws-htc-grid/archive/refs/tags/v0.1.0.tar.gz"
             - cd /home/ec2-user/environment; tar xzvf aws-htc-grid.tar.gz
+            - mv aws-htc-grid-0.2.0/ aws-htc-grid
             - sudo chown -R 501:501 /home/ec2-user/environment/
   C9BootstrapAssociation:
     Type: AWS::SSM::Association
