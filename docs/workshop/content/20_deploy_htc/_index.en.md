@@ -8,7 +8,7 @@ weight = 20
 In this section we will deploy HTC-Grid and all the dependencies. By the end of this section we will have a full HTC-Grid deployment working.
 
 
-# Getting Started
+## Getting Started
 To start the workshop, follow one of the following depending on whether you are...
 
 * ...[running the workshop on your own (in your own account)]({{< relref "10_self_paced/_index.en.md" >}}), or

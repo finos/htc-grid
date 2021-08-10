@@ -118,6 +118,7 @@ Note also how the location of the lambda points to the `lambda.zip` that we just
       }
   ]
 }
+{{< / highlight >}}
 
 
 

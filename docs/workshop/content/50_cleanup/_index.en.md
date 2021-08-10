@@ -1,8 +1,8 @@
 +++
 title = "Cleanup"
 chapter = false
-weight = 40
-pre = "<b>4. </b>"
+weight = 50
+pre = "<b>5. </b>"
 +++
 
 Before closing the session we should cleanup the environment. 
