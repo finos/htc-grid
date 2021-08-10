@@ -142,3 +142,19 @@ While we have used the Cloud9 environment we created for admin tasks on both HTC
 {{% /notice %}}
 
 
+version: 0.1
+frontend:
+  phases:
+    build:
+      commands:
+        - wget https://github.com/gohugoio/hugo/releases/download/v0.53/hugo_0.53_Linux-64bit.tar.gz
+        - tar -xf hugo_0.53_Linux-64bit.tar.gz hugo
+        - mv hugo /usr/bin/hugo
+        - rm -rf hugo_0.53_Linux-64bit.tar.gz
+        - hugo
+  artifacts:
+    baseDirectory: public
+    files:
+      - '**/*'
+  cache:
+    paths: []
