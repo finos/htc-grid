@@ -35,12 +35,14 @@ If terraform apply is successful then in the terraform folder two files are crea
 * **kubeconfig_htc_$TAG**: this file give access to the EKS cluster through kubectl 
 * **Agent_config.json**: this file contains all the parameters, so the agent can run in the infrastructure
 
-Let's validate that the Compute Plane has been set up accordingly. First of all, we need to configure our environment with [Kubectl](https://kubernetes.io/docs/tasks/tools/) configuration pointing to our cluster:
+Let's validate that the Compute Plane has been set up accordingly. First of all, we need to configure our environment with [Kubectl](https://kubernetes.io/docs/tasks/tools/) configuration pointing to our cluster. We will also read from the terraform output the Agent config file and prepare our environment to select the configuration on newly created terminals.
 
   ```
   cd ~/environment/aws-htc-grid/deployment/grid/terraform
   export KUBECONFIG=$(terraform output -raw kubeconfig)
-  echo "export KUBECONFIG=$KUBECONFIG >> ~/.bashrc
+  echo "export KUBECONFIG=$KUBECONFIG" >> ~/.bashrc
+  export AGENT_CONFIG_FILE=$(terraform output -raw agent_config)
+  echo "export AGENT_CONFIG_FILE=$AGENT_CONFIG_FILE" >> ~/.bashrc
   ```
 
 With this done, we can get the number of nodes in the cluster using the following command:
