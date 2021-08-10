@@ -140,21 +140,3 @@ pip install ~/environment/aws-htc-grid/dist/*
 {{% notice info %}}
 While we have used the Cloud9 environment we created for admin tasks on both HTC-Grid and the Kubernetes/EKS, the Cloud9 environment has been created on the default VPC and as a result cannot reach some of the components without changes.  
 {{% /notice %}}
-
-
-version: 0.1
-frontend:
-  phases:
-    build:
-      commands:
-        - wget https://github.com/gohugoio/hugo/releases/download/v0.53/hugo_0.53_Linux-64bit.tar.gz
-        - tar -xf hugo_0.53_Linux-64bit.tar.gz hugo
-        - mv hugo /usr/bin/hugo
-        - rm -rf hugo_0.53_Linux-64bit.tar.gz
-        - hugo
-  artifacts:
-    baseDirectory: public
-    files:
-      - '**/*'
-  cache:
-    paths: []
