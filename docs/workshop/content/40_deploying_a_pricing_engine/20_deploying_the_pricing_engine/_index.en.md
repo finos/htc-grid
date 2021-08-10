@@ -42,12 +42,13 @@ To apply this change, we just need to point and apply the new configuration usin
 
 ```
 cd ~/environment/aws-htc-grid/deployment/grid/terraform
-terraform apply -var-file ../../../generated/python_runtime_grid_config.json -var="grafana_admin_password=<my_grafana_admin_password>"
+terraform apply -var-file ../../../generated/python_runtime_grid_config.json
 ```
 
 {{% notice note %}}
 The execution of this command will prompt for `yes` to continue. Just type yes, for the command to proceed. You should see how this time around only a few changes are applied; Those changes have to do with the minimum changes required to modify the htc-agent configuration and redeploy it back again.
 {{% /notice %}}
+
 
 
 

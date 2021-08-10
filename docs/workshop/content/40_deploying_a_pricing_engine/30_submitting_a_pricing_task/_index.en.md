@@ -140,5 +140,3 @@ pip install ~/environment/aws-htc-grid/dist/*
 {{% notice info %}}
 While we have used the Cloud9 environment we created for admin tasks on both HTC-Grid and the Kubernetes/EKS, the Cloud9 environment has been created on the default VPC and as a result cannot reach some of the components without changes.  
 {{% /notice %}}
-
-

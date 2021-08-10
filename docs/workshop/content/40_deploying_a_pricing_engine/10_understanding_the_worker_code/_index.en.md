@@ -41,7 +41,7 @@ For those familiar with AWS Lambda service, you can see the interface is exactly
         },
 {{< / highlight >}}
 
-As you can see in the worker code, the worker will take this vector of trade definitions and start running one by one the valuations, storing the results in the result vector. The result vector will be ultimately serialised and sent over the data plane for the client to retrieve the results.
+As you can see in the worker code, the worker will take this vector of trade definitions and start running one by one the valuations, storing the results in the result vector. The result vector will be ultimately serialized and sent over the data plane for the client to retrieve the results.
 
 The directory where the engine is deployed has a few extra files: 
 
