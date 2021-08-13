@@ -9,7 +9,7 @@ import os
 
 def lambda_handler(event, context):
     # For every x minute
-    # count all items with "task_status" PENDING in the dynamoDB table "tasks_status_table"
+    # count all items with "task_status" PENDING in the dynamoDB table "tasks_state_table"
     # put metric in CloudWatch with:
     # - namespace: given in the environment variable NAMESPACE
     # - DimensionName: given in the environment variable DIMENSION_NAME
@@ -50,7 +50,7 @@ def main():
 
 if __name__ == "__main__":
     # execute only if run as a script
-    os.environ["TASKS_STATUS_TABLE_NAME"] = "tasks_status_table"
+    os.environ["STATE_TABLE_CONFIG"] = "tasks_state_table"
     os.environ["NAMESPACE"] = "CloudGrid/HTC/Scaling/"
     os.environ["DIMENSION_NAME"] = "cluster_name"
     os.environ["DIMENSION_VALUE"] = "aws"

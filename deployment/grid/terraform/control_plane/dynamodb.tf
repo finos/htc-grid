@@ -1,12 +1,12 @@
 # Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
- 
-resource "aws_dynamodb_table" "htc_tasks_status_table" {
-  name           = var.ddb_status_table
+
+resource "aws_dynamodb_table" "htc_tasks_state_table" {
+  name           = var.ddb_state_table
   read_capacity  = var.dynamodb_table_read_capacity
   write_capacity = var.dynamodb_table_write_capacity
-  
+
   hash_key       = "task_id"
 
 
@@ -65,7 +65,7 @@ resource "aws_dynamodb_table" "htc_tasks_status_table" {
   #   name = "parent_session_id"
   #   type = "S"
   # }
-  
+
   global_secondary_index {
     name               = "gsi_ttl_index"
     hash_key           = "task_status"
@@ -73,7 +73,7 @@ resource "aws_dynamodb_table" "htc_tasks_status_table" {
     read_capacity      = var.dynamodb_gsi_ttl_table_read_capacity
     write_capacity     = var.dynamodb_gsi_ttl_table_write_capacity
     projection_type    = "INCLUDE"
-    non_key_attributes = ["task_id", "task_owner"]
+    non_key_attributes = ["task_id", "task_owner", "task_priority"]
   }
 
   global_secondary_index {
