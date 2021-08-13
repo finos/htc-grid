@@ -270,4 +270,4 @@ def send_to_dlq(task):
 
     """
     print("Sending task [{}] to DLQ".format(task))
-    dlq.send_message(message_bodies=[str(task)])
+    dlq.send_message(MessageBody=str(task))
