@@ -36,14 +36,14 @@ resource null_resource "push_provided" {
   }
   depends_on = [
     null_resource.authenticate_to_ecr_repository,
-    null_resource.build_dotnet50
+    null_resource.build_provided
   ]
 }
 
 #########################################
 ##### build and push python runtime #####
 #########################################
-resource null_resource "build_provided" {
+resource null_resource "build_python38" {
   triggers = {
     always_run = timestamp()
   }
@@ -55,7 +55,7 @@ resource null_resource "build_provided" {
   ]
 }
 
-resource null_resource "push_provided" {
+resource null_resource "push_python38" {
   triggers = {
     always_run = timestamp()
   }
@@ -64,7 +64,7 @@ resource null_resource "push_provided" {
   }
   depends_on = [
     null_resource.authenticate_to_ecr_repository,
-    null_resource.build_dotnet50
+    null_resource.build_python38
   ]
 }
 
@@ -79,7 +79,7 @@ resource null_resource "build_dotnet50" {
     command = "docker build -t ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda:5.0 -f ./lambda_runtimes/Dockerfile.dotnet5.0 ./lambda_runtimes"
   }
   depends_on = [
-    null_resource.authenticate_to_ecr_repository
+    null_resource.authenticate_to_ecr_public_repository
   ]
 }
 
