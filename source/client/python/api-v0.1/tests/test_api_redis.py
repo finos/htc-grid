@@ -13,7 +13,7 @@ import responses
 import json
 import fakeredis
 from moto import mock_cognitoidp
-from utils.dynamodb_common import TASK_STATUS_FINISHED  # noqa: E402
+from utils.state_table_common import TASK_STATE_FINISHED  # noqa: E402
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from api.connector import AWSConnector  # noqa: E402
 
@@ -92,8 +92,8 @@ def mocked_responses_get():
                 "metadata": {
                     "tasks_in_response": 2
                 },
-                TASK_STATUS_FINISHED: ["test1", "test2"],
-                TASK_STATUS_FINISHED + '_OUTPUT': [
+                TASK_STATE_FINISHED: ["test1", "test2"],
+                TASK_STATE_FINISHED + '_OUTPUT': [
                     "NoResult1",
                     "NoResult2"
                 ]

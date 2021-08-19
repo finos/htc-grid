@@ -14,7 +14,7 @@ variable "lambda_runtime" {
   description = "Python version"
 }
 
-variable "ddb_status_table" {
+variable "ddb_state_table" {
   description = "HTC DynamoDB table name"
 }
 
@@ -159,4 +159,10 @@ variable "api_gateway_version" {
   description = "version deployed by API Gateway"
 }
 
+variable "state_table_service" {
+  description = "State Table service type"
+}
 
+variable "state_table_config" {
+  description = "State Table configuration"
+}

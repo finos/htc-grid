@@ -18,17 +18,21 @@ from utils.performance_tracker import EventsCounter, performance_tracker_initial
 from boto3.dynamodb.conditions import Key
 
 import utils.grid_error_logger as errlog
-from utils.dynamodb_common import make_partition_key_4_state
+from utils.state_table_common import TASK_STATE_PENDING
 
 from api.in_out_manager import in_out_manager
+from api.state_table_manager import state_table_manager
 
 region = os.environ["REGION"]
 
 sqs = boto3.resource('sqs', endpoint_url=f'https://sqs.{region}.amazonaws.com')
 queue = sqs.get_queue_by_name(QueueName=os.environ['TASKS_QUEUE_NAME'])
 
-dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['TASKS_STATUS_TABLE_NAME'])
+state_table = state_table_manager(
+    os.environ['STATE_TABLE_SERVICE'],
+    os.environ['STATE_TABLE_CONFIG'],
+    os.environ['STATE_TABLE_NAME'],
+    os.environ["REGION"])
 
 perf_tracker = performance_tracker_initializer(
     os.environ["METRICS_ARE_ENABLED"],
@@ -159,7 +163,10 @@ def lambda_handler(event, context):
             session_id = get_safe_session_id()
         else:
             session_id = event["session_id"]
-            verify_passed_sessionid_is_unique(session_id)
+            # verify_passed_sessionid_is_unique(session_id)
+        session_priority = 0
+        if "context"  in event:
+            session_priority = event["context"]["tasks_priority"]
 
         parent_session_id = event["session_id"]
 
@@ -172,53 +179,49 @@ def lambda_handler(event, context):
         last_submitted_task_ref = None
 
         tasks_list = event['tasks_list']['tasks']
-        ddb_batch_size = 500
         ddb_batch_write_times = []
         backoff_count = 0
 
-        tasks_batches = [tasks_list[x:x + ddb_batch_size] for x in range(0, len(tasks_list), ddb_batch_size)]
 
-        for bid, ddb_batch in enumerate(tasks_batches):
-            # <1.> Batch write to dynamoDB
-            with table.batch_writer() as batch:  # batch_writer is flushed when exiting this block
+        state_table_entries = []
+        for task_id in tasks_list:
+            time_now_ms = get_time_now_ms()
+            task_definition = "none"
 
-                for i, task_definition in enumerate(ddb_batch):
-                    # tdef = json.loads(task_definition["stdin"])
-                    # print(tdef["parent_session_id"])
-                    task_id = session_id + "_" + str(bid * ddb_batch_size + i)
-                    time_now_ms = get_time_now_ms()
+            task_json = {
+                'session_id': session_id,
+                'task_id': task_id,
+                'parent_session_id': parent_session_id,
+                'submission_timestamp': time_now_ms,
+                'task_completion_timestamp': 0,
+                'task_status': state_table.make_task_state_from_session_id(TASK_STATE_PENDING, session_id),
+                'task_owner': "None",
+                'retries': 0,
+                'task_definition': task_definition,
+                'sqs_handler_id': "None",
+                'heartbeat_expiration_timestamp': 0,
+                "task_priority": session_priority
+            }
 
-                    task_json = {
-                        'session_id': session_id,
-                        'task_id': task_id,
-                        'parent_session_id': parent_session_id,
-                        'submission_timestamp': time_now_ms,
-                        'task_completion_timestamp': 0,
-                        'task_status': make_partition_key_4_state("pending", session_id),
-                        'task_owner': "None",
-                        'retries': 0,
-                        'task_definition': task_definition,
-                        'sqs_handler_id': "None",
-                        'heartbeat_expiration_timestamp': 0
-                    }
+            state_table_entries.append(task_json)
 
-                    write_to_dynamodb(task_json, batch)  # TODO: res not in use
+            task_json_4_sqs: dict = copy.deepcopy(task_json)
 
-                    task_json_4_sqs: dict = copy.deepcopy(task_json)
+            task_json_4_sqs["stats"] = event["stats"]
+            task_json_4_sqs["stats"]["stage2_sbmtlmba_01_invocation_tstmp"]["tstmp"] = invocation_tstmp
+            task_json_4_sqs["stats"]["stage2_sbmtlmba_02_before_batch_write_tstmp"]["tstmp"] = get_time_now_ms()
 
-                    task_json_4_sqs["stats"] = event["stats"]
-                    task_json_4_sqs["stats"]["stage2_sbmtlmba_01_invocation_tstmp"]["tstmp"] = invocation_tstmp
-                    task_json_4_sqs["stats"]["stage2_sbmtlmba_02_before_batch_write_tstmp"]["tstmp"] = get_time_now_ms()
+            # task_json["scheduler_data"] = event["scheduler_data"]
 
-                    # task_json["scheduler_data"] = event["scheduler_data"]
+            sqs_batch_entries.append({
+                'Id': task_id,  # use to return send result for this message
+                'MessageBody': json.dumps(task_json_4_sqs)
+                }
+            )
 
-                    sqs_batch_entries.append({
-                        'Id': task_id,  # use to return send result for this message
-                        'MessageBody': json.dumps(task_json_4_sqs)
-                    }
-                    )
+            last_submitted_task_ref = task_json_4_sqs
 
-                    last_submitted_task_ref = task_json_4_sqs
+        state_table.batch_write(state_table_entries)
 
         # <2.> Batch submit tasks to SQS
         # Performance critical code
@@ -329,7 +332,7 @@ def main():
 if __name__ == "__main__":
     # execute only if run as a script
     os.environ["TASKS_QUEUE_NAME"] = "sample_task_queue"
-    os.environ["TASKS_STATUS_TABLE_NAME"] = "sample_tasks_status_table"
+    os.environ["STATE_TABLE_CONFIG"] = "sample_tasks_state_table"
     os.environ["METRICS_ARE_ENABLED"] = "0"
 
     main()

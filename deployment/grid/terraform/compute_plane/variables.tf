@@ -1,7 +1,7 @@
 # Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
- 
+
 variable "region" {
   description = "AWS region"
 }
@@ -58,7 +58,7 @@ variable "k8s_ca_version" {
   description = "Cluster autoscaler version"
 }
 
-variable "ddb_status_table" {
+variable "ddb_state_table" {
   description = "HTC DynamoDB table name"
 }
 
@@ -159,6 +159,14 @@ variable "vpc_id" {
 
 variable "vpc_cidr" {
   description = "Default VPC CIDR"
+}
+
+variable "state_table_service" {
+  description = "State Table service type"
+}
+
+variable "state_table_config" {
+  description = "Status Table configuration"
 }
 
 variable "aws_xray_daemon_version" {
