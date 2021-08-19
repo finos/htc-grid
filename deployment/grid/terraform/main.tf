@@ -50,7 +50,7 @@ locals {
             minMemory = "4096"
             storage = "S3"
             location = "s3://mock_location"
-            function_name = "mock_computation"
+            function_name = "function"
             layer_name = "mock_computation_layer"
             lambda_handler_file_name = ""
             lambda_handler_function_name = ""
@@ -221,6 +221,7 @@ module "htc_agent" {
     lambda_configuration_location = lookup(lookup(var.agent_configuration,"lambda",local.default_agent_configuration.lambda),"location",local.default_agent_configuration.lambda.location)
     lambda_handler_file_name = lookup(lookup(var.agent_configuration,"lambda",local.default_agent_configuration.lambda),"lambda_handler_file_name",local.default_agent_configuration.lambda.lambda_handler_file_name)
     lambda_handler_function_name = lookup(lookup(var.agent_configuration,"lambda",local.default_agent_configuration.lambda),"lambda_handler_function_name",local.default_agent_configuration.lambda.lambda_handler_function_name)
+    lambda_configuration_function_name = lookup(lookup(var.agent_configuration,"lambda",local.default_agent_configuration.lambda),"function_name",local.default_agent_configuration.lambda.function_name)
     depends_on = [
         module.compute_plane,
         module.control_plane,

@@ -16,6 +16,8 @@ import sys
 import base64
 import asyncio
 import requests
+import psutil
+
 from functools import partial
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch
@@ -393,8 +395,8 @@ async def do_task_local_lambda_execution_thread(perf_tracker, task, sqs_msg, tas
         )
     )
     logging.info("TASK FINISHED!!!\nRESPONSE: [{}]".format(response))
-    logs = base64.b64decode(response['LogResult']).decode('utf-8')
-    logging.info("logs : {}".format(logs))
+    #logs = base64.b64decode(response['LogResult']).decode('utf-8')
+    #logging.info("logs : {}".format(logs))
 
     ret_value = response['Payload'].read().decode('utf-8')
     logging.info("retValue : {}".format(ret_value))
@@ -527,15 +529,13 @@ def event_loop():
                          format(timeout)
                          )
             time.sleep(timeout)
-
-    url = "{}/2018-06-01/stop".format(os.environ['LAMBDA_ENDPOINT_URL'])
-    r = requests.post(url)
-    logging.info("stopped status {}".format(r))
-    if r.status_code != 200:
-        logging.info("failed stopping the lambda : {}".format(r.json()))
-    else:
-        # TODO: at some point we need to pass any information that requests body/json throws
-        logging.info("lambda successfully stopped")
+    for proc in psutil.process_iter():
+        logging.info("running process : {}".format(proc.name()))
+        # check whether the process name matches
+        if proc.name() == 'aws-lambda-rie':
+            logging.info("stop lambda emulated environment after the last request")
+            proc.terminate()
+    logging.info("agent and lambda gracefully stopped")
 
 
 if __name__ == "__main__":
