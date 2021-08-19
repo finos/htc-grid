@@ -15,7 +15,6 @@ import signal
 import sys
 import base64
 import asyncio
-import requests
 import psutil
 
 from functools import partial
@@ -91,12 +90,10 @@ sqs = boto3.resource('sqs', endpoint_url=agent_config_data['sqs_endpoint'], regi
 # sqs = boto3.resource('sqs', region_name=region)
 tasks_queue = sqs.get_queue_by_name(QueueName=agent_config_data['sqs_queue'])
 
-
 lambda_cfg = botocore.config.Config(retries={'max_attempts': 3}, read_timeout=2000, connect_timeout=2000,
                                     region_name=region)
 lambda_client = boto3.client('lambda', config=lambda_cfg, endpoint_url=os.environ['LAMBDA_ENDPOINT_URL'],
                              region_name=region)
-
 
 # TODO: We are using two retry logics for accessing DynamoDB config, and config_cc (for congestion control)
 # Revisit this code and unify the logic.
@@ -171,6 +168,7 @@ def get_time_now_ms():
 
 
 ttl_gen = TTLExpirationGenerator(task_ttl_refresh_interval_sec, task_ttl_expiration_offset_sec)
+
 
 # {'Items': [{'session_size': Decimal('10'), 'submission_timestamp': Decimal('1612276891690'), 'task_id': 'bd88ea18-6564-11eb-b5fb-060372291b89-part007_9', 'task_status': 'processing-part007', 'task_definition': 'passed_via_storage_size_75_bytes', 'task_owner': 'htc-agent-6d54fd8dfd-7wgpk', 'heartbeat_expiration_timestamp': Decimal('1612277256'), 'session_id': 'bd88ea18-6564-11eb-b5fb-060372291b89-part007', 'sqs_handler_id': 'AQEB19gkPrI8MNJlqfdu+kH4Xr/QOnZWvH9E6qcMTVuHOEKZdhvCeGdW3opZ38k5uIngM94MEzaIZyciDpZYNuwNgXozpp2vpRz5x952R80GAt26FsPmuQQoJ6gdm7dJabHqblYghXw8r+92yTdmSZRnzAr7fpkF2f7C6LoP3AEPVa8DV/6MYbrkKBqjeQLWctQmmTwvcqVkIWJH4KqokjMx+WQt1tGHLBrdd8xPwFlb8kGgwq1d6qeu5hHkdTizoaUDqbLShSYhSWlfysZ7r9its9owIkiZiYDc5/SdPKEi2hga9SH7E1GTtKetk9mUgoH2p4lCFdH2jIDnpY5EVHoicyviCWA2AMOolDZrIeTBtPklWXOnw3Wkljr2qtWbCHS7s6R1Qpis82n+5pVJUjoNfA==', 'task_completion_timestamp': Decimal('0'), 'retries': Decimal('1'), 'parent_session_id': 'bd88ea18-6564-11eb-b5fb-060372291b89-part007'}]
 
@@ -395,8 +393,8 @@ async def do_task_local_lambda_execution_thread(perf_tracker, task, sqs_msg, tas
         )
     )
     logging.info("TASK FINISHED!!!\nRESPONSE: [{}]".format(response))
-    #logs = base64.b64decode(response['LogResult']).decode('utf-8')
-    #logging.info("logs : {}".format(logs))
+    # logs = base64.b64decode(response['LogResult']).decode('utf-8')
+    # logging.info("logs : {}".format(logs))
 
     ret_value = response['Payload'].read().decode('utf-8')
     logging.info("retValue : {}".format(ret_value))
