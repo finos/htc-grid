@@ -6,14 +6,13 @@ import json
 import time
 import os
 import uuid
-import sys
 import boto3
 import botocore
 import requests
 import logging
 
 from api.in_out_manager import in_out_manager
-from utils.dynamodb_common import generate_random_logical_partition_name, TASK_STATUS_FINISHED
+from utils.state_table_common import TASK_STATE_FINISHED
 from warrant_lite import WarrantLite
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -32,27 +31,14 @@ logging.info("Init AWS Grid Connector")
 
 
 def get_safe_session_id():
-    """this function returns a safe uuid.
-
-    Args:
+    """
+    This function returns a safe uuid.
 
     Returns:
       str: a safe session id
 
     """
-    session_id = uuid.uuid1()
-    # if (session_id.is_safe != uuid.SafeUUID.safe):
-    #     print("Need to create a second UUID")
-    #     session_id = uuid.uuid1()
-    # if (session_id.is_safe != uuid.SafeUUID.safe):
-    #     raise Exception('Cannot produce a safe unique ID')
-
-    key = "{}-{}".format(
-        session_id,
-        generate_random_logical_partition_name()
-    )
-
-    return key
+    return str(uuid.uuid1())
 
 
 class AWSConnector:
@@ -208,7 +194,7 @@ class AWSConnector:
                 self.in_out_manager.put_input_from_bytes(task_id, b64data)
 
                 # We are no longer passing the actual task definition
-                binary_tasks_list.append("passed_via_storage_size_{}_bytes".format(sys.getsizeof(data)))
+                binary_tasks_list.append(task_id)
 
         # creation message with tasks_list
         user_task_json = {
@@ -304,13 +290,13 @@ class AWSConnector:
                 break
             time.sleep(self.__dynamodb_results_pull_intervall)
 
-        for i, completed_task in enumerate(session_results[TASK_STATUS_FINISHED]):
+        for i, completed_task in enumerate(session_results[TASK_STATE_FINISHED]):
             stdout_bytes = self.in_out_manager.get_output_to_bytes(completed_task)
             # print("stdout_bytes: {}".format(stdout_bytes))
 
             output = base64.b64decode(stdout_bytes).decode('utf-8')
 
-            session_results[TASK_STATUS_FINISHED + '_OUTPUT'][i] = output
+            session_results[TASK_STATE_FINISHED + '_OUTPUT'][i] = output
 
         logging.info("Finish get_results")
         return session_results

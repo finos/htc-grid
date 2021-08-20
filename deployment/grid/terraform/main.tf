@@ -15,7 +15,7 @@ locals {
     aws_htc_ecr = var.aws_htc_ecr != "" ? var.aws_htc_ecr : "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com"
     project_name = var.project_name != "" ? var.project_name : random_string.random_resources.result
     cluster_name = "${var.cluster_name}-${local.project_name}"
-    ddb_status_table = "${var.ddb_status_table}-${local.project_name}"
+    ddb_state_table = "${var.ddb_state_table}-${local.project_name}"
     sqs_queue = "${var.sqs_queue}-${local.project_name}"
     sqs_dlq = "${var.sqs_dlq}-${local.project_name}"
     lambda_name_get_results = "${var.lambda_name_get_results}-${local.project_name}"
@@ -94,13 +94,15 @@ module "compute_plane" {
     k8s_ca_version = var.k8s_ca_version
     aws_htc_ecr = local.aws_htc_ecr
     cwa_version = var.cwa_version
+    state_table_service = var.state_table_service
+    state_table_config = var.state_table_config
     aws_node_termination_handler_version = var.aws_node_termination_handler
     cw_agent_version = var.cw_agent_version
     fluentbit_version = var.fluentbit_version
     suffix = local.project_name
     region = var.region
     lambda_runtime = var.lambda_runtime
-    ddb_status_table = local.ddb_status_table
+    ddb_state_table = local.ddb_state_table
     sqs_queue = local.sqs_queue
     namespace_metrics = var.namespace_metrics
     dimension_name_metrics = var.dimension_name_metrics
@@ -154,11 +156,13 @@ module "control_plane" {
     region = var.region
     lambda_runtime = var.lambda_runtime
     aws_htc_ecr = local.aws_htc_ecr
-    ddb_status_table = local.ddb_status_table
+    ddb_state_table = local.ddb_state_table
     sqs_queue = local.sqs_queue
     sqs_dlq = local.sqs_dlq
     s3_bucket = local.s3_bucket
     grid_storage_service = var.grid_storage_service
+    state_table_service = var.state_table_service
+    state_table_config = var.state_table_config
     task_input_passed_via_external_storage = var.task_input_passed_via_external_storage
     lambda_name_ttl_checker = local.lambda_name_ttl_checker
     lambda_name_submit_tasks = local.lambda_name_submit_tasks

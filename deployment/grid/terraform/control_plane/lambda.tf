@@ -121,7 +121,9 @@ module "submit_task" {
   vpc_security_group_ids = [var.vpc_default_security_group_id]
 
   environment_variables  = {
-    TASKS_STATUS_TABLE_NAME=aws_dynamodb_table.htc_tasks_status_table.name,
+    STATE_TABLE_NAME=aws_dynamodb_table.htc_tasks_state_table.name,
+    STATE_TABLE_SERVICE=var.state_table_service,
+    STATE_TABLE_CONFIG=var.state_table_config,
     TASKS_QUEUE_NAME=aws_sqs_queue.htc_task_queue.name,
     TASKS_QUEUE_DLQ_NAME=aws_sqs_queue.htc_task_queue_dlq.name,
     METRICS_ARE_ENABLED=var.metrics_are_enabled,
@@ -179,7 +181,9 @@ module  "get_results" {
   vpc_subnet_ids = var.vpc_private_subnet_ids
   vpc_security_group_ids = [var.vpc_default_security_group_id]
   environment_variables = {
-    TASKS_STATUS_TABLE_NAME=aws_dynamodb_table.htc_tasks_status_table.name,
+    STATE_TABLE_NAME=aws_dynamodb_table.htc_tasks_state_table.name,
+    STATE_TABLE_SERVICE=var.state_table_service,
+    STATE_TABLE_CONFIG=var.state_table_config,
     TASKS_QUEUE_NAME=aws_sqs_queue.htc_task_queue.name,
     S3_BUCKET=aws_s3_bucket.htc-stdout-bucket.id,
     REDIS_URL=aws_elasticache_cluster.stdin-stdout-cache.cache_nodes.0.address,
@@ -237,7 +241,9 @@ module "cancel_tasks" {
   vpc_security_group_ids = [var.vpc_default_security_group_id]
 
   environment_variables  = {
-    TASKS_STATUS_TABLE_NAME=aws_dynamodb_table.htc_tasks_status_table.name,
+    STATE_TABLE_NAME=aws_dynamodb_table.htc_tasks_state_table.name,
+    STATE_TABLE_SERVICE=var.state_table_service,
+    STATE_TABLE_CONFIG=var.state_table_config,
     TASKS_QUEUE_NAME=aws_sqs_queue.htc_task_queue.name,
     TASKS_QUEUE_DLQ_NAME=aws_sqs_queue.htc_task_queue_dlq.name,
     METRICS_ARE_ENABLED=var.metrics_are_enabled,
@@ -300,7 +306,9 @@ module "ttl_checker" {
 
   use_existing_cloudwatch_log_group = true
   environment_variables = {
-    TASKS_STATUS_TABLE_NAME=aws_dynamodb_table.htc_tasks_status_table.name,
+    STATE_TABLE_NAME=aws_dynamodb_table.htc_tasks_state_table.name,
+    STATE_TABLE_SERVICE=var.state_table_service,
+    STATE_TABLE_CONFIG=var.state_table_config,
     TASKS_QUEUE_NAME=aws_sqs_queue.htc_task_queue.name,
     TASKS_QUEUE_DLQ_NAME=aws_sqs_queue.htc_task_queue_dlq.name
     METRICS_ARE_ENABLED=var.metrics_are_enabled,

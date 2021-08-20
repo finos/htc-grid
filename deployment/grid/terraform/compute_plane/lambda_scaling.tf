@@ -1,7 +1,7 @@
 # Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
- 
+
 
 
 resource "aws_iam_role" "role_lambda_metrics" {
@@ -42,7 +42,7 @@ module "scaling_metrics" {
   docker_image =  "${var.aws_htc_ecr}/lambda-build:build-${var.lambda_runtime}"
   use_existing_cloudwatch_log_group = true
   environment_variables = {
-    TASKS_STATUS_TABLE_NAME=var.ddb_status_table,
+    STATE_TABLE_CONFIG=var.ddb_state_table,
     NAMESPACE=var.namespace_metrics,
     DIMENSION_NAME=var.dimension_name_metrics,
     DIMENSION_VALUE=var.cluster_name,

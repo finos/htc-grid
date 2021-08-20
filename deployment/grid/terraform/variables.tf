@@ -67,8 +67,8 @@ variable "fluentbit_version" {
   description = "Fluentbit version"
 }
 
-variable "ddb_status_table" {
-  default  = "htc_tasks_status_table"
+variable "ddb_state_table" {
+  default  = "htc_tasks_state_table"
   description = "htc DinamoDB table name"
 }
 
@@ -90,6 +90,16 @@ variable "s3_bucket" {
 variable "grid_storage_service" {
   default = "S3 htc-stdout-bucket-1"
   description = "Configuration string for internal results storage system"
+}
+
+variable "state_table_service" {
+  description = "State Table service type"
+  default = "DynamoDB"
+}
+
+variable "state_table_config" {
+  description = "Status Table configuration"
+  default = "{'retries':{'max_attempts':10, 'mode':'adaptive'}}"
 }
 
 variable "lambda_name_ttl_checker" {

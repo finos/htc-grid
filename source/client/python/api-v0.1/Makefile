@@ -19,7 +19,7 @@ $(PACKAGE_TARGET): setup.py README.md $(SRCS)
 	python setup.py bdist_wheel -d $(DIST_DIR)
 
 flake8: $(SRCS) init
-	flake8  --ignore  E501 --statistic --exclude build
+	flake8  --ignore  E501,W503,E131 --statistic --exclude build
 
 pytest: $(SRCS) init
 	pytest --cov=api ./tests/

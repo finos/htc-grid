@@ -40,14 +40,14 @@ kubectl apply -f ~/environment/aws-htc-grid/generated/single-task-test.yaml
 That will create a new Kubernetes job named `single-task`. You can also check the client logs created by the single task by running the following command:
 
 ```
-kubectl logs job/single-task -f 
+kubectl logs job/single-task -f
 ```
 
 {{% notice note %}}
-It may take a few seconds for the single-job to be deployed to the kubernetes cluster. During that time the `kubectl logs` command may fail with an error similar to the error below. It only take a few seconds to start the container so, hust re-run the command and you should get the logs. `Error from server (BadRequest): container "generator" in pod "single-task-vch74" is waiting to start: ContainerCreating`. 
+It may take a few seconds for the single-job to be deployed to the kubernetes cluster. During that time the `kubectl logs` command may fail with an error similar to the error below. It only take a few seconds to start the container so, hust re-run the command and you should get the logs. `Error from server (BadRequest): container "generator" in pod "single-task-vch74" is waiting to start: ContainerCreating`.
 {{% /notice %}}
 
-To check the execution went as expected, check the output of of the `job/single-task` it should complete in a few seconds (~4 seconds). 
+To check the execution went as expected, check the output of of the `job/single-task` it should complete in a few seconds (~4 seconds).
 
 The Lambda execution should now show an output similar to the one below:
 
@@ -59,7 +59,7 @@ As for the agent, you may need to scroll up on the terminal, but there should be
 
 Finally there is one more place that we can check how our execution went **DynamoDB**. In the AWS Console, search for the AWS DynamoDB service.
 
-1. In the AWS Console, search for the AWS DynamoDB service. Select **Tables** and then click on the table **htc_tasks_status_table-main**. When the selection comes up, click onthe **Items** tab.
+1. In the AWS Console, search for the AWS DynamoDB service. Select **Tables** and then click on the table **htc_tasks_state_table-main**. When the selection comes up, click onthe **Items** tab.
 
   {{< img "dynamo_db_selection.png" "dynamo_db_selection." >}}
 
