@@ -1,5 +1,5 @@
 requests
-responses
+urllib3_mock
 pytest
 moto[all]
 sure
