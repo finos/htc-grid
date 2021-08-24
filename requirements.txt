@@ -8,3 +8,4 @@ flake8
 boto3
 pytest-cov
 urllib3_mock
+warrant_lite

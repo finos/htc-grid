@@ -8,5 +8,6 @@ fakeredis
 flake8
 boto3
 pytest-cov
+warrant_lite
 ./../../../../dist/python/privateapi-1.0.0-py3-none-any.whl
 ./../../../../dist/python/publicapi-1.0.0-py3-none-any.whl
