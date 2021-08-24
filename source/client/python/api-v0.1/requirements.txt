@@ -1,8 +1,12 @@
-boto3
-redis
-responses
 requests
+responses
+pytest
 moto[all]
 sure
-warrant-lite
-apscheduler
+redis
+fakeredis
+flake8
+boto3
+pytest-cov
+./../../../../dist/python/privateapi-1.0.0-py3-none-any.whl
+./../../../../dist/python/publicapi-1.0.0-py3-none-any.whl

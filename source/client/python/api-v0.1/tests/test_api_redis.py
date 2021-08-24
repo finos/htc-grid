@@ -9,13 +9,17 @@ import uuid
 import boto3
 import pytest
 import sure  # noqa: F401
-import responses
+import urllib3_mock
+from urllib3_mock import Responses
+from urllib.parse import urlparse
+from urllib.parse import parse_qs
 import json
 import fakeredis
 from moto import mock_cognitoidp
 from utils.state_table_common import TASK_STATE_FINISHED  # noqa: E402
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from api.connector import AWSConnector  # noqa: E402
+responses = Responses('requests.packages.urllib3')
 
 
 @pytest.fixture
@@ -66,13 +70,13 @@ def mocked_responses_submit():
     Yields:
         The mocked http connection
     """
-    with responses.RequestsMock() as rsps:
+    with urllib3_mock.Responses() as rsps:
         rsps.add(
-            responses.POST, "https://publicapi.eu-west-1.amazonaws.com/submit",
-            json={
+            "POST", "/submit",
+            body=json.dumps({
                 "session_id": "1234567890123",
                 "task_ids": []
-            }, status=200,
+            }), status=200,
             content_type='application/json')
 
         yield rsps
@@ -85,10 +89,10 @@ def mocked_responses_get():
     Yields:
         The mocked http connection
     """
-    with responses.RequestsMock() as rsps:
+    with urllib3_mock.Responses() as rsps:
         rsps.add(
-            responses.GET, "https://publicapi.eu-west-1.amazonaws.com/result",
-            json={
+            responses.GET, "/result",
+            body=json.dumps({
                 "metadata": {
                     "tasks_in_response": 2
                 },
@@ -97,7 +101,7 @@ def mocked_responses_get():
                     "NoResult1",
                     "NoResult2"
                 ]
-            }, status=200,
+            }), status=200,
             content_type='application/json')
         yield rsps
 
@@ -201,15 +205,15 @@ def test_send(test_init_connector, test_generate_one_task, mocked_responses_subm
     resp = test_init_connector.send(tasks)
     resp.should.have.key("session_id").which.should.equal("1234567890123")
     resp.should.have.key("task_ids").which.should.have.length_of(0)
-    # check  that the right content was submitted
+    # check  content sent to API Gateway
     mocked_responses_submit.calls.should.have.length_of(1)
-    submitted_session = mocked_responses_submit.calls[0].request.params
+    submitted_session = parse_qs(urlparse(mocked_responses_submit.calls[0].request.url).query)
     submitted_session.should.have.key("submission_content")
     submitted_content = json.loads(base64.urlsafe_b64decode(
-        test_init_connector.in_out_manager.get_payload_to_utf8_string(submitted_session["submission_content"])).decode(
+        test_init_connector.in_out_manager.get_payload_to_utf8_string(submitted_session["submission_content"][0])).decode(
         "utf-8"))
     # submitted_content = json.loads(base64.urlsafe_b64decode(mocked_responses.calls[0].request.params).decode('utf-8'))
-    submitted_content.should.have.key("session_id").which.should.equal(submitted_session["submission_content"])
+    submitted_content.should.have.key("session_id").which.should.equal(submitted_session["submission_content"][0])
     submitted_content.should.have.key("scheduler_data").which.should.equal(test_generate_one_task["scheduler_data"])
     submitted_content.should.have.key("stats")
     submitted_content["stats"].should.have.key("stage1_grid_api_01_task_creation_tstmp") \
@@ -232,7 +236,7 @@ def test_send(test_init_connector, test_generate_one_task, mocked_responses_subm
         .should.equal(test_generate_one_task["stats"]["stage4_agent_01_user_code_finished_tstmp"])
     submitted_content["stats"].should.have.key("stage4_agent_02_S3_stdout_delivered_tstmp") \
         .should.equal(test_generate_one_task["stats"]["stage4_agent_02_S3_stdout_delivered_tstmp"])
-    submitted_content.should.have.key("tasks_list").which.should.equal(test_generate_one_task["tasks_list"])
+    submitted_content.should.have.key("tasks_list").which.should.have.length_of(1)
 
 
 def test_get_results(test_init_connector, mocked_responses_get, output_for_get_result):
@@ -245,12 +249,14 @@ def test_get_results(test_init_connector, mocked_responses_get, output_for_get_r
     }
     result = test_init_connector.get_results(submission_result)
     # check output of the method
-    result.should.have.key("metadata").which.should.be.equal({"tasks_in_response": 2})
+    result.should.have.key("metadata")
+    metadata = result["metadata"].to_dict()
+    metadata.should.be.equal({"tasks_in_response": 2})
     result.should.have.key("finished").which.should.be.equal(["test1", "test2"])
     result.should.have.key("finished_OUTPUT").which.should.be.equal(["OK1", "OK2"])
     # check content sent to API Gateway
     mocked_responses_get.calls.should.have.length_of(1)
-    get_result_request = mocked_responses_get.calls[0].request.params
+    get_result_request = parse_qs(urlparse(mocked_responses_get.calls[0].request.url).query)
     get_result_request.should.have.key("submission_content")
-    submitted_content = json.loads(base64.urlsafe_b64decode(get_result_request["submission_content"]).decode("utf-8"))
+    submitted_content = json.loads(base64.urlsafe_b64decode(get_result_request["submission_content"][0]).decode("utf-8"))
     submitted_content.should.be.equal({"session_id": "12984908349"})
