@@ -33,6 +33,11 @@ resource "helm_release" "influxdb" {
   }
 
   set {
+    name = "image.tag"
+    value = "1.8.6-alpine"
+  }
+
+  set {
     name = "service.type"
     value = "LoadBalancer"
   }
