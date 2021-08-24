@@ -1,0 +1,3 @@
+FROM public.ecr.aws/lambda/provided:al2
+COPY lambda_entry_point_provided.sh  /lambda_entrypoint_signal.sh
+ENTRYPOINT ["/lambda_entrypoint_signal.sh"]

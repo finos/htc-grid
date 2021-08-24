@@ -75,10 +75,10 @@ config-c++:
 	$(MAKE) -C ./examples/configurations generated-c++
 
 config-python:
-	$(MAKE) -C ./examples/configurations generated-python FILE_HANDLER=mock_compute_engine FUNCTION_HANDLER=lambda_handler
+	$(MAKE) -C ./examples/configurations generated-python FILE_HANDLER="mock_compute_engine.lambda_handler" FUNCTION_HANDLER=lambda_handler
 
 config-python-ql:
-	$(MAKE) -C ./examples/configurations generated-python FILE_HANDLER=portfolio_pricing_engine FUNCTION_HANDLER=lambda_handler
+	$(MAKE) -C ./examples/configurations generated-python FILE_HANDLER="portfolio_pricing_engine.lambda_handler" FUNCTION_HANDLER=lambda_handler
 
 config-s3-c++:
 	$(MAKE) -C ./examples/configurations generated-s3-c++
