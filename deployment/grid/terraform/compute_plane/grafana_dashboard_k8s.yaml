@@ -11,6 +11,8 @@ datasources:
       url: http://prometheus-server.prometheus.svc.cluster.local
       access: proxy
       isDefault: true
+      jsonData:
+        httpMethod: 'POST'
     - name: InfluxDB
       type: influxdb
       url: influxdb.influxdb.svc.cluster.local:8086

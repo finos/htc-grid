@@ -39,8 +39,6 @@ Let's validate that the Compute Plane has been set up accordingly. First of all,
 
   ```
   cd ~/environment/aws-htc-grid/deployment/grid/terraform
-  export KUBECONFIG=$(terraform output -raw kubeconfig)
-  echo "export KUBECONFIG=$KUBECONFIG" >> ~/.bashrc
   export AGENT_CONFIG_FILE=$(terraform output -raw agent_config)
   echo "export AGENT_CONFIG_FILE=$AGENT_CONFIG_FILE" >> ~/.bashrc
   ```

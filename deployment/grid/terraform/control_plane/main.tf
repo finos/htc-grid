@@ -7,6 +7,8 @@ locals {
   suffix = var.suffix != "" ? var.suffix : random_string.random.result
 }
 
+data aws_caller_identity current {}
+
 resource "random_string" "random" {
   length = 5
   special = false

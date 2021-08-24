@@ -160,12 +160,7 @@ resource "kubernetes_ingress" "grafana_ingress" {
         "alb.ingress.kubernetes.io/listen-ports" = "[{\"HTTP\": 80},{\"HTTPS\":443}]"
         "alb.ingress.kubernetes.io/certificate-arn"= aws_iam_server_certificate.alb_certificate.arn
         "alb.ingress.kubernetes.io/actions.ssl-redirect"= "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}"
-        // "alb.ingress.kubernetes.io/auth-type"= "cognito"
-        // "alb.ingress.kubernetes.io/auth-scope"= "openid"
-        // "alb.ingress.kubernetes.io/auth-session-timeout"= "3600"
-        // "alb.ingress.kubernetes.io/auth-session-cookie"= "AWSELBAuthSessionCookie"
-        // "alb.ingress.kubernetes.io/auth-on-unauthenticated-request" = "authenticate"
-        // "alb.ingress.kubernetes.io/auth-idp-cognito" = "{\"UserPoolArn\": \"arn:aws:cognito-idp:eu-west-1:123456789012:userpool/eu-west-1_tobereplaced\",\"UserPoolClientId\":\"ToBeReplaced\",\"UserPoolDomain\":\"${lower(local.suffix)}\"}"
+        "alb.ingress.kubernetes.io/subnets" = join(",",var.vpc_public_subnet_ids)
     }
   }
 

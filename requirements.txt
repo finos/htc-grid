@@ -1,5 +1,4 @@
 requests
-responses
 pytest
 moto[all]
 sure
@@ -8,3 +7,6 @@ fakeredis
 flake8
 boto3
 pytest-cov
+urllib3_mock
+warrant_lite
+apscheduler

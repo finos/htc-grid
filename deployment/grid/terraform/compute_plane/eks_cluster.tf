@@ -85,6 +85,27 @@ data "local_file" "patch_core_dns" {
     filename = "${path.module}/patch-toleration-selector.yaml"
 }
 
+resource "null_resource" "update_kubeconfig" {
+  triggers = {
+    #cluster_arn = "arn:aws:eks:${var.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.cluster_name}"
+    cluster_arn = module.eks.cluster_arn
+  }
+  provisioner "local-exec" {
+    command = "aws eks update-kubeconfig --region ${var.region} --name ${var.cluster_name}"
+  }
+  provisioner "local-exec" {
+    when = destroy
+    command = "kubectl config delete-cluster ${self.triggers.cluster_arn}"
+  }
+  provisioner "local-exec" {
+    when = destroy
+    command = "kubectl config delete-context ${self.triggers.cluster_arn}"
+  }
+  depends_on = [
+    module.eks
+  ]
+}
+
 resource "null_resource" "patch_coredns" {
     provisioner "local-exec" {
     command = "kubectl -n kube-system patch deployment coredns --patch \"${data.local_file.patch_core_dns.content}\""

@@ -248,18 +248,9 @@ The deployment time is about 30 min.
 
     * `kubeconfig_htc_$TAG`: this file give access to the EKS cluster through kubectl (example: kubeconfig_htc_aws_my_project)
     * `Agent_config.json`: this file contains all the parameters, so the agent can run in the infrastructure
+    
 
-2. Set the connection with the EKS cluster
-* If using terraform v0.14.9:
-   ```bash
-   export KUBECONFIG=$(terraform output -raw kubeconfig)
-   ```
-* If using terraform v0.13.4:
-   ```bash
-   export KUBECONFIG=$(terraform output kubeconfig)
-   ```
-
-3. Testing the Deployment
+2. Testing the Deployment
     1. Get the number of nodes in the cluster using the command below. Note: You should have one or more nodes. If not please the review the configuration files and particularly the variable `eks_worker`
        ```bash
        kubectl get nodes

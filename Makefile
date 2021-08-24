@@ -14,21 +14,28 @@ export FILE_HANDLER
 export FUNCTION_HANDLER
 
 PACKAGE_DIR := ./dist
-PACKAGES    := $(wildcard $(PACKAGE_DIR)/*.whl)
+PYTHON_PACKAGE_DIR := ./dist/python
+PACKAGES    := $(wildcard $(PYTHON_PACKAGE_DIR)/*.whl)
 .PHONY: all utils api lambda submitter  packages test test-api test-utils test-agent lambda-init config-c++
 
 all: utils api lambda submitter lambda-init
+
+#############################
+##### building source #######
+#############################
+http-apis:
+	$(MAKE) -C ./source/control_plane/openapi/ all
 
 utils:
 	$(MAKE) -C ./source/client/python/utils
 
 install-utils: utils
-	pip install --force-reinstall $(PACKAGE_DIR)/utils-*.whl
+	pip install --force-reinstall $(PYTHON_PACKAGE_DIR)/utils-*.whl
 
 test-utils:
 	$(MAKE) test -C ./source/client/python/utils
 
-api:
+api: http-apis
 	$(MAKE) -C ./source/client/python/api-v0.1
 
 test-api: install-utils
@@ -43,7 +50,9 @@ test-packages: test-api test-utils
 
 test: test-agent test-packages
 
-
+#############################
+##### building images #######
+#############################
 lambda: utils api
 	$(MAKE) -C ./source/compute_plane/python/agent
 
@@ -52,6 +61,11 @@ lambda-init: utils api
 
 submitter: utils api
 	$(MAKE) -C ./examples/submissions/k8s_jobs all
+
+
+####################################
+##### building documentation #######
+####################################
 
 doc: import
 	mkdocs build
@@ -62,6 +76,9 @@ serve: import
 import: packages $(PACKAGES)
 	pip install --force-reinstall $(PACKAGES)
 
+######################################
+##### upload workload binaries #######
+######################################
 upload-c++: config-c++
 	$(MAKE) -C ./examples/workloads/c++/mock_computation upload
 
@@ -72,16 +89,20 @@ upload-python-ql: config-python
 	$(MAKE) -C ./examples/workloads/python/quant_lib upload
 
 config-c++:
-	$(MAKE) -C ./examples/configurations generated-c++
+	@$(MAKE) -C ./examples/configurations generated-c++
 
 config-python:
-	$(MAKE) -C ./examples/configurations generated-python FILE_HANDLER="mock_compute_engine.lambda_handler" FUNCTION_HANDLER=lambda_handler
+	@$(MAKE) -C ./examples/configurations generated-python FILE_HANDLER="mock_compute_engine.lambda_handler" FUNCTION_HANDLER=lambda_handler
 
 config-python-ql:
-	$(MAKE) -C ./examples/configurations generated-python FILE_HANDLER="portfolio_pricing_engine.lambda_handler" FUNCTION_HANDLER=lambda_handler
+	@$(MAKE) -C ./examples/configurations generated-python FILE_HANDLER="portfolio_pricing_engine.lambda_handler" FUNCTION_HANDLER=lambda_handler
 
 config-s3-c++:
-	$(MAKE) -C ./examples/configurations generated-s3-c++
+	@$(MAKE) -C ./examples/configurations generated-s3-c++
+
+#############################
+##### path per example ######
+#############################
 
 happy-path: all upload-c++ config-c++
 

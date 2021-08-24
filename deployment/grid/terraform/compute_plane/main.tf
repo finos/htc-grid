@@ -26,7 +26,7 @@ locals {
   ],[
     {
       name = "operational-worker-ondemand",
-      override_instance_types = ["m5.2xlarge","m4.2xlarge","m5d.2xlarge"],
+      override_instance_types = ["m5.xlarge","m4.xlarge","m5d.xlarge"],
       spot_instance_pools    = 0,
       asg_min_size            = 2,
       asg_max_size           = 5,
