@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
-import random
-import logging
 
 TASK_STATE_CANCELLED = "cancelled"
 TASK_STATE_PENDING = "pending"
@@ -14,6 +12,7 @@ TASK_STATE_RETRYING = "retrying"
 TASK_STATE_INCONSISTENT = "inconsistent"
 
 TTL_LAMBDA_ID = 'TTL_LAMBDA'
+
 
 class StateTableException(Exception):
 
