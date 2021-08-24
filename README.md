@@ -1,4 +1,4 @@
-# HTC-Grid
+# HTC-Grid 
 The high throughput compute grid project (HTC-Grid) is a container based cloud native HPC/Grid environment. The project provides a reference architecture that can be used to build and adapt a modern High throughput compute solution using underlying AWS services, allowing users to submit high volumes of short and long running tasks and scaling environments dynamically.
 
 **Warning**: This project is an Open Source (Apache 2.0 License), not a supported AWS Service offering.
