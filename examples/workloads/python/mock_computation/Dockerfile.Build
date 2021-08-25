@@ -5,7 +5,6 @@ WORKDIR /app
 COPY mock_compute_engine.py .
 RUN mkdir -p /app/build
 RUN zip -9yr lambda.zip .
-ENTRYPOINT sh
-CMD cp lambda.zip /app/build
+ENTRYPOINT cp lambda.zip /app/build
 
 
