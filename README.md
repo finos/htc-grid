@@ -162,21 +162,26 @@ The HTC-Grid project has external software dependencies that are deployed as con
    ```bash
    aws ecr get-login-password --region $HTCGRID_REGION | docker login --username AWS --password-stdin $HTCGRID_ACCOUNT_ID.dkr.ecr.$HTCGRID_REGION.amazonaws.com
    ```
+   
+2. As you'll be uploading images to ECR public gallery, to avoid timeouts, refresh your ECR authentication token for ECR public registries:
 
-2. From the `<project_root>` go to the image repository folder
+   ```bash
+   aws ecr-public get-login-password  --region us-east-1  | docker login --username AWS --password-stdin public.ecr.aws
+   ```
+3. From the `<project_root>` go to the image repository folder
 
    ```bash
    cd ./deployment/image_repository/terraform
    ```
 
-3. Now run the command
+4. Now run the command
 
    ```bash
    terraform init -backend-config="bucket=$S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME" \
                   -backend-config="region=$HTCGRID_REGION"
    ```
 
-4. If successful, you can now run *terraform apply* to create the HTC-Grid infrastructure. This can take between 10 and 15 minutes depending on the Internet connection.
+5. If successful, you can now run *terraform apply* to create the HTC-Grid infrastructure. This can take between 10 and 15 minutes depending on the Internet connection.
 
     ```bash
     terraform apply -var-file ./images_config.json -var "region=$HTCGRID_REGION" -parallelism=1

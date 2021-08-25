@@ -1,6 +1,6 @@
 # Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: LicenseRef-.amazon.com.-AmznSL-1.0
-# Licensed under the Amazon Software License  http://aws.amazon.com/asl/
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 ---
 apiVersion: apps/v1
 kind: Deployment

@@ -1,20 +1,15 @@
-FROM lambci/lambda:build-python3.8
+FROM public.ecr.aws/lambda/python:3.8
+RUN yum install -d1 -y  zip
 
 RUN mkdir -p /app
 WORKDIR /app
-
 COPY portfolio_pricing_engine.py .
 COPY american_options.py .
 COPY european_options.py .
 COPY ql_common.py .
-
-
 RUN pip install --target=/app QuantLib
-
 RUN mkdir -p /app/build
-
-
 RUN zip -yr lambda.zip .
-CMD cp lambda.zip /app/build
+ENTRYPOINT cp lambda.zip /app/build
 
 
