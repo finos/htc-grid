@@ -2,15 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
-# authenticate to ECR repository
-resource "null_resource" "authenticate_to_ecr_public_repository"{
-  triggers = {
-    always_run = timestamp()
-  }
-  provisioner "local-exec" {
-    command = " aws ecr-public get-login-password --region us-east-1  | docker login --username AWS --password-stdin public.ecr.aws"
-  }
-}
+
 
 #########################################
 ##### build and push custom runtime #####
