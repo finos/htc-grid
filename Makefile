@@ -111,10 +111,10 @@ auto-destroy-custom-runtime-s3:
 # Python runtime targets (Python, Redis)
 #################################
 # deploy runtime with confirmation
-apply-python-custom-runtime:
+apply-python-runtime:
 	@$(MAKE) -C ./deployment/grid/terraform GRID_CONFIG=$(GENERATED)/python_runtime_grid_config.json apply
 # deploy runtime without confirmation
-auto-apply-python-custom-runtime:
+auto-apply-python-runtime:
 	@$(MAKE) -C ./deployment/grid/terraform GRID_CONFIG=$(GENERATED)/python_runtime_grid_config.json auto-apply
 # destroy runtime with confirmation
 destroy-python-runtime:
