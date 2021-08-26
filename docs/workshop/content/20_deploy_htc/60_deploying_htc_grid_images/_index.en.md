@@ -13,25 +13,23 @@ HTC-Grid uses a few open source project with container images stored at Dockerhu
 1. As you'll be uploading images to ECR, to avoid timeouts, refresh your ECR authentication token:
 
     ```
-    aws ecr get-login-password --region $HTCGRID_REGION | docker login --username AWS --password-stdin $HTCGRID_ACCOUNT_ID.dkr.ecr.$HTCGRID_REGION.amazonaws.com
+    make ecr-login
     ```
-1. As you'll be uploading images to ECR public gallery, to avoid timeouts, refresh your ECR authentication token for ECR public registries:
+1. As you'll be downloading images to the ECR public gallery, to avoid timeouts, refresh your ECR authentication token for ECR public registries:
 
     ```
-    aws ecr-public get-login-password  --region us-east-1  | docker login --username AWS --password-stdin public.ecr.aws
+    make public-ecr-login
     ```
 1. Go into the terraform image deployment directory. This contains the terraform project that will help to create a copy of the required images to your ECR repository. The following command will go to the `~/environment/aws-htc-grid/deployment/image_repository/terraform` and initialize the terraform project using the bucket `$S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME` as the bucket that will hold the terraform state:
 
     ```
-    cd ~/environment/aws-htc-grid/deployment/image_repository/terraform
-    terraform init -backend-config="bucket=$S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME" \
-                -backend-config="region=$HTCGRID_REGION"
+    make init-images  TAG=$TAG REGION=$HTCGRID_REGION
     ```
 
 1. If successful, you can now run terraform apply to create the HTC-Grid infrastructure. This can take between 10 and 15 minutes depending on the Internet connection.
 
     ```
-    terraform apply -var-file ./images_config.json -var "region=$HTCGRID_REGION" -parallelism=1
+    make transfer-images  TAG=$TAG REGION=$HTCGRID_REGION
     ```
 {{% notice note %}}
 The execution of this command will prompt for `yes` to continue. Just type yes, for the command to proceed

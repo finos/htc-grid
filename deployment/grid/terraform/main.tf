@@ -11,9 +11,16 @@ resource "random_string" "random_resources" {
     # number = false
 }
 
+resource "random_password" "password" {
+  length           = 16
+  special          = true
+  override_special = "_%@"
+}
+
 locals {
     aws_htc_ecr = var.aws_htc_ecr != "" ? var.aws_htc_ecr : "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com"
     project_name = var.project_name != "" ? var.project_name : random_string.random_resources.result
+    grafana_admin_password = var.grafana_admin_password != "" ? var.grafana_admin_password : random_password.password.result
     cluster_name = "${var.cluster_name}-${local.project_name}"
     ddb_state_table = "${var.ddb_state_table}-${local.project_name}"
     sqs_queue = "${var.sqs_queue}-${local.project_name}"
@@ -131,7 +138,7 @@ module "compute_plane" {
         grafana_tag = var.grafana_configuration.grafana_tag
         initChownData_tag = var.grafana_configuration.initChownData_tag
         sidecar_tag = var.grafana_configuration.sidecar_tag
-        admin_password = var.grafana_admin_password
+        admin_password = local.grafana_admin_password
 
     }
     prometheus_configuration = {

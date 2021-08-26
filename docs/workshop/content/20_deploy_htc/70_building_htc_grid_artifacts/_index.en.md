@@ -11,18 +11,12 @@ Before we proceed with the final step, we need to build a few HTC-Grid Artifacts
 To build and install these:
 
 ```
-cd ~/environment/aws-htc-grid
-make happy-path TAG=$TAG ACCOUNT_ID=$HTCGRID_ACCOUNT_ID REGION=$HTCGRID_REGION BUCKET_NAME=$S3_LAMBDA_HTCGRID_BUCKET_NAME
+make happy-path TAG=$TAG REGION=$HTCGRID_REGION
 ```
 
 A few notes on this command:
  - If `TAG` is omitted then mainline will be the chosen has a default value.
- - If `ACCOUNT_ID` is omitted then the value will be resolved by the following command:
-    ```
-    aws sts get-caller-identity --query 'Account' --output text
-    ```
  - If `REGION` is omitted then eu-west-1 will be used.
- - `BUCKET_NAME` refers to the name of the bucket created at the beginning for storing the HTC-Grid workload lambda function. This variable is mandatory.
 
  Once the command above gets executed, A folder named `generated` will be created at `~/environment/aws-htc-grid/generated`. This folder should contain the following two important files:
 

@@ -17,8 +17,7 @@ If you are running the workshop at an AWS event, you can skip this section. We s
 To remove and destroy all the resources deployed within HTC-Grid use the following command:
 
 ```
-cd ~/environment/aws-htc-grid/deployment/grid/terraform
-terraform destroy -var-file ../../../generated/grid_config.json
+make destroy-custom-runtime TAG=$TAG REGION=$HTCGRID_REGION
 ```
 
 {{% notice warning %}}
@@ -31,8 +30,7 @@ The destruction of some of the resources may take some time. If for whatever rea
 To remove the images from the ECR repository go to the images folder
 
 ```
-cd ~/environment/aws-htc-grid/deployment/image_repository/terraform
-terraform destroy -var-file ./images_config.json -var "region=$HTCGRID_REGION"
+make destroy-images TAG=$TAG REGION=$HTCGRID_REGION
 ```
 
 ### Cleanup of the S3 buckets
@@ -45,9 +43,7 @@ You should leave this for the very end once that all the other cleanup processes
 Finally, this will leave the 3 only resources that you can clean manually, the S3 buckets. You can remove the folders using the following command.
 
 ```
-aws s3 --region $HTCGRID_REGION rb --force s3://$S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME
-aws s3 --region $HTCGRID_REGION rb --force s3://$S3_TFSTATE_HTCGRID_BUCKET_NAME
-aws s3 --region $HTCGRID_REGION rb --force s3://$S3_LAMBDA_HTCGRID_BUCKET_NAME
+make delete-grid-state TAG=$TAG REGION=$HTCGRID_REGION
 ```
 
 

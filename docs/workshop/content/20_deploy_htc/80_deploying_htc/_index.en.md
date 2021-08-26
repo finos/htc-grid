@@ -6,18 +6,16 @@ weight: 80
 
 We are now ready to deploy HTC-Grid using the terraform stack provided by the project. The terraform stack does use `~/environment/aws-htc-grid/generated/grid_config.json` to inject a few variables to the project.
 
-Before we deploy the project, we needto initialize the terraform state. Remember we will be using the `$S3_TFSTATE_HTCGRID_BUCKET_NAME` bucket to hold the state. You can read more about the S3 terraform backend [here](https://www.terraform.io/docs/language/settings/backends/s3.html)
+Before we deploy the project, we need to initialize the terraform state. Remember we will be using the `$S3_TFSTATE_HTCGRID_BUCKET_NAME` bucket to hold the state. You can read more about the S3 terraform backend [here](https://www.terraform.io/docs/language/settings/backends/s3.html)
 
 ```
-cd ~/environment/aws-htc-grid/deployment/grid/terraform
-terraform init -backend-config="bucket=$S3_TFSTATE_HTCGRID_BUCKET_NAME" \
-                -backend-config="region=$HTCGRID_REGION"
+make init-grid-deployment  TAG=$TAG REGION=$HTCGRID_REGION
 ```
 
-All the dependencies have been created and are now ready. We are now ready to deploy the HTC-Grid project. There is one last thing to note. HTC-Grid deploys a grafana version behind [Amazon Cognito](https://aws.amazon.com/cognito/). While you can modify and select which passwords to use in cognito, the grafana internal deployment still requires an admin password. Select a memorable password change the value in the placeholder `<my_grafana_admin_password>` below:
+All the dependencies have been created and are now ready. We are now ready to deploy the HTC-Grid project. There is one last thing to note. HTC-Grid deploys a grafana version behind [Amazon Cognito](https://aws.amazon.com/cognito/). While you can modify and select which passwords to use in cognito, the grafana internal deployment still requires an admin password. Select a memorable password change the value in the placeholder `<my_grafana_admin_password>` below (make this password follows [cognito default policy](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html)):
 
 ```
-terraform apply -var-file ../../../generated/grid_config.json -var="grafana_admin_password=<my_grafana_admin_password>"
+make apply-custom-runtime  TAG=$TAG REGION=$HTCGRID_REGION GRAFANA_ADMIN_PASSWORD=<my_grafana_admin_password>
 ```
 
 {{% notice note %}}

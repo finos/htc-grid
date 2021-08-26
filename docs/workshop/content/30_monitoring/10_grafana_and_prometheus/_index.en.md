@@ -11,6 +11,34 @@ While the deployment of Grafana uses self-signed certifictes for encryption, our
 {{% /notice %}}
 
 
+## Create a cognito user (CLI)
+All the services behind a public URL are protected wih an authentication mecanism based on Cognito. So in order to acccess the grafana dashboard you will need to create a cognito user.
+Please from the root of the project :
+Choose a cognito username:
+```bash
+export USERNAME=<my_cognito_user>
+```
+Choose a cognito password (make this password follows [cognito default policy](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html) ) :
+You can reuse the password chosen  in section [Deploy HTC-Grid]({{< ref "20_deploy_htc/80_deploying_htc/_index.en.md" >}}) or create a new one.
+```bash
+export PASSWORD=<my_grafana_admin_password>
+```
+
+Get the client id:
+```bash
+clientid=$(make get-client-id  TAG=$TAG)
+```
+
+Create the user
+```bash
+aws cognito-idp sign-up --region $HTCGRID_REGION --client-id $clientid --username $USERNAME --password $PASSWORD
+```
+The user newly created will be unconfirmed.
+
+Confirm user creation:
+```bash
+aws cognito-idp admin-confirm-sign-up --region $HTCGRID_REGION --user-pool-id $userpoolid --username $USERNAME
+```
 ## Grafana
 
 During the [Deploy HTC-Grid]({{< ref "20_deploy_htc/80_deploying_htc/_index.en.md" >}}) section you replaced and selected a **<my_grafana_admin_password>** that we will need now to access grafana. The HTC-Grid project captures metrics into influxdb and prometheus and exposes those metrics through Grafana. 
@@ -27,7 +55,10 @@ it should output something like:
 Grafana URL  -> https://k8s-grafana-grafanai-XXXXXXXXXXXX-YYYYYYYYYYY.eu-west-2.elb.amazonaws.com
 ```
 
-Open the URL and use the user `admin` and the password you selected at creation time to login into Grafana. 
+If you open this URL you will be redirected to a cognito sign in page. Please enter the username and password created in the previous section.
+Once you are sign up  with cognito you will be redirected to the Grafana sign in page.
+
+Pleas use the user `admin` and the password you selected at creation time to login into Grafana.
 
 Once in, on the left hand side menu, click on **Dashboards** and then select **Manage**. This will take you to the two dashboards that have been created at this stage. One for the EKS Cluster and another one with a few metrics relevant to HTC-Grid components. 
 
