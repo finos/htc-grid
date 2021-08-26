@@ -32,8 +32,6 @@ Resources:
       BucketName: !Sub
         - '${BucketTag}-image-tfstate-htc-grid-${RANDOM}'
         - RANDOM: !Select [0, !Split ['-', !Select [2, !Split ['/', !Ref 'AWS::StackId' ]]]]
-      VersioningConfiguration:
-        Status: Enabled
     DeletionPolicy: Delete
   TfstateHtcGrid:
     Type: 'AWS::S3::Bucket'
@@ -41,8 +39,6 @@ Resources:
       BucketName: !Sub
         - '${BucketTag}-tfstate-htc-grid-${RANDOM}'
         - RANDOM: !Select [0, !Split ['-', !Select [2, !Split ['/', !Ref 'AWS::StackId' ]]]]
-      VersioningConfiguration:
-        Status: Enabled
     DeletionPolicy: Delete
   LambdaUnitHtcGrid:
     Type: 'AWS::S3::Bucket'

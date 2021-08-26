@@ -32,13 +32,13 @@ $(TAG)-workload-bucket: $(BUILD_DIR)/grid_init/init-grid-$(TAG)-workload-bucket
 init: $(BUILD_DIR)/grid_init
 
 clean-grid-state:
-	aws --region $(REGION) s3 rm --recursive $(aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[2].OutputValue' --output text)
+	aws --region $(REGION) s3 rm --recursive s3://$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[2].OutputValue' --output text) || true
 
 clean-image-state:
-	aws --region $(REGION) s3 rm --recursive $(aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[1].OutputValue' --output text)
+	aws --region $(REGION) s3 rm --recursive s3://$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[1].OutputValue' --output text) || true
 
 clean-lambda-storage:
-	aws --region $(REGION) s3 rm --recursive $(aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[0].OutputValue' --output text)
+	aws --region $(REGION) s3 rm --recursive s3://$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[0].OutputValue' --output text) || true
 
 delete: clean-image-state clean-grid-state clean-lambda-storage
 	aws cloudformation delete-stack --stack-name $(TAG) --region $(REGION)
