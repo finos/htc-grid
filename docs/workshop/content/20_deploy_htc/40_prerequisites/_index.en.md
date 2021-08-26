@@ -33,13 +33,9 @@ To simplify the deployment we will use a set of environment variables, that late
 
 ```
 export TAG=main
-export HTCGRID_ACCOUNT_ID=$(aws sts get-caller-identity --output text --query Account)
 export HTCGRID_REGION=$(curl -s 169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')
-export S3_UUID=$(uuidgen | sed 's/.*-\(.*\)/\1/g'  | tr '[:upper:]' '[:lower:]')
-export S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME="${TAG}-image-tfstate-htc-grid-${S3_UUID}"
-export S3_TFSTATE_HTCGRID_BUCKET_NAME="${TAG}-tfstate-htc-grid-${S3_UUID}"
-export S3_LAMBDA_HTCGRID_BUCKET_NAME="${TAG}-lambda-unit-htc-grid-${S3_UUID}"
-for var in TAG HTCGRID_ACCOUNT_ID HTCGRID_REGION S3_UUID S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME S3_TFSTATE_HTCGRID_BUCKET_NAME S3_LAMBDA_HTCGRID_BUCKET_NAME ; do echo "export $var=$(eval "echo \"\$$var\"")" >> load_variables.sh ; done
+
+for var in TAG HTCGRID_REGION  ; do echo "export $var=$(eval "echo \"\$$var\"")" >> load_variables.sh ; done
 echo -e "===\nYour variables and configuration have been setup as follows\n===\n$(cat load_variables.sh)"
 echo "source ~/environment/aws-htc-grid/load_variables.sh" >> ~/.bashrc
 ```
@@ -48,12 +44,6 @@ The code above first set the variables and then, saves all of them within the fi
 
 As for the variables that we have created: 
 
-* **TAG**: HTC-Grid can be deployed many times per account. We however must clearly define each setup using a TAG.  We've used `main` as the TAG for our setup. TAG will be used in the naming of the S3 buckets, so it needs to follow S3 naming rules. 
-
-* **S3_UUID** we created a unique UUID to ensure the buckets created are unique, then we create the three environment variables with the S3 bucket names.
-
-* **HTCGRID_ACCOUNT_ID** The account ID where we are installing HTC-Grid
-
+* **TAG**: HTC-Grid can be deployed many times per account. We however must clearly define each setup using a TAG.  We've used `main` as the TAG for our setup. TAG will be used in the naming of the S3 buckets, so it needs to follow S3 naming rules.
 * **HTCGRID_REGION** The region where we are installing HTC-Grid.
 
-We will cover the S3 variables in the next section.

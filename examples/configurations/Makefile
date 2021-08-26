@@ -9,7 +9,7 @@ BUCKET_NAME=
 FILE_HANDLER=
 FUNCTION_HANDLER=
 ACCOUNT_ID?=$(shell aws sts get-caller-identity | jq -r '.Account')
-
+BUCKET_NAME=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[0].OutputValue' --output text)
 
 
 

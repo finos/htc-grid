@@ -43,7 +43,7 @@ The following resources should be installed upon you local machine (Linux and ma
 
 * [aws CLI version 2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 
-* [terraform v0.13.4](https://releases.hashicorp.com/terraform/0.13.4/) or [terraform v0.14.9](https://releases.hashicorp.com/terraform/0.14.9/)
+* [terraform v1.0.0](https://releases.hashicorp.com/terraform/1.0.0/) or [terraform v0.14.9](https://releases.hashicorp.com/terraform/0.14.9/) or
 
 * [helm](https://helm.sh/docs/helm/helm_install/) version > 3
 
@@ -112,11 +112,7 @@ For further details on *virtualenv* see https://sourabhbajaj.com/mac-setup/Pytho
    ```bash
       export TAG=<Your tag>
    ```
-2. Define the AWS account ID where the grid will be deployed
-   ```bash
-      export HTCGRID_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
-   ```
-3. Define the region where the grid will be deployed
+2. Define the region where the grid will be deployed
    ```bash
       export HTCGRID_REGION=<Your region>
    ```
@@ -130,25 +126,14 @@ For further details on *virtualenv* see https://sourabhbajaj.com/mac-setup/Pytho
    - `ap-northeast-1`
    - `ap-southeast-1`
 
-4. In the following section we create a unique UUID to ensure the buckets created are unique, then we create the three environment variables with the S3 bucket names. The S3 buckets will contain:
-    * **S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME**: The environment variable for the S3 bucket that holds the terraform state to transfer htc-grid docker images to your ECR repository.
-    * **S3_TFSTATE_HTCGRID_BUCKET_NAME**: The environment variable for the S3 bucket that holds terraform state for the installation of the htc-grid project
-    * **S3_LAMBDA_HTCGRID_BUCKET_NAME**: The environment variable for the S3 bucket that holds the code to be executed when a task is invoked.
-   ```bash
-   export S3_UUID=$(uuidgen | sed 's/.*-\(.*\)/\1/g'  | tr '[:upper:]' '[:lower:]')
-   export S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME="${TAG}-image-tfstate-htc-grid-${S3_UUID}"
-   export S3_TFSTATE_HTCGRID_BUCKET_NAME="${TAG}-tfstate-htc-grid-${S3_UUID}"
-   export S3_LAMBDA_HTCGRID_BUCKET_NAME="${TAG}-lambda-unit-htc-grid-${S3_UUID}"
-   ```
+
 
 ### Create the S3 Buckets
 
 1. The following step creates the S3 buckets that will be needed during the installation:
 
   ```bash
-  aws s3 --region $HTCGRID_REGION mb s3://$S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME
-  aws s3 --region $HTCGRID_REGION mb s3://$S3_TFSTATE_HTCGRID_BUCKET_NAME
-  aws s3 --region $HTCGRID_REGION mb s3://$S3_LAMBDA_HTCGRID_BUCKET_NAME
+  make init-grid-state  TAG=$TAG REGION=$HTCGRID_REGION
   ```
 ### Create and deploy HTC-Grid images
 
@@ -160,31 +145,19 @@ The HTC-Grid project has external software dependencies that are deployed as con
 1. As you'll be uploading images to ECR, to avoid timeouts, refresh your ECR authentication token:
 
    ```bash
-   aws ecr get-login-password --region $HTCGRID_REGION | docker login --username AWS --password-stdin $HTCGRID_ACCOUNT_ID.dkr.ecr.$HTCGRID_REGION.amazonaws.com
+   make ecr-login
    ```
    
-2. As you'll be uploading images to ECR public gallery, to avoid timeouts, refresh your ECR authentication token for ECR public registries:
+2. Now run the command
 
    ```bash
-   aws ecr-public get-login-password  --region us-east-1  | docker login --username AWS --password-stdin public.ecr.aws
+   make init-images  TAG=$TAG REGION=$HTCGRID_REGION
    ```
-3. From the `<project_root>` go to the image repository folder
+
+4. If successful, you can now run *terraform apply* to create the HTC-Grid infrastructure. This can take between 10 and 15 minutes depending on the Internet connection.
 
    ```bash
-   cd ./deployment/image_repository/terraform
-   ```
-
-4. Now run the command
-
-   ```bash
-   terraform init -backend-config="bucket=$S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME" \
-                  -backend-config="region=$HTCGRID_REGION"
-   ```
-
-5. If successful, you can now run *terraform apply* to create the HTC-Grid infrastructure. This can take between 10 and 15 minutes depending on the Internet connection.
-
-    ```bash
-    terraform apply -var-file ./images_config.json -var "region=$HTCGRID_REGION" -parallelism=1
+    make transfer-images  TAG=$TAG REGION=$HTCGRID_REGION
     ```
 
 NB: This operation fetches images from external repositories and creates a copy into your ECR account, sometimes the fetch to external repositories may have temporary failures due to the state of the external repositories, If the `terraform apply` fails with errors such as the ones below, re-run the command until `terraform apply` successfully completes.
@@ -201,16 +174,11 @@ HTC artifacts include: python packages, docker images, configuration files for H
 2. Now build the images for the HTC agent. Return to  `<project_root>`  and run the command:
 
    ```bash
-   make happy-path TAG=$TAG ACCOUNT_ID=$HTCGRID_ACCOUNT_ID REGION=$HTCGRID_REGION BUCKET_NAME=$S3_LAMBDA_HTCGRID_BUCKET_NAME
+   make happy-path TAG=$TAG REGION=$HTCGRID_REGION
    ```
 
    * If `TAG` is omitted then `mainline` will be the chosen has a default value.
-   * If `ACCOUNT_ID` is omitted then the value will be resolved by the following command:
-    ```bash
-    aws sts get-caller-identity --query 'Account' --output text
-    ```
    * If `REGION` is omitted then `eu-west-1` will be used.
-   * `BUCKET_NAME` refers to the name of the bucket created at the beginning for storing the **HTC-Grid workload lambda function**. This variable is mandatory.
 
    A folder name `generated` will be created at  `<project_root>`. This folder should contain the following two files:
     * `grid_config.json` a configuration file for the grid with basic setting
@@ -230,18 +198,13 @@ Some important parameters are:
 
 The deployment time is about 30 min.
 
-1. from the project root
+1. Run
    ```bash
-   cd ./deployment/grid/terraform
+   make init-grid-deployment  TAG=$TAG REGION=$HTCGRID_REGION
    ```
-2. Run
+2. if successful you can run terraform apply to create the infrastructure. HTC-Grid deploys a grafana version behind cognito. The admin password is configurable and should be passed at this stage.
    ```bash
-   terraform init -backend-config="bucket=$S3_TFSTATE_HTCGRID_BUCKET_NAME" \
-                   -backend-config="region=$HTCGRID_REGION"
-   ```
-3. if successful you can run terraform apply to create the infrastructure. HTC-Grid deploys a grafana version behind cognito. The admin password is configurable and should be passed at this stage.
-   ```bash
-   terraform apply -var-file ../../../generated/grid_config.json -var="grafana_admin_password=<my_grafana_admin_password>"
+   make apply-custom-runtime  TAG=$TAG REGION=$HTCGRID_REGION
    ```
 
 
@@ -249,7 +212,7 @@ The deployment time is about 30 min.
 ### Testing the deployment
 
 
-1. If `terraform apply` is successful then in the terraform folder two files are  created:
+1. If `make apply-custom-runtime  TAG=$TAG REGION=$HTCGRID_REGION` is successful then in the terraform folder two files are  created:
 
     * `kubeconfig_htc_$TAG`: this file give access to the EKS cluster through kubectl (example: kubeconfig_htc_aws_my_project)
     * `Agent_config.json`: this file contains all the parameters, so the agent can run in the infrastructure
@@ -334,20 +297,18 @@ to access the Grafana landing page.
 
 ### Un-Installing and destroying HTC grid
 The destruction time is about 15 min.
-1. Go in the terraform grid folder `./deployment/grid/terraform`.
+1. From the root of the project.
 2. To remove the grid resources run the following command:
    ```bash
-   terraform destroy -var-file ../../../generated/grid_config.json
+   make destroy-custom-runtime TAG=$TAG REGION=$HTCGRID_REGION
    ```
-3. To remove the images from the ECR repository go to the images folder `deployment/image_repository/terraform` and execute
+3. To remove the images from the ECR repository, execute
    ```bash
-   terraform destroy -var-file ./images_config.json -var "region=$HTCGRID_REGION"
+   make destroy-images TAG=$TAG REGION=$HTCGRID_REGION
    ```
 4. Finally, this will leave the 3 only resources that you can clean manually, the S3 buckets. You can remove the folders using the following command
    ```bash
-   aws s3 --region $HTCGRID_REGION rb --force s3://$S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME
-   aws s3 --region $HTCGRID_REGION rb --force s3://$S3_TFSTATE_HTCGRID_BUCKET_NAME
-   aws s3 --region $HTCGRID_REGION rb --force s3://$S3_LAMBDA_HTCGRID_BUCKET_NAME
+   make delete-grid-state TAG=$TAG REGION=$HTCGRID_REGION
    ```
 
 ### Build the documentation
