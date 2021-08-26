@@ -79,49 +79,49 @@ reset-grid-deployment:
 # Custom runtime (C++) with redis
 # deploy runtime with confirmation
 apply-custom-runtime:
-	@$(MAKE) -C ./deployment/grid/terraform apply GRID_CONFIG=$(GENERATED)/grid_config.json apply
+	@$(MAKE) -C ./deployment/grid/terraform GRID_CONFIG=$(GENERATED)/grid_config.json apply
 
 # deploy runtime without confirmation
 auto-apply-custom-runtime:
-	@$(MAKE) -C ./deployment/grid/terraform apply GRID_CONFIG=$(GENERATED)/grid_config.json auto-apply
+	@$(MAKE) -C ./deployment/grid/terraform GRID_CONFIG=$(GENERATED)/grid_config.json auto-apply
 # destroy runtime with confirmation
 destroy-custom-runtime:
-	@$(MAKE) -C ./deployment/grid/terraform destroy GRID_CONFIG=$(GENERATED)/grid_config.json destroy
+	@$(MAKE) -C ./deployment/grid/terraform GRID_CONFIG=$(GENERATED)/grid_config.json destroy
 # destroy runtime without confirmation
 auto-destroy-custom-runtime:
-	@$(MAKE) -C ./deployment/grid/terraform destroy GRID_CONFIG=$(GENERATED)/grid_config.json auto-destroy
+	@$(MAKE) -C ./deployment/grid/terraform GRID_CONFIG=$(GENERATED)/grid_config.json auto-destroy
 #################################
 
 # Custom runtime (C++) with S3
 #################################
 # deploy runtime with confirmation
 apply-custom-runtime-s3:
-	@$(MAKE) -C ./deployment/grid/terraform apply GRID_CONFIG=$(GENERATED)/custom_runtime_s3_grid_config.json apply
+	@$(MAKE) -C ./deployment/grid/terraform GRID_CONFIG=$(GENERATED)/custom_runtime_s3_grid_config.json apply
 # deploy runtime without confirmation
 auto-apply-custom-runtime-s3:
-	@$(MAKE) -C ./deployment/grid/terraform apply GRID_CONFIG=$(GENERATED)/custom_runtime_s3_grid_config.json auto-apply
+	@$(MAKE) -C ./deployment/grid/terraform GRID_CONFIG=$(GENERATED)/custom_runtime_s3_grid_config.json auto-apply
 # destroy runtime with confirmation
 destroy-custom-runtime-s3:
-	@$(MAKE) -C ./deployment/grid/terraform destroy GRID_CONFIG=$(GENERATED)/custom_runtime_s3_grid_config.json destroy
+	@$(MAKE) -C ./deployment/grid/terraform GRID_CONFIG=$(GENERATED)/custom_runtime_s3_grid_config.json destroy
 # destroy runtime without confirmation
 auto-destroy-custom-runtime-s3:
-	@$(MAKE) -C ./deployment/grid/terraform destroy GRID_CONFIG=$(GENERATED)/custom_runtime_s3_grid_config.json auto-destroy
+	@$(MAKE) -C ./deployment/grid/terraform GRID_CONFIG=$(GENERATED)/custom_runtime_s3_grid_config.json auto-destroy
 #################################
 
 # Python runtime targets (Python, Redis)
 #################################
 # deploy runtime with confirmation
 apply-python-custom-runtime:
-	@$(MAKE) -C ./deployment/grid/terraform apply GRID_CONFIG=$(GENERATED)/python_runtime_grid_config.json apply
+	@$(MAKE) -C ./deployment/grid/terraform GRID_CONFIG=$(GENERATED)/python_runtime_grid_config.json apply
 # deploy runtime without confirmation
 auto-apply-python-custom-runtime:
-	@$(MAKE) -C ./deployment/grid/terraform apply GRID_CONFIG=$(GENERATED)/python_runtime_grid_config.json auto-apply
+	@$(MAKE) -C ./deployment/grid/terraform GRID_CONFIG=$(GENERATED)/python_runtime_grid_config.json auto-apply
 # destroy runtime with confirmation
 destroy-python-runtime:
-	@$(MAKE) -C ./deployment/grid/terraform destroy GRID_CONFIG=$(GENERATED)/python_runtime_grid_config.json destroy
+	@$(MAKE) -C ./deployment/grid/terraform GRID_CONFIG=$(GENERATED)/python_runtime_grid_config.json destroy
 # destroy runtime without confirmation
 auto-destroy-python-runtime:
-	@$(MAKE) -C ./deployment/grid/terraform destroy GRID_CONFIG=$(GENERATED)/python_runtime_grid_config.json auto-destroy
+	@$(MAKE) -C ./deployment/grid/terraform GRID_CONFIG=$(GENERATED)/python_runtime_grid_config.json auto-destroy
 #################################
 
 ##########################################################
