@@ -48,7 +48,8 @@ init-grid-state:
 delete-grid-state:
 	$(MAKE) -C ./deployment/init_grid/cloudformation delete
 
-
+clean-grid-state:
+	$(MAKE) -C ./deployment/init_grid/cloudformation clean
 #############################################################################
 #### Manage images transfer from third parties to given docker registry  ####
 #############################################################################
