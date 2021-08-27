@@ -47,3 +47,20 @@ As for the variables that we have created:
 * **TAG**: HTC-Grid can be deployed many times per account. We however must clearly define each setup using a TAG.  We've used `main` as the TAG for our setup. TAG will be used in the naming of the S3 buckets, so it needs to follow S3 naming rules.
 * **HTCGRID_REGION** The region where we are installing HTC-Grid.
 
+## Create the infrastructure for storing the state of the HTC Grid
+
+The following step creates 3 S3 buckets that will be needed during the installation:
+* 2 buckets will store the state of the terraform deployment
+* 1 bucket will store the HTC artifacts (lambda to be executed by the agent)
+
+```
+make init-grid-state  TAG=$TAG REGION=$HTCGRID_REGION
+```
+
+To validate the creation of the S3 buckets, you can run
+
+```
+aws cloudformation describe-stacks --stack-name $TAG --region $HTCGRID_REGION --query 'Stacks[0]'
+```
+
+That will list the 3 S3 Buckets that we just created.
