@@ -12,7 +12,7 @@ YAML_SRC:=grid_state.yaml
 
 all: $(BUILD_DIR)/grid_init/init-grid-$(TAG)
 
-.PHONY: clean delete init clean-image-state clean-grid-state clean-lambda-storage
+.PHONY: clean delete init clean-image-state clean-grid-state clean-lambda-storage clean-artifacts
 
 $(BUILD_DIR)/grid_init:
 	mkdir -p $(BUILD_DIR)/grid_init
@@ -43,6 +43,8 @@ clean-lambda-storage:
 delete: clean-image-state clean-grid-state clean-lambda-storage
 	aws cloudformation delete-stack --stack-name $(TAG) --region $(REGION)
 	aws cloudformation wait stack-delete-complete --stack-name $(shell aws cloudformation describe-stacks --region $(REGION) --stack-name $(TAG) --query 'Stacks[0].StackId' --output text) --region $(REGION)
+
+clean-artifacts: clean-image-state clean-grid-state clean-lambda-storage
 
 
 clean:
