@@ -50,8 +50,8 @@ As for the variables that we have created:
 ## Create the infrastructure for storing the state of the HTC Grid
 
 The following step creates 3 S3 buckets that will be needed during the installation:
-* 2 buckets will store the state of the terraform deployment
-* 1 bucket will store the HTC artifacts (lambda to be executed by the agent)
+* 2 buckets will store the state of the different terraform deployments
+* 1 bucket will store the HTC artifacts (the lambda to be executed by the agent)
 
 ```
 make init-grid-state  TAG=$TAG REGION=$HTCGRID_REGION

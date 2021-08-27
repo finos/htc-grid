@@ -19,7 +19,7 @@ Choose a cognito username:
 export USERNAME=<my_cognito_user>
 ```
 Choose a cognito password (make this password follows [cognito default policy](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html) ) :
-You can reuse the password chosen  in section [Deploy HTC-Grid]({{< ref "20_deploy_htc/80_deploying_htc/_index.en.md" >}}) or create a new one.
+You can reuse the password chosen  in section [Deploy HTC-Grid]({{< ref "20_deploy_htc/70_deploying_htc/_index.en.md" >}}) or create a new one.
 ```bash
 export PASSWORD=<my_grafana_admin_password>
 ```
@@ -41,7 +41,7 @@ aws cognito-idp admin-confirm-sign-up --region $HTCGRID_REGION --user-pool-id $u
 ```
 ## Grafana
 
-During the [Deploy HTC-Grid]({{< ref "20_deploy_htc/80_deploying_htc/_index.en.md" >}}) section you replaced and selected a **<my_grafana_admin_password>** that we will need now to access grafana. The HTC-Grid project captures metrics into influxdb and prometheus and exposes those metrics through Grafana. 
+During the [Deploy HTC-Grid]({{< ref "20_deploy_htc/70_deploying_htc/_index.en.md" >}}) section you replaced and selected a **<my_grafana_admin_password>** that we will need now to access grafana. The HTC-Grid project captures metrics into influxdb and prometheus and exposes those metrics through Grafana. 
 
 To find out the https endpoint where grafana has been deployed type:
 
