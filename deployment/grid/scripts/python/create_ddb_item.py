@@ -12,7 +12,7 @@ import os
 
 def lambda_handler(event, context):
     dynamodb = boto3.resource('dynamodb',region_name="eu-west-1")
-    table = dynamodb.Table(os.environ['TASKS_STATUS_TABLE_NAME'])
+    table = dynamodb.Table(os.environ['STATE_TABLE_CONFIG'])
     for i  in range(20):
         session_id = uuid.uuid1()
         task_id = uuid.uuid1()
@@ -40,5 +40,5 @@ def main():
 
 if __name__ == "__main__":
     # execute only if run as a script
-    os.environ["TASKS_STATUS_TABLE_NAME"] = "tasks_status_table_kgrid_team"
+    os.environ["STATE_TABLE_CONFIG"] = "tasks_state_table_kgrid_team"
     main()

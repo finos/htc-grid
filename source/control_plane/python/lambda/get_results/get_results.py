@@ -12,12 +12,15 @@ import traceback
 from botocore.exceptions import ClientError
 
 from utils.performance_tracker import EventsCounter, performance_tracker_initializer
-from utils.dynamodb_common import TASK_STATUS_CANCELLED, TASK_STATUS_FAILED, TASK_STATUS_FINISHED, read_tasks_by_status
+from api.state_table_manager import state_table_manager
+from utils.state_table_common import TASK_STATE_CANCELLED, TASK_STATE_FAILED, TASK_STATE_FINISHED
 
 import utils.grid_error_logger as errlog
 
-dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['TASKS_STATUS_TABLE_NAME'])
+state_table = state_table_manager(
+    os.environ['STATE_TABLE_SERVICE'],
+    os.environ['STATE_TABLE_CONFIG'],
+    os.environ['STATE_TABLE_NAME'])
 
 event_counter = EventsCounter(["invocations", "retrieved_rows"])
 
@@ -37,28 +40,28 @@ def get_tasks_statuses_in_session(session_id):
     response = {}
 
     # <1.> Process finished Tasks
-    finished_tasks_resp = read_tasks_by_status(table, session_id, TASK_STATUS_FINISHED)
+    finished_tasks_resp = state_table.get_tasks_by_status(session_id, TASK_STATE_FINISHED)
 
     finished_tasks = finished_tasks_resp["Items"]
     if len(finished_tasks) > 0:
-        response[TASK_STATUS_FINISHED] = [x["task_id"] for x in finished_tasks]
-        response[TASK_STATUS_FINISHED + '_OUTPUT'] = ["read_from_REDIS" for x in finished_tasks]
+        response[TASK_STATE_FINISHED] = [x["task_id"] for x in finished_tasks]
+        response[TASK_STATE_FINISHED + '_OUTPUT'] = ["read_from_dataplane" for x in finished_tasks]
 
     # <2.> Process cancelled Tasks
-    cancelled_tasks_resp = read_tasks_by_status(table, session_id, TASK_STATUS_CANCELLED)
+    cancelled_tasks_resp = state_table.get_tasks_by_status(session_id, TASK_STATE_CANCELLED)
 
     cancelled_tasks = cancelled_tasks_resp["Items"]
     if len(cancelled_tasks) > 0:
-        response[TASK_STATUS_CANCELLED] = [x["task_id"] for x in cancelled_tasks]
-        response[TASK_STATUS_CANCELLED + '_OUTPUT'] = ["read_from_REDIS" for x in cancelled_tasks]
+        response[TASK_STATE_CANCELLED] = [x["task_id"] for x in cancelled_tasks]
+        response[TASK_STATE_CANCELLED + '_OUTPUT'] = ["read_from_dataplane" for x in cancelled_tasks]
 
     # <3.> Process failed Tasks
-    failed_tasks_resp = read_tasks_by_status(table, session_id, TASK_STATUS_FAILED)
+    failed_tasks_resp = state_table.get_tasks_by_status(session_id, TASK_STATE_FAILED)
 
     failed_tasks = failed_tasks_resp["Items"]
     if len(failed_tasks) > 0:
-        response[TASK_STATUS_FAILED] = [x["task_id"] for x in failed_tasks]
-        response[TASK_STATUS_FAILED + '_OUTPUT'] = ["read_from_REDIS" for x in failed_tasks]
+        response[TASK_STATE_FAILED] = [x["task_id"] for x in failed_tasks]
+        response[TASK_STATE_FAILED + '_OUTPUT'] = ["read_from_dataplane" for x in failed_tasks]
 
     # <4.> Process metadata
     response["metadata"] = {

@@ -41,10 +41,11 @@ serviceAccount:
 podSecurityContext: {}
   # fsGroup: 2000
 
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
+
+securityContext:
+  capabilities:
+    drop:
+    - SYS_PTRACE
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
@@ -52,7 +53,7 @@ securityContext: {}
 lambda:
   protocolEndpoint: http
   hostEndpoint: localhost
-  port: 9001
+  port: 8080
   timeout: 86400
   region: eu-west-1
   mountPoint: /var/task

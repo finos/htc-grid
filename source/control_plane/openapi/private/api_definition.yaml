@@ -1,0 +1,151 @@
+# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+---
+openapi: "3.0.1"
+info:
+  title: "Private APi for the HTC grid"
+  description: "Private API Gateway for HTC Grid"
+  version: "1.0.0"
+servers:
+  - url: "https://restapiid.execute-api.my-region-1.amazonaws.com/{basePath}"
+    variables:
+      basePath:
+        default: "/v1"
+paths:
+  /cancel:
+    post:
+      parameters:
+        - name: submission_content
+          in: query
+          description: Job submission to the grid
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: ssful operationsuccessful operation
+          content:
+            application/json:
+              schema:
+                type: string
+        542:
+          description: Invalid status value
+          content: { }
+      security:
+        - api_key: []
+      x-amazon-apigateway-integration:
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${region}:${account_id}:function:${cancel_lambda_name}/invocations"
+        passthroughBehavior: "when_no_match"
+        timeoutInMillis: 29000
+  /submit:
+    post:
+      parameters:
+        - name: submission_content
+          in: query
+          description: Job submission to the grid
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: ssful operationsuccessful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: '#/components/schemas/PostSubmitResponse'
+        542:
+          description: Invalid status value
+          content: { }
+      security:
+        - api_key: []
+      x-amazon-apigateway-integration:
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${region}:${account_id}:function:${submit_task_lambda_name}/invocations"
+        passthroughBehavior: "when_no_match"
+        timeoutInMillis: 29000
+  /result:
+    get:
+      parameters:
+        - name: submission_content
+          in: query
+          description: Job submission to the grid
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: ssful operationsuccessful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: '#/components/schemas/GetResponse'
+        542:
+          description: Invalid status value
+          content: { }
+      security:
+        - api_key: []
+      x-amazon-apigateway-integration:
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${region}:${account_id}:function:${get_result_lambda_name}/invocations"
+        passthroughBehavior: "when_no_match"
+        timeoutInMillis: 29000
+components:
+  securitySchemes:
+    api_key:
+      type: "apiKey"
+      name: "x-api-key"
+      in: "header"
+  schemas:
+    GetMetadataResponse:
+      type: object
+      properties:
+        tasks_in_response:
+          type: integer
+          format: int64
+    GetResponse:
+      type: object
+      properties:
+        finished:
+          type: array
+          items:
+            type: string
+        finished_output:
+          type: array
+          items:
+            type: string
+        cancelled:
+          type: array
+          items:
+            type: string
+        cancelled_output:
+          type: array
+          items:
+            type: string
+        failed:
+          type: array
+          items:
+            type: string
+        failed_output:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/GetMetadataResponse'
+    PostSubmitResponse:
+      type: object
+      properties:
+        task_ids:
+          type: array
+          items:
+            type: string
+        session_id:
+          type: string

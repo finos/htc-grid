@@ -19,3 +19,4 @@ site/
 __init__.py/
 lambda.zip
 generated
+.build

@@ -6,16 +6,21 @@ import json
 import time
 import os
 import uuid
-import sys
 import boto3
 import botocore
 import requests
 import logging
 
 from api.in_out_manager import in_out_manager
-from utils.dynamodb_common import generate_random_logical_partition_name, TASK_STATUS_FINISHED
+from utils.state_table_common import TASK_STATE_FINISHED
 from warrant_lite import WarrantLite
 from apscheduler.schedulers.background import BackgroundScheduler
+if os.environ.get('INTRA_VPC'):
+    from privateapi import Configuration, ApiClient, ApiException
+    from privateapi.api import default_api
+else:
+    from publicapi import Configuration, ApiClient, ApiException
+    from publicapi.api import default_api
 
 URLOPEN_LAMBDA_INVOKE_TIMEOUT_SEC = 120  # TODO Catch timout exception
 TASK_TIMEOUT_SEC = 3600
@@ -32,27 +37,14 @@ logging.info("Init AWS Grid Connector")
 
 
 def get_safe_session_id():
-    """this function returns a safe uuid.
-
-    Args:
+    """
+    This function returns a safe uuid.
 
     Returns:
       str: a safe session id
 
     """
-    session_id = uuid.uuid1()
-    # if (session_id.is_safe != uuid.SafeUUID.safe):
-    #     print("Need to create a second UUID")
-    #     session_id = uuid.uuid1()
-    # if (session_id.is_safe != uuid.SafeUUID.safe):
-    #     raise Exception('Cannot produce a safe unique ID')
-
-    key = "{}-{}".format(
-        session_id,
-        generate_random_logical_partition_name()
-    )
-
-    return key
+    return str(uuid.uuid1())
 
 
 class AWSConnector:
@@ -78,6 +70,9 @@ class AWSConnector:
         self.__intra_vpc = False
         self.__authorization_headers = {}
         self.__scheduler = None
+        self.__configuration = None
+        self.__api_client = None
+        self.__default_api_client = None
 
     def refresh(self):
         """This method refreshes an expired JWT. The new JWT  overrides the existing one"""
@@ -140,11 +135,12 @@ class AWSConnector:
         self.__authorization_headers = {}
         if self.__intra_vpc:
             self.__api_gateway_endpoint = self.__private_api_gateway_endpoint
-            self.__authorization_headers = {
-                "x-api-key": self.__api_key
-            }
+            self.__configuration = Configuration(host=self.__api_gateway_endpoint)
+            self.__configuration.api_key['api_key'] = self.__api_key
         else:
             self.__api_gateway_endpoint = self.__public_api_gateway_endpoint
+            self.__configuration = Configuration(host=self.__api_gateway_endpoint)
+
         self.__scheduler = BackgroundScheduler()
         logging.info("LAMBDA_ENDPOINT_URL:{}".format(self.__api_gateway_endpoint))
         logging.info("dynamodb_results_pull_interval_sec:{}".format(self.__dynamodb_results_pull_intervall))
@@ -172,9 +168,7 @@ class AWSConnector:
             except Exception as e:
                 logging.error("Cannot authenticate user {}".format(self.__username))
                 raise e
-            self.__authorization_headers = {
-                "authorization": self.__user_token_id
-            }
+            self.__configuration.api_key['htc_cognito_authorizer'] = self.__user_token_id
 
     def generate_user_task_json(self, tasks_list=None):
         """this methods returns from a list of tasks, a tasks object that can be submitted to the grid
@@ -208,7 +202,7 @@ class AWSConnector:
                 self.in_out_manager.put_input_from_bytes(task_id, b64data)
 
                 # We are no longer passing the actual task definition
-                binary_tasks_list.append("passed_via_storage_size_{}_bytes".format(sys.getsizeof(data)))
+                binary_tasks_list.append(task_id)
 
         # creation message with tasks_list
         user_task_json = {
@@ -304,13 +298,13 @@ class AWSConnector:
                 break
             time.sleep(self.__dynamodb_results_pull_intervall)
 
-        for i, completed_task in enumerate(session_results[TASK_STATUS_FINISHED]):
+        for i, completed_task in enumerate(session_results[TASK_STATE_FINISHED]):
             stdout_bytes = self.in_out_manager.get_output_to_bytes(completed_task)
             # print("stdout_bytes: {}".format(stdout_bytes))
 
             output = base64.b64decode(stdout_bytes).decode('utf-8')
 
-            session_results[TASK_STATUS_FINISHED + '_OUTPUT'][i] = output
+            session_results[TASK_STATE_FINISHED + '_OUTPUT'][i] = output
 
         logging.info("Finish get_results")
         return session_results
@@ -328,7 +322,6 @@ class AWSConnector:
         """
         logging.info("Start submit")
         # logging.warning("jobs = {}".format(jobs))
-        url_base = self.__api_gateway_endpoint
         raw_response: requests.Response
         if self.__task_input_passed_via_external_storage == 1:
             submission_payload_bytes = base64.urlsafe_b64encode(json.dumps(jobs).encode('utf-8'))
@@ -336,22 +329,17 @@ class AWSConnector:
             if session_id is None or session_id == 'None':
                 raise Exception('Invalid configuration : session id must be set')
             self.in_out_manager.put_payload_from_bytes(session_id, submission_payload_bytes)
-            query = {
-                "submission_content": str(session_id)
-            }
-            raw_response = requests.post(url_base + '/submit', params=query, headers=self.__authorization_headers)
+        with ApiClient(self.__configuration) as api_client:
+            # Create an instance of the API class
+            api_instance = default_api.DefaultApi(api_client)
+            try:
+                raw_response = api_instance.submit_post(str(session_id))
+                logging.warning(raw_response)
+            except ApiException as e:
+                logging.error("Exception when calling DefaultApi->ca_post: %s\n" % e)
 
-        else:
-            submission_payload_string = base64.urlsafe_b64encode(json.dumps(jobs).encode('utf-8')).decode('utf-8')
-            raw_response = requests.post(url_base + '/submit', data=submission_payload_string,
-                                         headers=self.__authorization_headers)
-        # print(request)
-        if raw_response.status_code != requests.codes.ok:
-            logging.error("request {} not processed correctly {}".format(url_base, raw_response.status_code))
-        # return the body content of the Lambda call
-        raw_response.raise_for_status()
         logging.info("Finish submit")
-        return raw_response.json()
+        return raw_response
 
     # TODO make it private
     def invoke_get_results_lambda(self, session_id):
@@ -376,21 +364,18 @@ class AWSConnector:
 
         """
         logging.info("Init get_results")
-        url_base = self.__api_gateway_endpoint
         submission_payload_string = base64.urlsafe_b64encode(json.dumps(session_id).encode('utf-8')).decode('utf-8')
-        query = {
-            "submission_content": str(submission_payload_string)
-        }
-        raw_response = requests.get(url_base + '/result', headers=self.__authorization_headers, params=query)
+        with ApiClient(self.__configuration) as api_client:
+            # Create an instance of the API class
+            api_instance = default_api.DefaultApi(api_client)
+            try:
+                raw_response = api_instance.result_get(str(submission_payload_string))
+                logging.warning(raw_response)
+            except ApiException as e:
+                logging.error("Exception when calling DefaultApi->result_get: %s\n" % e)
+                raise e
 
-        if raw_response.status_code != requests.codes.ok:
-            logging.error("request {} not processed correctly {}".format(url_base, raw_response.status_code))
-
-        raw_response.raise_for_status()
-
-        logging.info("Finish invoke_get_results_lambda")
-        # return the body content of the Lambda call
-        return raw_response.json()
+        return raw_response
 
     def cancel_sessions(self, session_ids):
         """
@@ -422,21 +407,19 @@ class AWSConnector:
         """
 
         logging.info("Init cancel session")
-        url_base = self.__api_gateway_endpoint
 
         cancellation_request = {"session_ids_to_cancel": session_ids}
         submission_payload_string = base64.urlsafe_b64encode(json.dumps(cancellation_request).encode('utf-8')).decode(
             'utf-8')
-        query = {
-            "submission_content": str(submission_payload_string)
-        }
-        raw_response = requests.post(url_base + '/cancel', headers=self.__authorization_headers, params=query)
-
-        if raw_response.status_code != requests.codes.ok:
-            logging.error("request {} not processed correctly {}".format(url_base, raw_response.status_code))
-
-        raw_response.raise_for_status()
+        with ApiClient(self.__configuration) as api_client:
+            # Create an instance of the API class
+            api_instance = default_api.DefaultApi(api_client)
+            try:
+                raw_response = api_instance.cancel_post(str(submission_payload_string))
+                logging.warning(raw_response)
+            except ApiException as e:
+                logging.error("Exception when calling DefaultApi->cancel_post: %s\n" % e)
+                raise e
 
         logging.info("Finish cancel session")
-        # return the body content of the Lambda call
-        return raw_response.json()
+        return raw_response

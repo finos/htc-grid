@@ -33,12 +33,12 @@ variable "lambda_runtime" {
 }
 
 variable "kubernetes_version" {
-  default = "1.19"
+  default = "1.21"
   description = "Name of EKS cluster in AWS"
 }
 
 variable "k8s_ca_version" {
-  default  = "v1.19.1"
+  default  = "v1.21.0"
   description = "Cluster autoscaler version"
 }
 
@@ -67,8 +67,8 @@ variable "fluentbit_version" {
   description = "Fluentbit version"
 }
 
-variable "ddb_status_table" {
-  default  = "htc_tasks_status_table"
+variable "ddb_state_table" {
+  default  = "htc_tasks_state_table"
   description = "htc DinamoDB table name"
 }
 
@@ -90,6 +90,16 @@ variable "s3_bucket" {
 variable "grid_storage_service" {
   default = "S3 htc-stdout-bucket-1"
   description = "Configuration string for internal results storage system"
+}
+
+variable "state_table_service" {
+  description = "State Table service type"
+  default = "DynamoDB"
+}
+
+variable "state_table_config" {
+  description = "Status Table configuration"
+  default = "{'retries':{'max_attempts':10, 'mode':'adaptive'}}"
 }
 
 variable "lambda_name_ttl_checker" {
@@ -372,10 +382,10 @@ variable "prometheus_configuration" {
 
   })
   default = {
-    node_exporter_tag = "v1.0.1"
-    server_tag = "v2.24.0"
-    alertmanager_tag = "v0.21.0"
-    kube_state_metrics_tag = "v1.9.8"
+    node_exporter_tag = "v1.1.2"
+    server_tag = "v2.26.0"
+    alertmanager_tag = "v0.22.0"
+    kube_state_metrics_tag = "v2.0.0"
     pushgateway_tag = "v1.3.1"
     configmap_reload_tag = "v0.5.0"
   }

@@ -11,11 +11,18 @@ resource "random_string" "random_resources" {
     # number = false
 }
 
+resource "random_password" "password" {
+  length           = 16
+  special          = true
+  override_special = "_%@"
+}
+
 locals {
     aws_htc_ecr = var.aws_htc_ecr != "" ? var.aws_htc_ecr : "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com"
     project_name = var.project_name != "" ? var.project_name : random_string.random_resources.result
+    grafana_admin_password = var.grafana_admin_password != "" ? var.grafana_admin_password : random_password.password.result
     cluster_name = "${var.cluster_name}-${local.project_name}"
-    ddb_status_table = "${var.ddb_status_table}-${local.project_name}"
+    ddb_state_table = "${var.ddb_state_table}-${local.project_name}"
     sqs_queue = "${var.sqs_queue}-${local.project_name}"
     sqs_dlq = "${var.sqs_dlq}-${local.project_name}"
     lambda_name_get_results = "${var.lambda_name_get_results}-${local.project_name}"
@@ -50,7 +57,7 @@ locals {
             minMemory = "4096"
             storage = "S3"
             location = "s3://mock_location"
-            function_name = "mock_computation"
+            function_name = "function"
             layer_name = "mock_computation_layer"
             lambda_handler_file_name = ""
             lambda_handler_function_name = ""
@@ -81,8 +88,8 @@ module "vpc" {
     enable_private_subnet = var.enable_private_subnet
 
 }
-module "resources" {
-    source = "./resources"
+module "compute_plane" {
+    source = "./compute_plane"
 
     vpc_id = module.vpc.vpc_id
     vpc_private_subnet_ids = module.vpc.private_subnet_ids
@@ -94,13 +101,15 @@ module "resources" {
     k8s_ca_version = var.k8s_ca_version
     aws_htc_ecr = local.aws_htc_ecr
     cwa_version = var.cwa_version
+    state_table_service = var.state_table_service
+    state_table_config = var.state_table_config
     aws_node_termination_handler_version = var.aws_node_termination_handler
     cw_agent_version = var.cw_agent_version
     fluentbit_version = var.fluentbit_version
     suffix = local.project_name
     region = var.region
     lambda_runtime = var.lambda_runtime
-    ddb_status_table = local.ddb_status_table
+    ddb_state_table = local.ddb_state_table
     sqs_queue = local.sqs_queue
     namespace_metrics = var.namespace_metrics
     dimension_name_metrics = var.dimension_name_metrics
@@ -129,7 +138,7 @@ module "resources" {
         grafana_tag = var.grafana_configuration.grafana_tag
         initChownData_tag = var.grafana_configuration.initChownData_tag
         sidecar_tag = var.grafana_configuration.sidecar_tag
-        admin_password = var.grafana_admin_password
+        admin_password = local.grafana_admin_password
 
     }
     prometheus_configuration = {
@@ -142,8 +151,8 @@ module "resources" {
     }
 }
 
-module "scheduler" {
-    source = "./scheduler"
+module "control_plane" {
+    source = "./control_plane"
 
     vpc_id = module.vpc.vpc_id
     vpc_private_subnet_ids = module.vpc.private_subnet_ids
@@ -154,11 +163,13 @@ module "scheduler" {
     region = var.region
     lambda_runtime = var.lambda_runtime
     aws_htc_ecr = local.aws_htc_ecr
-    ddb_status_table = local.ddb_status_table
+    ddb_state_table = local.ddb_state_table
     sqs_queue = local.sqs_queue
     sqs_dlq = local.sqs_dlq
     s3_bucket = local.s3_bucket
     grid_storage_service = var.grid_storage_service
+    state_table_service = var.state_table_service
+    state_table_config = var.state_table_config
     task_input_passed_via_external_storage = var.task_input_passed_via_external_storage
     lambda_name_ttl_checker = local.lambda_name_ttl_checker
     lambda_name_submit_tasks = local.lambda_name_submit_tasks
@@ -180,9 +191,9 @@ module "scheduler" {
     dynamodb_gsi_parent_table_write_capacity = var.dynamodb_default_write_capacity
     dynamodb_gsi_parent_table_read_capacity = var.dynamodb_default_read_capacity
     agent_use_congestion_control = var.agent_use_congestion_control
-    nlb_influxdb = module.resources.nlb_influxdb
+    nlb_influxdb = module.compute_plane.nlb_influxdb
     cluster_name = local.cluster_name
-    cognito_userpool_arn = module.resources.cognito_userpool_arn
+    cognito_userpool_arn = module.compute_plane.cognito_userpool_arn
     api_gateway_version = var.api_gateway_version
 
 
@@ -221,9 +232,10 @@ module "htc_agent" {
     lambda_configuration_location = lookup(lookup(var.agent_configuration,"lambda",local.default_agent_configuration.lambda),"location",local.default_agent_configuration.lambda.location)
     lambda_handler_file_name = lookup(lookup(var.agent_configuration,"lambda",local.default_agent_configuration.lambda),"lambda_handler_file_name",local.default_agent_configuration.lambda.lambda_handler_file_name)
     lambda_handler_function_name = lookup(lookup(var.agent_configuration,"lambda",local.default_agent_configuration.lambda),"lambda_handler_function_name",local.default_agent_configuration.lambda.lambda_handler_function_name)
+    lambda_configuration_function_name = lookup(lookup(var.agent_configuration,"lambda",local.default_agent_configuration.lambda),"function_name",local.default_agent_configuration.lambda.function_name)
     depends_on = [
-        module.resources,
-        module.scheduler,
+        module.compute_plane,
+        module.control_plane,
         module.vpc,
         kubernetes_config_map.htcagentconfig
     ]

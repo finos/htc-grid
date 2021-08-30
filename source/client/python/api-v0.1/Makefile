@@ -3,6 +3,7 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 DIST_DIR=../../../../dist
+PYTHON_DIST_DIR?=$(DIST_DIR)/python
 SRC     := ./api
 SRCS    := $(wildcard $(SRC)/*.py)
 PACKAGE_NAME=api
@@ -16,10 +17,10 @@ init:
 	pip install --force-reinstall -r requirements.txt
 
 $(PACKAGE_TARGET): setup.py README.md $(SRCS)
-	python setup.py bdist_wheel -d $(DIST_DIR)
+	python setup.py bdist_wheel -d $(PYTHON_DIST_DIR)
 
 flake8: $(SRCS) init
-	flake8  --ignore  E501 --statistic --exclude build
+	flake8  --ignore  E501,W503,E131 --statistic --exclude build
 
 pytest: $(SRCS) init
 	pytest --cov=api ./tests/

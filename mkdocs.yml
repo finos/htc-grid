@@ -1,6 +1,6 @@
 
 site_name: Cloud Native HTC Grid
-
+docs_dir: docs/project
 plugins:
   - search # necessary for search to work
   - awesome-pages

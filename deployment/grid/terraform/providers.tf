@@ -13,15 +13,15 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.37"
+      version = "~> 3.55.0"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "~> 2.1.0"
+      version = "~> 2.4.1"
     }
     helm = {
       source  = "hashicorp/helm"
-      version = "~> 2.1.0"
+      version = "~> 2.2.0"
     }
     tls = {
       source  = "hashicorp/tls"
@@ -29,7 +29,7 @@ terraform {
     }
     archive = {
       source = "hashicorp/archive"
-      version = "2.1.0"
+      version = "2.2.0"
     }
     template = {
       source = "hashicorp/template"
@@ -54,18 +54,18 @@ provider "archive" {
 }
 
 provider "kubernetes" {
-  host                   = module.resources.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.resources.certificate_authority.0.data)
-  token                  = module.resources.token
+  host                   = module.compute_plane.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.compute_plane.certificate_authority.0.data)
+  token                  = module.compute_plane.token
 }
 
 # package manager for kubernetes
 provider "helm" {
   helm_driver = "configmap"
   kubernetes {
-    host                   = module.resources.cluster_endpoint
-    cluster_ca_certificate = base64decode(module.resources.certificate_authority.0.data)
-    token                  = module.resources.token
+    host                   = module.compute_plane.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.compute_plane.certificate_authority.0.data)
+    token                  = module.compute_plane.token
   }
 }
 

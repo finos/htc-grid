@@ -1,16 +1,10 @@
-FROM lambci/lambda:build-python3.8
-
+FROM public.ecr.aws/lambda/python:3.8
+RUN yum install -d1 -y  zip
 RUN mkdir -p /app
 WORKDIR /app
-
 COPY mock_compute_engine.py .
-
-
-
 RUN mkdir -p /app/build
-
-
 RUN zip -9yr lambda.zip .
-CMD cp lambda.zip /app/build
+ENTRYPOINT cp lambda.zip /app/build
 
 

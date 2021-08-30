@@ -1,6 +1,6 @@
 # Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: LicenseRef-.amazon.com.-AmznSL-1.0
-# Licensed under the Amazon Software License  http://aws.amazon.com/asl/
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -22,6 +22,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+      shareProcessNamespace: true
       serviceAccountName: {{ include "agent-htc-lambda.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
@@ -57,13 +58,12 @@ spec:
         - name: lambda
           image: "{{ .Values.imageLambdaServer.repository }}:{{ .Values.imageLambdaServer.runtime  }}"
           imagePullPolicy: {{ .Values.imageLambdaServer.pullPolicy }}
+          args: [ {{ .Values.lambda.handler }} ]
           ports:
           - containerPort: {{.Values.lambda.port}}
           resources:
             {{- toYaml .Values.resourcesLambdaServer | nindent 12 }}
           env:
-          - name: DOCKER_LAMBDA_STAY_OPEN
-            value: "1"
           - name: AWS_LAMBDA_FUNCTION_TIMEOUT
             value: {{.Values.lambda.timeout | quote }}
           - name: AWS_LAMBDA_GRACEFUL_TERMINATION_DELAY
@@ -72,12 +72,6 @@ spec:
             value: "1"
           - name: AWS_LAMBDA_FUNCTION_HANDLER
             value: {{ .Values.lambda.handler }}
-          livenessProbe:
-            httpGet:
-              path: /2018-06-01/ping
-              port: {{.Values.lambda.port}}
-            initialDelaySeconds: 3
-            periodSeconds: 3
           volumeMounts:
           - name: {{ .Chart.Name }}-agent-config
             mountPath: /etc/agent

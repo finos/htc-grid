@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 locals {
-  handler = var.lambda_handler_file_name != "" ? "${var.lambda_handler_file_name}.${var.lambda_handler_function_name}" : ""
+  handler = var.lambda_handler_file_name == "" ? "${var.lambda_handler_file_name}.${var.lambda_handler_function_name}" : var.lambda_handler_file_name
 }
 
 resource "helm_release" "htc_agent" {
