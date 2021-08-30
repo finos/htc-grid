@@ -1,5 +1,5 @@
-
-site_name: Cloud Native HTC Grid
+site_name: Cloud Native HTC-Grid
+site_url: https://docs.d12sqmpa4c7emq.amplifyapp.com
 docs_dir: docs/project
 plugins:
   - search # necessary for search to work
@@ -7,7 +7,7 @@ plugins:
 theme:
   name: 'material'
   palette:
-    primary: 'blue grey' # Used as the main color for the site top bar,
+    primary: 'green' # Used as the main color for the site top bar,
     # links, etc...
     accent: 'deep orange' # Used as the highlight color for the site
   features:
@@ -41,3 +41,5 @@ markdown_extensions:
   - toc:
       permalink: true
   - attr_list
+
+

@@ -1,5 +1,4 @@
 nav:
-  - introduction.md
   - prerequisite.md
   - configurations.md
   - happy-path.md

@@ -3,9 +3,9 @@
 
 ## Installing the HTC-Grid software
 
-Unpack the provided HTC-Grid software ZIP (i.e: `htc-grid-0.3.0.tar.gz`)  or clone the repository into a local directory of your choice; this directory referred to in this documentation as `<project_root>`. Unless stated otherwise, all paths referenced in this documentation are relative to `<project_root>`.
+Unpack the provided HTC-Grid software ZIP (i.e: `htc-grid-0.3.0.tar.gz`)  or clone the repository into a local directory of your choice; this directory referred in this documentation as `<project_root>`. Unless stated otherwise, all paths referenced in this documentation are relative to `<project_root>`.
 
-For first time users or windows users, we do recommend the use of Cloud9 as the platform to deploy HTC-Grid. The installation process uses Terraform and also make to build up artifacts and environment. This project provides a CloudFormation Cloud9 Stack that installs all the pre-requisites listed above to deploy and develop HTC-Grid. Just follow the standard process in your account and deploy the **[Cloud9 Cloudformation Stack](/deployment/dev_environment_cloud9/cfn/cloud9-htc-grid.yaml)**. Once the CloudFormation Stack has been created, open either the **Output** section in CloudFormation or go to **Cloud9** in your AWS console and open the newly created Cloud9 environment.
+For first time users or Windows users, we do recommend the use of Cloud9 as the platform to deploy HTC-Grid. The installation process uses Terraform and also make to build up artifacts and environment. This project provides a CloudFormation Cloud9 Stack that installs all the pre-requisites listed above to deploy and develop HTC-Grid. Just follow the standard process in your account and deploy the **[Cloud9 Cloudformation Stack](/deployment/dev_environment_cloud9/cfn/cloud9-htc-grid.yaml)**. Once the CloudFormation Stack has been created, open either the **Output** section in CloudFormation or go to **Cloud9** in your AWS console and open the newly created Cloud9 environment.
 
 
 
@@ -54,17 +54,14 @@ The HTC-Grid project has external software dependencies that are deployed as con
 
 
 1. As you'll be uploading images to ECR, to avoid timeouts, refresh your ECR authentication token:
-
     ```
     make ecr-login
     ```
 2. As you'll be downloading images to the ECR public gallery, to avoid timeouts, refresh your ECR authentication token for ECR public registries:
-
     ```
     make public-ecr-login
     ```
 3. The following command will go to the `~/environment/aws-htc-grid/deployment/image_repository/terraform` and initialize the terraform project using the bucket `$S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME` as the bucket that will hold the terraform state:
-
     ```
     make init-images  TAG=$TAG REGION=$HTCGRID_REGION
     ```
@@ -183,7 +180,7 @@ We will use a kubernetes Jobs to submit  one execution of 1 second of this C++ p
    kubectl delete -f ./generated/single-task-test.yaml
    ```
 ## Create a cognito user (CLI)
-All the services behind a public URL are protected wih an authentication mecanism based on Cognito. So in order to acccess the grafana dashboard you will need to create a cognito user.
+All the services behind a public URL are protected wih an authentication mechanism based on Cognito. So in order to access the grafana dashboard you will need to create a cognito user.
 Please from the root of the project :
 
 1. Choose a cognito username:
@@ -224,7 +221,7 @@ The HTC-Grid project captures metrics into influxdb and exposes those metrics th
 2. Then take the ADDRESS part and point at that on a browser. **Note**:It will generate a warning as we are using self-signed certificates. Just accept the self-signed certificate and you will be redirected to a cognito sign in page. 
 4. Please enter the username and password created in the previous section.
 5. Once you are sign up  with cognito you will be redirected to the Grafana sign in page. 
-6. Pleas use the user `admin` and the password you selected at creation time to login into Grafana.
+6. Please use the user `admin` and the password you selected at creation time to log in into Grafana.
 
 ## Un-Installing and destroying HTC grid
 The destruction time is about 15 min.

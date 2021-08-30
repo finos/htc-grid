@@ -1,4 +1,4 @@
-# Introduction
+# API documentation
 This section outlines how to develop and deploy a custom application on HTC-Grid.
 At the top level, there are 3 main components that need to be developed:
 
