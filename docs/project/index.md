@@ -17,7 +17,7 @@ HTC-Grid might not be the best choice if :
 * The tasks are tightly coupled, or use MPI. Consider using either [AWS Parallel Cluster](https://aws.amazon.com/hpc/parallelcluster/) or [AWS Batch Multi-Node workloads](https://docs.aws.amazon.com/batch/latest/userguide/multi-node-parallel-jobs.html) instead 
 * The tasks uses third party licensed software.
 
-### How do I use HTC-Grid
+### How do I use HTC-Grid ?
 If you want to use the HTC-Grid, please visit the following pages:
 
 * [Getting Started](./getting_started/prerequisite.md)
