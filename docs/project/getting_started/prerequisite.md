@@ -10,7 +10,7 @@ The following resources should be installed upon you local machine (Linux and ma
 
 * [virtualenv](https://pypi.org/project/virtualenv/)
 
-* [aws CLI version 2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
+* [AWS CLI version 2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 
 * [terraform v0.13.4](https://releases.hashicorp.com/terraform/0.13.4/) or [terraform v0.14.9](https://releases.hashicorp.com/terraform/0.14.9/)
 

@@ -46,7 +46,7 @@ fi
 ```
 ### Resolution
 
-Rerun the terraform command, Docker hup has throttling limits that may cause spurious errors like this
+Rerun the terraform command, Docker DockerHub has throttling limits that may cause spurious errors like this
 
 
 ## Error on terraform apply:

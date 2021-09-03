@@ -48,17 +48,17 @@ gridConnector = AWSConnector(client_config_data=
 **Parameters** client_config_data (dict) [REQUIRED]
 
   * `grid_storage_service` - Determines which storage will be used for Data Plane 'REDIS'|'S3'
-  * `s3_bucket` - The name of the S3 bucket that is used as a backend for Data Plane
-  * `redis_url` - The URL of the Redis deployment that is used as a backend for the Data Plane
+  * `s3_bucket` - The name of the S3 bucket that is used as a back-end for Data Plane
+  * `redis_url` - The URL of the Redis deployment that is used as a back-end for the Data Plane
   * `public_api_gateway_url` -
   * `private_api_gateway_url` -
   * `api_gateway_key` -
   * `user_pool_id` -
   * `cognito_userpool_client_id` -
-  * `username` - (optional) username for cognito userpool, if the field is not present, `username` property is read from environment variable `USERNAME`
-  * `password` - (optional) password for cognito userpool, if the field is not present, `password` property is read from environment variable `PASSWORD`
+  * `username` - (optional) username for Cognito userpool, if the field is not present, `username` property is read from environment variable `USERNAME`
+  * `password` - (optional) password for Cognito userpool, if the field is not present, `password` property is read from environment variable `PASSWORD`
   * `dynamodb_results_pull_interval_sec` - The frequency that the client uses to fetch results from DynamoDB.
-  * `REGION` - Region where HTCGrid is deployed
+  * `REGION` - Region where HTC-Grid is deployed
 
 
 **Return type**
@@ -67,7 +67,7 @@ AWSConnector Object
 ### Method - **`authenticate`**
 
 There are currently three ways to authenticate a client.
-1. Passing `username` and `password` via `client_config_data` when initialising AWSConnector (not recommended).
+1. Passing `username` and `password` via `client_config_data` when initializing AWSConnector (not recommended).
 2. Setting `username` and `password` in the environmental variables
 3. If client application and HTC-Grid are located in the same VPN then there is no need for explicit authentication. However, an additional environmental variable needs to be set `INTRA_VPC=1` allowing AWSConnector to skip username and password.
 
@@ -104,7 +104,7 @@ gridConnector.send(tasks_list=[
 
 **Parameters** tasks_list (list) [REQUIRED]
 
-A list of serialisable dictionaries. Each dictionary will be passed to the execution lambda function as an event argument. Each dictionary will be encoded to base 64 before being stored in the Data Plane and then decoded before being passed to the execution lambda function. Output produced by the lambda function will be passed the same way in the reverse direction. Encoding and decoding is done by the gridConnector, client only needs to provide serialisable dictionary as input and output of the lambda functions.
+A list of serializable dictionaries. Each dictionary will be passed to the execution lambda function as an event argument. Each dictionary will be encoded to base 64 before being stored in the Data Plane and then decoded before being passed to the execution lambda function. Output produced by the lambda function will be passed the same way in the reverse direction. Encoding and decoding is done by the grid connector, client only needs to provide serializable dictionary as input and output of the lambda functions.
 
 ```python
 input:
@@ -193,12 +193,12 @@ Dict
 ```
 * `finished` (optional) - list of finished task IDs
 * `finished_OUTPUT` (optional) - returns a string output produced by the lambda function
-* `cancelled` (optional) list of cancelled task IDs
-* `cancelled_OUTPUT` (optional) - returns a hardcoded string `read_from_REDIS` indicating that actual output should be read from Data Plane, it is responsibility of the client to do that.
+* `cancelled` (optional) list of canceled task IDs
+* `cancelled_OUTPUT` (optional) - returns a hard-coded string `read_from_REDIS` indicating that actual output should be read from Data Plane, it is responsibility of the client to do that.
 * `failed` (optional) list of failed task IDs
-* `failed_OUTPUT` (optional) - returns a hardcoded string `read_from_REDIS` indicating that actual output should be read from Data Plane, it is responsibility of the client to do that.
+* `failed_OUTPUT` (optional) - returns a hard-coded string `read_from_REDIS` indicating that actual output should be read from Data Plane, it is responsibility of the client to do that.
 * `metadata`
-   * `tasks_in_response` - total number of task in the terminal state (finished + failed + cancelled) returned to the response. For example, if none of the tasks in the session have reached their terminal states an expected return is as follows:
+   * `tasks_in_response` - total number of task in the terminal state (finished + failed + canceled) returned to the response. For example, if none of the tasks in the session have reached their terminal states an expected return is as follows:
    ```python
    {
       'metadata': {
@@ -222,7 +222,7 @@ response = gridConnector.cancel_sessions(
 
 **Parameters**
 
-* Function takes list of session IDs to be cancelled
+* Function takes list of session IDs to be canceled
 
 **Return type**
 
@@ -247,8 +247,8 @@ Function returns dictionary of processed session IDs.
 }
 ```
 
-* `string` - keys of the response dictionary are session IDs that were passed in for cancellation. Sub-dictionaries contain information about how many tasks were moved into cancelled state.
-   * `cancellet_retying` - number of tasks moved from retrying state into cancelled state
-   * `cancellet_pending` - number of tasks moved from pending state into cancelled state
-   * `cancellet_processing` - number of tasks moved from processing state into cancelled state. **Note**, in current version, while state of tasks has been moved into cancelled processing will not be preemptively terminated (processing will continue until task is completed or failed). Failed tasks will not be retried.
+* `string` - keys of the response dictionary are session IDs that were passed in for cancellation. Sub-dictionaries contain information about how many tasks were moved into canceled state.
+   * `cancellet_retying` - number of tasks moved from retrying state into canceled state
+   * `cancellet_pending` - number of tasks moved from pending state into canceled state
+   * `cancellet_processing` - number of tasks moved from processing state into canceled state. **Note**, in current version, while state of tasks has been moved into canceled processing will not be preemptively terminated (processing will continue until task is completed or failed). Failed tasks will not be retried.
    * `tatal_cancelled_tasks` - total number of tasks that has been affected by this invocation.

@@ -5,7 +5,7 @@
 
 Unpack the provided HTC-Grid software ZIP (i.e: `htc-grid-0.3.0.tar.gz`)  or clone the repository into a local directory of your choice; this directory referred in this documentation as `<project_root>`. Unless stated otherwise, all paths referenced in this documentation are relative to `<project_root>`.
 
-For first time users or Windows users, we do recommend the use of Cloud9 as the platform to deploy HTC-Grid. The installation process uses Terraform and also make to build up artifacts and environment. This project provides a CloudFormation Cloud9 Stack that installs all the pre-requisites listed above to deploy and develop HTC-Grid. Just follow the standard process in your account and deploy the **[Cloud9 Cloudformation Stack](/deployment/dev_environment_cloud9/cfn/cloud9-htc-grid.yaml)**. Once the CloudFormation Stack has been created, open either the **Output** section in CloudFormation or go to **Cloud9** in your AWS console and open the newly created Cloud9 environment.
+For first time users or Windows users, we do recommend the use of Cloud9 as the platform to deploy HTC-Grid. The installation process uses Terraform and also make to build up artifacts and environment. This project provides a CloudFormation Cloud9 Stack that installs all the prerequisites-requisites listed above to deploy and develop HTC-Grid. Just follow the standard process in your account and deploy the **[Cloud9 CloudFormation Stack](/deployment/dev_environment_cloud9/cfn/cloud9-htc-grid.yaml)**. Once the CloudFormation Stack has been created, open either the **Output** section in CloudFormation or go to **Cloud9** in your AWS console and open the newly created Cloud9 environment.
 
 
 
@@ -32,7 +32,7 @@ For first time users or Windows users, we do recommend the use of Cloud9 as the 
 ## Create the infrastructure for storing the state of the HTC Grid
 
 The following step creates 3 S3 buckets that will be needed during the installation:
-* 2 buckets will store the state of the different terraform deployments
+* 2 buckets will store the state of the different Terraform deployments
 * 1 bucket will store the HTC artifacts (the lambda to be executed by the agent)
 
 ```
@@ -50,7 +50,7 @@ That will list the 3 S3 Buckets that we just created.
 
 The HTC-Grid project has external software dependencies that are deployed as container images. Instead of downloading each time from the public DockerHub repository, this step will pull those dependencies and upload into the your [Amazon Elastic Container Registry (ECR)](https://aws.amazon.com/ecr/).
 
-**Important Note** HTC-Grid uses a few open source project with container images stored at [Dockerhub](https://hub.docker.com/). Dockerhub has a [download rate limit policy](https://docs.docker.com/docker-hub/download-rate-limit/). This may impact you when running this step as an anonymous user as you can get errors when running the terraform command below. To overcome those errors, you can re-run the terraform command and wait until the throttling limit is lifted, or optionally you can create an account in [hub.docker.com](https://hub.docker.com/) and then use the credentials of the account using `docker login` locally to avoid anonymous throttling limitations.
+**Important Note** HTC-Grid uses a few open source project with container images stored at [DockerHub](https://hub.docker.com/). DockerHub has a [download rate limit policy](https://docs.docker.com/docker-hub/download-rate-limit/). This may impact you when running this step as an anonymous user as you can get errors when running the Terraform command below. To overcome those errors, you can re-run the Terraform command and wait until the throttling limit is lifted, or optionally you can create an account in [hub.docker.com](https://hub.docker.com/) and then use the credentials of the account using `docker login` locally to avoid anonymous throttling limitations.
 
 
 1. As you'll be uploading images to ECR, to avoid timeouts, refresh your ECR authentication token:
@@ -61,7 +61,7 @@ The HTC-Grid project has external software dependencies that are deployed as con
     ```
     make public-ecr-login
     ```
-3. The following command will go to the `~/environment/aws-htc-grid/deployment/image_repository/terraform` and initialize the terraform project using the bucket `$S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME` as the bucket that will hold the terraform state:
+3. The following command will go to the `~/environment/aws-htc-grid/deployment/image_repository/terraform` and initialize the Terraform project using the bucket `$S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME` as the bucket that will hold the Terraform state:
     ```
     make init-images  TAG=$TAG REGION=$HTCGRID_REGION
     ```
@@ -100,7 +100,7 @@ HTC artifacts include: python packages, docker images, configuration files for H
 
    A folder name `generated` will be created at  `<project_root>`. This folder should contain the following two files:
     * `grid_config.json` a configuration file for the grid with basic setting
-    * `single-task-test.yaml`  the kubernetes configuration for running a single tasks on the grid.
+    * `single-task-test.yaml`  the Kubernetes configuration for running a single tasks on the grid.
 
 
 
@@ -120,7 +120,7 @@ The deployment time is about 30 min.
    ```bash
    make init-grid-deployment  TAG=$TAG REGION=$HTCGRID_REGION
    ```
-3. All the dependencies have been created and are now ready. We are now ready to deploy the HTC-Grid project. There is one last thing to note. HTC-Grid deploys a grafana version behind [Amazon Cognito](https://aws.amazon.com/cognito/). While you can modify and select which passwords to use in cognito, the grafana internal deployment still requires an admin password. Select a memorable password change the value in the placeholder `<my_grafana_admin_password>` below (make this password follows [cognito default policy](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html)):
+3. All the dependencies have been created and are now ready. We are now ready to deploy the HTC-Grid project. There is one last thing to note. HTC-Grid deploys a Grafana version behind [Amazon Cognito](https://aws.amazon.com/cognito/). While you can modify and select which passwords to use in Cognito, the Grafana internal deployment still requires an admin password. Select a memorable password change the value in the placeholder `<my_grafana_admin_password>` below (make this password follows [Cognito default policy](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html)):
    ```bash
    make apply-custom-runtime  TAG=$TAG REGION=$HTCGRID_REGION GRAFANA_ADMIN_PASSWORD=<my_grafana_admin_password>
    ```
@@ -155,7 +155,7 @@ The deployment time is about 30 min.
        ```
 ## Running the example workload
 In the folder [mock_computation](./examples/workloads/c++/mock_computation), you will find the code of the C++ program mocking computation. This program can sleep for a given duration or emulate CPU/memory consumption based on the input parameters.
-We will use a kubernetes Jobs to submit  one execution of 1 second of this C++ program. The communication between the job and the grid are implemented by a client in folder [./examples/client/python](./examples/client/python).
+We will use a Kubernetes Jobs to submit  one execution of 1 second of this C++ program. The communication between the job and the grid are implemented by a client in folder [./examples/client/python](./examples/client/python).
 
 1. Make sure the connection with the grid is established
    ```bash
@@ -179,15 +179,15 @@ We will use a kubernetes Jobs to submit  one execution of 1 second of this C++ p
    ```bash
    kubectl delete -f ./generated/single-task-test.yaml
    ```
-## Create a cognito user (CLI)
-All the services behind a public URL are protected wih an authentication mechanism based on Cognito. So in order to access the grafana dashboard you will need to create a cognito user.
+## Create a Cognito user (CLI)
+All the services behind a public URL are protected with an authentication mechanism based on Cognito. So in order to access the Grafana dashboard you will need to create a Cognito user.
 Please from the root of the project :
 
-1. Choose a cognito username:
+1. Choose a Cognito username:
    ```bash
    export USERNAME=<my_cognito_user>
    ```
-2. Choose a cognito password (make this password follows [cognito default policy](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html) ) :
+2. Choose a Cognito password (make this password follows [Cognito default policy](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html) ) :
 You can reuse the password chosen  in section [Deploy HTC-Grid](#deploying-htc-grid) or create a new one.
    ```bash
    export PASSWORD=<my_grafana_admin_password>
@@ -207,10 +207,10 @@ The user newly created will be unconfirmed.
    ```
 
 ## Accessing Grafana
-The HTC-Grid project captures metrics into influxdb and exposes those metrics through Grafana. To secure Grafana
+The HTC-Grid project captures metrics into InfluxDB and exposes those metrics through Grafana. To secure Grafana
 
 
-1. To find out the https endpoint where grafana has been deployed type:
+1. To find out the HTTPS endpoint where Grafana has been deployed type:
    ```bash
    kubectl -n grafana get ingress | tail -n 1 | awk '{ print "Grafana URL  -> https://"$4 }'
    ```
@@ -218,12 +218,12 @@ The HTC-Grid project captures metrics into influxdb and exposes those metrics th
    ```bash
    Grafana URL  -> https://k8s-grafana-grafanai-XXXXXXXXXXXX-YYYYYYYYYYY.eu-west-2.elb.amazonaws.com
    ```
-2. Then take the ADDRESS part and point at that on a browser. **Note**:It will generate a warning as we are using self-signed certificates. Just accept the self-signed certificate and you will be redirected to a cognito sign in page. 
+2. Then take the ADDRESS part and point at that on a browser. **Note**:It will generate a warning as we are using self-signed certificates. Just accept the self-signed certificate and you will be redirected to a Cognito sign in page. 
 4. Please enter the username and password created in the previous section.
-5. Once you are sign up  with cognito you will be redirected to the Grafana sign in page. 
+5. Once you are sign up  with Cognito you will be redirected to the Grafana sign in page. 
 6. Please use the user `admin` and the password you selected at creation time to log in into Grafana.
 
-## Un-Installing and destroying HTC grid
+## Uninstalling-Installing and destroying HTC grid
 The destruction time is about 15 min.
 
 1. To remove the grid resources run the following command:

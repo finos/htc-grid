@@ -18,7 +18,7 @@ This document outlines high level architecture and API of HTC-Grid.
 
 This section outlines the high level modular architecture of the cloud native HTC-Grid
 
-HTC-Grid has been designed with strong focus on the following tenets: use of cloud native serverless and fully managed services, performance & scalability, availability, cost optimisation, and operational simplicity.
+HTC-Grid has been designed with strong focus on the following tenets: use of cloud native serverless and fully managed services, performance & scalability, availability, cost optimization, and operational simplicity.
 
 The grid system is composed of 4 functional components:
 1. HTC-Grid’s API provides entry point for Client Applications to interact with the grid,
@@ -26,7 +26,7 @@ The grid system is composed of 4 functional components:
 3. Control Plane (i.e., scheduler) keeps track of the task's execution, grid’s scaling, and error handling
 4. A pool of Computing Resources that perform computational tasks.
 
-Each component has a clearly defined role and operates strictly within that role. Inter module communication is implemented using standardised AWS APIs which facilitates independent development and provide further customisation options.
+Each component has a clearly defined role and operates strictly within that role. Inter module communication is implemented using standardized AWS API which facilitates independent development and provide further customization options.
 
 Internally, each of the 4 functional components (API, Data & Control Planes, and Compute Resources) are built using exclusively cloud native building blocks such as: serverless functions and fully managed services. These blocks require no human maintenance (zero administration), are highly available by design, and can scale horizontally in response to demand.
 
@@ -57,7 +57,7 @@ During a normal usage, client application would either (i) save the returned ses
 
 Control Plane performs the role of a job broker responsible for coordinating and scheduling jobs executions in the grid along with scaling Compute Resources in accordance with demand. Control Plane has built in failure detection and recovery mechanism which allows it to retry and report failed jobs.
 
-All building components of the Control Plane are fully managed AWS services (DynamoDB, Simple Queue Service, API Gateway) or serverless functions (i.e., Lambda) which minimises management and simplifies design.
+All building components of the Control Plane are fully managed AWS services (DynamoDB, Simple Queue Service, API Gateway) or serverless functions (i.e., Lambda) which minimizes management and simplifies design.
 
 ### Failure Detection and Recover
 
@@ -77,11 +77,11 @@ When the task is completed, the Engine updates DynamoDB for the last time and se
 
 The Data plane is responsible for data distribution across the grid system. Specifically it serves two purposes (i) stores tasks input data associated with jobs definitions (client-to-grid) and (ii) stores results of the computation (grid-to-client).
 
-HTC Grid can use S3 or Redis as backend for the data plane depending on the requirements. Alternatively, existing interface can easily be extended to support other storage systems.
+HTC Grid can use S3 or Redis as back-end for the data plane depending on the requirements. Alternatively, existing interface can easily be extended to support other storage systems.
 
 ## Compute Resources
 
-HTC-Grid utilises Amazon Elastic Kubernetes Service (Amazon EKS) as a computational backend. Each engine is a pod containing two containers an Agent and a Lambda. The Lambda container executes lambda locally within the container (there are no calls made to AWS lambda service, the execution is done within the node Lambda container). The agent provides a connectivity layer between the HTC-Grid and the Lambda container.  The Agent pulls new tasks from the task queues in the Control Plane, once a new task is acquired the agent invokes the Lambda container and passes the task definition. The Lambda container contains custom executable that perform the work. It is responsibility of the Lambda container to connect to the Data Plane and retrieve associated task payload. Once the task is complete, the results is uploaded to the Data Plane. The Grid Agent updates the task’s state to “completed” and pulls the next task from the Control Plane.
+HTC-Grid utilizes Amazon Elastic Kubernetes Service (Amazon EKS) as a computational back-end. Each engine is a pod containing two containers an Agent and a Lambda. The Lambda container executes lambda locally within the container (there are no calls made to AWS lambda service, the execution is done within the node Lambda container). The agent provides a connectivity layer between the HTC-Grid and the Lambda container.  The Agent pulls new tasks from the task queues in the Control Plane, once a new task is acquired the agent invokes the Lambda container and passes the task definition. The Lambda container contains custom executable that perform the work. It is responsibility of the Lambda container to connect to the Data Plane and retrieve associated task payload. Once the task is complete, the results is uploaded to the Data Plane. The Grid Agent updates the task’s state to “completed” and pulls the next task from the Control Plane.
 
 ![Test](../images/worker.png)
 

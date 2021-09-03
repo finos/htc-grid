@@ -1,7 +1,7 @@
 # Developing a Worker Function
 
 
-HTC-Grid uses Amazon Elastic Kubernetes Service (Amazon EKS) as a computational backend. Each engine is a pod running two containers: (i) an Agent and a (ii) Worker Function.
+HTC-Grid uses Amazon Elastic Kubernetes Service (Amazon EKS) as a computational back-end. Each engine is a pod running two containers: (i) an Agent and a (ii) Worker Function.
 
 - The **Agent** provides a connectivity layer between the HTC-Grid and the Worker container. Agent's responsibilities include: (i) pulling for new tasks, (ii) interacting with the Data Plane (I/O), (iii) sending heartbeats back to Control Plane, and (iv) indicating completion of a task. Note, Agent does not need to be changed when developing new applications on HTC-Grid.
 - The **Worker container** executes the custom code that performs the computational task. The execution is done locally within the container. The code of the worker function needs to be modified during the development.
