@@ -1,0 +1,21 @@
+name: Publish docs via GitHub Pages
+on:
+  push:
+    branches:
+      - docs
+  # Allow the workflow to be triggered also manually.
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Deploy docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout mainline
+        uses: actions/checkout@v2
+        with:
+          ref: 'docs'
+      - name: Deploy docs
+        uses: mhausenblas/mkdocs-deploy-gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
