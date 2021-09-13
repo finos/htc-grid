@@ -47,7 +47,7 @@ We assume that all previous steps have been successfully completed, there is at 
     pip3 install -r requirements.txt
     ```
 
-6. Sample client and workload generator is located here [`./examples/client/python/client.py`](./examples/client/python/client.py). Read help and browse through the code to be able to submit tasks and sessions, see examples below:
+6. Sample client and workload generator is located here [`./examples/client/python/client.py`](https://github.com/awslabs/aws-htc-grid/blob/main/examples/client/python/client.py). Read help and browse through the code to be able to submit tasks and sessions, see examples below:
 
     To show the example client application help
 
@@ -66,7 +66,7 @@ We assume that all previous steps have been successfully completed, there is at 
     ```bash
     python3 ./client.py  --njobs 2 --job_size 3 --job_batch_size 4
     ```
-    To tarts 5 threads, each submits a single session wth 1 job with a custom arguments to the executable.
+    To tarts 5 threads, each submits a single session with 1 job with a custom arguments to the executable.
 
     ```bash
     python3 ./client.py  --njobs 1 --worker_arguments "5000 1 100" -nthreads 5

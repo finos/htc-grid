@@ -1,10 +1,45 @@
-site_name: MkLorum
-nav:
-  - Home: index.md
-  - About: about.md
-  - Reference: reference.md
-theme:
-  name: material
+site_name: Cloud Native HTC-Grid
+site_url: https://docs.d12sqmpa4c7emq.amplifyapp.com
+docs_dir: docs/project
 plugins:
-  - search
-  - mkdocstrings
+  - search # necessary for search to work
+  - awesome-pages
+theme:
+  name: 'material'
+  palette:
+    primary: 'green' # Used as the main color for the site top bar,
+    # links, etc...
+    accent: 'deep orange' # Used as the highlight color for the site
+  features:
+    - navigation.tabs
+    - navigation.tracking
+    - navigation.sections
+
+
+# Repository
+repo_name: 'awslabs/aws-htc-grid'
+repo_url: 'https://github.com/awslabs/aws-htc-grid'
+
+markdown_extensions:
+  - footnotes
+  - codehilite
+  - admonition
+  - pymdownx.arithmatex
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.magiclink
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - toc:
+      permalink: true
+  - attr_list
+
+copyright: 'Copyright &copy; 2021 Amazon'
