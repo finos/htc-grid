@@ -58,14 +58,14 @@ resource "null_resource" "copy_image" {
       echo "cannot download image ${each.key}"
       exit 1
     fi
-    if ! docker tag ${each.key} ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${each.value}:${split(":",each.key)[1]}
+    if ! docker tag ${each.key} ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${split(":",each.value)[0]}:${length(split(":",each.value)) == 2 ? split(":",each.value)[1] : split(":",each.key)[1]}
     then
-      echo "cannot tag ${each.key} to ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${each.value}:${split(":",each.key)[1]}"
+      echo "cannot tag ${each.key} to ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${split(":",each.value)[0]}:${length(split(":",each.value)) == 2 ? split(":",each.value)[1] : split(":",each.key)[1]}"
       exit 1
     fi
-    if ! docker push ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${each.value}:${split(":",each.key)[1]}
+    if ! docker push ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${split(":",each.value)[0]}:${length(split(":",each.value)) == 2 ? split(":",each.value)[1] : split(":",each.key)[1]}
     then
-      echo "echo cannot push ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${each.value}:${split(":",each.key)[1]}"
+      echo "echo cannot push ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${split(":",each.value)[0]}:${length(split(":",each.value)) == 2 ? split(":",each.value)[1] : split(":",each.key)[1]}"
       exit 1
     fi
   EOT

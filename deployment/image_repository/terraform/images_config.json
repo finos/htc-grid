@@ -17,7 +17,7 @@
         "prom/pushgateway:v1.3.1":"pushgateway",
         "influxdb:1.8.6-alpine":"influxdb",
         "amazon/aws-xray-daemon:latest":"aws-xray-daemon",
-        "public.ecr.aws/sam/build-python3.7:1":"lambda-build",
+        "public.ecr.aws/sam/build-python3.7:1":"lambda-build:build-python3.7",
         "amazon/aws-for-fluent-bit:2.10.0": "aws-for-fluent-bit"
     },
     "repository" : [
