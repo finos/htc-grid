@@ -17,7 +17,7 @@ If you are running the workshop at an AWS event, you can skip this section. We s
 To remove and destroy all the resources deployed within HTC-Grid use the following command:
 
 ```
-make destroy-custom-runtime TAG=$TAG REGION=$HTCGRID_REGION
+make destroy-python-runtime TAG=$TAG REGION=$HTCGRID_REGION
 ```
 
 {{% notice warning %}}

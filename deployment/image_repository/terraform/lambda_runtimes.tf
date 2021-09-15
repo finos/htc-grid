@@ -52,7 +52,7 @@ resource null_resource "push_python38" {
     always_run = timestamp()
   }
   provisioner "local-exec" {
-    command = "docker push ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda:provided"
+    command = "docker push ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda:python3.8"
   }
   depends_on = [
     null_resource.authenticate_to_ecr_repository,

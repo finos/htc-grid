@@ -24,7 +24,7 @@ PYTHON_PACKAGE_DIR := ./dist/python
 PACKAGES    := $(wildcard $(PYTHON_PACKAGE_DIR)/*.whl)
 .PHONY: all utils api lambda submitter  packages test test-api test-utils test-agent lambda-init config-c++
 
-all: utils api lambda submitter lambda-init
+all: utils api lambda submitter lambda-init k8s-jobs
 
 
 ###############################################
@@ -129,16 +129,16 @@ auto-destroy-python-runtime:
 #### retrieve output value from terraform deployment ####
 ##########################################################
 get-grafana-password:
-	@$(MAKE) -C ./deployment/grid/terraform get-grafana-password
+	@$(MAKE) --no-print-directory -C ./deployment/grid/terraform get-grafana-password
 
 get-userpool-id:
-	@$(MAKE) -C ./deployment/grid/terraform get-userpool-id
+	@$(MAKE) --no-print-directory -C ./deployment/grid/terraform get-userpool-id
 
 get-client-id:
-	@$(MAKE) -C ./deployment/grid/terraform get-client-id
+	@$(MAKE) --no-print-directory -C ./deployment/grid/terraform get-client-id
 
 get-agent-configuration:
-	@$(MAKE) -C ./deployment/grid/terraform get-agent-configuration
+	@$(MAKE) --no-print-directory -C ./deployment/grid/terraform get-agent-configuration
 #############################
 ##### building source #######
 #############################

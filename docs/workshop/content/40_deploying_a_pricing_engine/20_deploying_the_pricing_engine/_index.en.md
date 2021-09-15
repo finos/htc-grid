@@ -12,7 +12,7 @@ The first step we will need to run is the set of makefiles that create the new w
 
 ```
 cd ~/environment/aws-htc-grid
-make python-quant-lib-path TAG=$TAG ACCOUNT_ID=$HTCGRID_ACCOUNT_ID REGION=$HTCGRID_REGION BUCKET_NAME=$S3_LAMBDA_HTCGRID_BUCKET_NAME
+make python-quant-lib-path TAG=$TAG REGION=$HTCGRID_REGION
 ```
 
 The following command will build up the lambda and worker code that we just explored in the previous section, and upload the content to the S3 folder holding the lambda. It will also generate a configuration files that we will use moving forward for some extra configuration of the HTC-Grid. 
@@ -41,8 +41,7 @@ The section highlighted provides a few information of the changes that we are ap
 To apply this change, we just need to point and apply the new configuration using terraform.
 
 ```
-cd ~/environment/aws-htc-grid/deployment/grid/terraform
-terraform apply -var-file ../../../generated/python_runtime_grid_config.json
+make apply-custom-runtime  TAG=$TAG REGION=$HTCGRID_REGION
 ```
 
 {{% notice note %}}
