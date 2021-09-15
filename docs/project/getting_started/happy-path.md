@@ -91,7 +91,7 @@ HTC artifacts include: python packages, docker images, configuration files for H
 2. Now build the images for the HTC agent. Return to  `<project_root>`  and run the command:
 
    ```bash
-   make happy-path TAG=$TAG ACCOUNT_ID=$HTCGRID_ACCOUNT_ID REGION=$HTCGRID_REGION BUCKET_NAME=$S3_LAMBDA_HTCGRID_BUCKET_NAME
+   make happy-path TAG=$TAG REGION=$HTCGRID_REGION
    ```
 
     * If `TAG` is omitted then `mainline` will be the chosen has a default value.
@@ -194,9 +194,13 @@ You can reuse the password chosen  in section [Deploy HTC-Grid](#deploying-htc-g
    ```
 3. Get the client id:
    ```bash
-   clientid=$(make get-client-id  TAG=$TAG)
+   clientid=$(make get-client-id  TAG=$TAG REGION=$HTCGRID_REGION)
    ```
-4. Create the user
+4. Get the userpool id:
+   ```bash
+   userpoolid=$(make get-userpool-id  TAG=$TAG REGION=$HTCGRID_REGION)
+   ```
+5. Create the user
    ```bash
    aws cognito-idp sign-up --region $HTCGRID_REGION --client-id $clientid --username $USERNAME --password $PASSWORD
    ```
@@ -227,9 +231,14 @@ The HTC-Grid project captures metrics into InfluxDB and exposes those metrics th
 The destruction time is about 15 min.
 
 1. To remove the grid resources run the following command:
-   ```bash
-   make destroy-custom-runtime TAG=$TAG REGION=$HTCGRID_REGION
-   ```
+   1. For the custom runtime: 
+      ```bash
+      make destroy-custom-runtime TAG=$TAG REGION=$HTCGRID_REGION
+      ```
+   2. For the python runtime
+      ```bash
+      make destroy-python-runtime TAG=$TAG REGION=$HTCGRID_REGION
+      ```
 2. To remove the images from the ECR repository execute
    ```bash
    make destroy-images TAG=$TAG REGION=$HTCGRID_REGION

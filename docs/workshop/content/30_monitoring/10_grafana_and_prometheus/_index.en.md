@@ -26,7 +26,12 @@ export PASSWORD=<my_grafana_admin_password>
 
 Get the client id:
 ```bash
-clientid=$(make get-client-id  TAG=$TAG)
+clientid=$(make get-client-id  TAG=$TAG REGION=$HTCGRID_REGION)
+```
+
+Get the user pool id:
+```bash
+userpoolid=$(make get-userpool-id  TAG=$TAG REGION=$HTCGRID_REGION)
 ```
 
 Create the user
