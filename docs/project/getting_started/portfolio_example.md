@@ -41,3 +41,20 @@ kubectl apply -f ./generated/portfolio-pricing-book.yaml
 ```
 
 Refer to the corresponding yaml files to change the configuration of the client application and refer to the help of the client application to identify all options.
+
+## Uninstalling-Installing and destroying HTC grid
+The destruction time is about 15 min.
+
+1. To remove the grid resources run the following command:
+   ```bash
+   make destroy-python-runtime TAG=$TAG REGION=$HTCGRID_REGION
+   ```
+
+2. To remove the images from the ECR repository execute
+   ```bash
+   make destroy-images TAG=$TAG REGION=$HTCGRID_REGION
+   ```
+3. Finally, this will leave the 3 only resources that you can clean manually, the S3 buckets. You can remove the folders using the following command
+   ```bash
+   make delete-grid-state TAG=$TAG REGION=$HTCGRID_REGION
+   ```
