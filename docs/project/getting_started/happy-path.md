@@ -231,14 +231,10 @@ The HTC-Grid project captures metrics into InfluxDB and exposes those metrics th
 The destruction time is about 15 min.
 
 1. To remove the grid resources run the following command:
-   1. For the custom runtime: 
-      ```bash
-      make destroy-custom-runtime TAG=$TAG REGION=$HTCGRID_REGION
-      ```
-   2. For the python runtime
-      ```bash
-      make destroy-python-runtime TAG=$TAG REGION=$HTCGRID_REGION
-      ```
+   ```bash
+   make destroy-custom-runtime TAG=$TAG REGION=$HTCGRID_REGION
+   ```
+
 2. To remove the images from the ECR repository execute
    ```bash
    make destroy-images TAG=$TAG REGION=$HTCGRID_REGION
