@@ -10,7 +10,10 @@ import boto3
 import botocore
 import requests
 import logging
+import threading
+import traceback
 
+from api.session import GridSession
 from api.in_out_manager import in_out_manager
 from utils.state_table_common import TASK_STATE_FINISHED
 from warrant_lite import WarrantLite
@@ -23,8 +26,6 @@ else:
     from publicapi.api import default_api
 
 URLOPEN_LAMBDA_INVOKE_TIMEOUT_SEC = 120  # TODO Catch timout exception
-TASK_TIMEOUT_SEC = 3600
-RETRY_COUNT = 5
 TOKEK_REFRESH_INTERVAL_SEC = 200
 
 working_path = os.path.dirname(os.path.realpath(__file__))
@@ -47,51 +48,12 @@ def get_safe_session_id():
     return str(uuid.uuid1())
 
 
-class AWSConnector:
+class HTCGridConnector:
     """This class implements the API for managing jobs"""
     in_out_manager = None
 
-    def __init__(self):
-        self.in_out_manager = None
-        self.__api_gateway_endpoint = ""
-        self.__public_api_gateway_endpoint = ""
-        self.__private_api_gateway_endpoint = ""
-        self.__api_key = ""
-        self.__user_pool_id = ""
-        self.__user_pool_client_id = ""
-        self.__username = ""
-        self.__password = ""
-        self.__dynamodb_results_pull_intervall = ""
-        self.__task_input_passed_via_external_storage = ""
-        self.__user_token_id = None
-        self.__user_refresh_token = None
-        self.__cognito_client = None
-        self.__s3_resource = None
-        self.__intra_vpc = False
-        self.__authorization_headers = {}
-        self.__scheduler = None
-        self.__configuration = None
-        self.__api_client = None
-        self.__default_api_client = None
-
-    def refresh(self):
-        """This method refreshes an expired JWT. The new JWT  overrides the existing one"""
-        logging.info("starting cognito refresh")
-        try:
-            tokens = self.__cognito_client.initiate_auth(
-                ClientId=self.__user_pool_client_id,
-                AuthFlow='REFRESH_TOKEN_AUTH',
-                AuthParameters={
-                    'REFRESH_TOKEN': self.__user_refresh_token,
-                }
-            )
-            self.__user_token_id = tokens["AuthenticationResult"]["IdToken"]
-            logging.info("successfully cognito token refreshed")
-        except botocore.exceptions.ClientError:
-            logging.exception("Failed while refreshing cognito token")
-
-    def init(self, agent_config_data, username="", password="", cognitoidp_client=None, s3_custom_resource=None,
-             redis_custom_connection=None):
+    def __init__(self, agent_config_data, username="", password="", cognitoidp_client=None, s3_custom_resource=None,
+        redis_custom_connection=None):
         """
         Args:
             redis_custom_connection(object): override default redis connection
@@ -104,6 +66,34 @@ class AWSConnector:
         Returns:
             Nothing
         """
+        # <1.> Setting defaults
+        self.in_out_manager = None
+        self.__api_gateway_endpoint = ""
+        self.__public_api_gateway_endpoint = ""
+        self.__private_api_gateway_endpoint = ""
+        self.__api_key = ""
+        self.__user_pool_id = ""
+        self.__user_pool_client_id = ""
+        self.__username = ""
+        self.__password = ""
+        self.__dynamodb_results_pull_interval = ""
+        self.__task_input_passed_via_external_storage = ""
+        self.__user_token_id = None
+        self.__user_refresh_token = None
+        self.__cognito_client = None
+        self.__s3_resource = None
+        self.__intra_vpc = False
+        self.__authorization_headers = {}
+        self.__scheduler = None
+        self.__configuration = None
+        self.__api_client = None
+        self.__default_api_client = None
+
+        self.active_sessions = {}
+        self.is_closed = False
+        self.wait_for_sessions_completion = True
+
+        # <2.> Initialization
         logging.info("AGENT:", agent_config_data)
         self.in_out_manager = in_out_manager(
             agent_config_data['grid_storage_service'],
@@ -120,7 +110,7 @@ class AWSConnector:
         self.__user_pool_client_id = agent_config_data['cognito_userpool_client_id']
         self.__username = username
         self.__password = password
-        self.__dynamodb_results_pull_intervall = agent_config_data['dynamodb_results_pull_interval_sec']
+        self.__dynamodb_results_pull_interval = agent_config_data['dynamodb_results_pull_interval_sec']
         self.__task_input_passed_via_external_storage = agent_config_data['task_input_passed_via_external_storage']
         self.__user_token_id = None
         if cognitoidp_client is None:
@@ -143,12 +133,78 @@ class AWSConnector:
 
         self.__scheduler = BackgroundScheduler()
         logging.info("LAMBDA_ENDPOINT_URL:{}".format(self.__api_gateway_endpoint))
-        logging.info("dynamodb_results_pull_interval_sec:{}".format(self.__dynamodb_results_pull_intervall))
+        logging.info("dynamodb_results_pull_interval_sec:{}".format(self.__dynamodb_results_pull_interval))
         logging.info("task_input_passed_via_external_storage:{}".format(self.__task_input_passed_via_external_storage))
         logging.info("grid_storage_service:{}".format(agent_config_data['grid_storage_service']))
-        logging.info("AWSConnector Initialized")
+        logging.info("HTCGridConnector Initialized")
         logging.info("init with {}".format(self.__user_pool_client_id))
         logging.info("init with {}".format(self.__cognito_client))
+
+        # <3.> Starting session management thread
+        self.t = threading.Thread(target=self.session_management_thread, args=(1,))
+        self.t.start()
+
+
+    def create_session(self, service_name, context, callback):
+
+        new_session = GridSession(
+            htc_grid_connector=self,
+            session_id=self.__get_safe_session_id(),
+            callback=callback
+            )
+
+        self.register_session(new_session)
+
+        return new_session
+
+    def close(self, wait_for_sessions_completion=True):
+        print("Connector: Closing HTC-Grid Connector")
+        self.is_closed = True
+        self.wait_for_sessions_completion = wait_for_sessions_completion
+
+    def register_session(self, new_session):
+        assert(new_session.session_id not in self.active_sessions)
+
+        self.active_sessions[new_session.session_id] = new_session
+        pass
+
+    def diregister_session(self, session):
+
+        # Check that all tasks of the session completed?
+        print(f"Connector: Diregistering session {session.session_id}")
+        del self.active_sessions[session.session_id]
+        pass
+
+    def __get_safe_session_id(self):
+        session_id = uuid.uuid1()
+        return str(session_id)
+
+    def session_management_thread(self, args):
+
+        print("Connector: Thread started ", args)
+
+        try:
+            while True:
+                print(f"Connector: Number of active sessions: {len(self.active_sessions)}")
+
+                for session_id, session in self.active_sessions.items():
+                    session.check_tasks_states()
+
+                time.sleep(1)
+
+                if self.wait_for_sessions_completion:
+                    # break if all sessions are completed
+                    if len(self.active_sessions) == 0:
+                        break
+                elif self.is_closed:
+                    # break, ignore incompleted sessions if any
+                    break
+        except Exception as e:
+            print("Unexpected error in session_management_thread {} [{}]".format(
+            e, traceback.format_exc()))
+
+    def terminate(self):
+        self.t.join()
 
     def authenticate(self):
         """This method authenticates against a Cognito User Pool. The JWT is stored as attribute of the class
@@ -162,13 +218,37 @@ class AWSConnector:
                 self.__user_token_id = tokens["AuthenticationResult"]["IdToken"]
                 self.__user_refresh_token = tokens["AuthenticationResult"]["RefreshToken"]
                 logging.info("authentication successful for user {}".format(self.__user_token_id))
-                self.__scheduler.add_job(AWSConnector.refresh, 'interval', seconds=TOKEK_REFRESH_INTERVAL_SEC,
+                self.__scheduler.add_job(HTCGridConnector.refresh, 'interval', seconds=TOKEK_REFRESH_INTERVAL_SEC,
                                          args=[self])
                 self.__scheduler.start()
             except Exception as e:
                 logging.error("Cannot authenticate user {}".format(self.__username))
                 raise e
             self.__configuration.api_key['htc_cognito_authorizer'] = self.__user_token_id
+
+    def refresh(self):
+        """This method refreshes an expired JWT. The new JWT  overrides the existing one"""
+        logging.info("starting cognito refresh")
+        try:
+            tokens = self.__cognito_client.initiate_auth(
+                ClientId=self.__user_pool_client_id,
+                AuthFlow='REFRESH_TOKEN_AUTH',
+                AuthParameters={
+                    'REFRESH_TOKEN': self.__user_refresh_token,
+                }
+            )
+            self.__user_token_id = tokens["AuthenticationResult"]["IdToken"]
+            logging.info("successfully cognito token refreshed")
+        except botocore.exceptions.ClientError:
+            logging.exception("Failed while refreshing cognito token")
+
+    def is_task_input_passed_via_external_storage(self):
+        return self.__task_input_passed_via_external_storage
+
+#######################################################################
+#######################################################################
+
+
 
     def generate_user_task_json(self, tasks_list=None):
         """this methods returns from a list of tasks, a tasks object that can be submitted to the grid
@@ -235,78 +315,22 @@ class AWSConnector:
 
         return user_task_json
 
-    # TODO implements this method
-    def cancel(self, session_id):
-        """
+
+    def get_results(self, session_id):
+        """This methods get the result associated to a specific session_id
 
         Args:
-            session_id:
+          session_id (list): session_id for which to retrieve results
 
         Returns:
+          dict: the result of the submission
 
         """
-        pass
+        logging.info(f"Init get_results {session_id}")
 
-    # TODO raise exception when the  task list is above a given threshold
-    # TODO create a response object instead of  dictionary
-    def send(self, tasks_list):  # returns TaskID[]
-        """This method submits tasks to the HTC grid
+        session_results = self.invoke_get_results_lambda({'session_id': session_id})
+        logging.info("session_results: {}".format(session_results))
 
-        Args:
-          tasks_list (list): the list of tasks to execute on the grid
-
-        Returns:
-          dict: the response from the endpoint of the HTC grid
-
-        """
-        logging.info("Init send {} tasks".format(len(tasks_list)))
-        user_task_json_request = self.generate_user_task_json(tasks_list)
-        logging.info("user_task_json_request: {}".format(user_task_json_request))
-        # print(user_task_json_request)
-
-        json_response = self.submit(user_task_json_request)
-        logging.info("json_response = {}".format(json_response))
-        return json_response
-
-    def get_results(self, submission_response: dict, timeout_sec=0):
-        """This methods get the result associated to a specific submission
-
-        Args:
-          submission_response (list): arrays storing the ids of the submission to check
-          timeout_sec (int): time after the connection between the client of the HTC grid is killed (Default value = 0)
-
-        Returns:
-          str: the result of the submission
-
-        """
-        logging.info("Init get_results")
-        start_time = time.time()
-
-        session_tasks_count: int = len(submission_response['task_ids'])
-        logging.info("session_tasks_count: {}".format(session_tasks_count))
-        while True:
-            session_results = self.invoke_get_results_lambda({'session_id': submission_response['session_id']})
-            logging.info("session_results: {}".format(session_results))
-            # print("session_results: {}".format(session_results))
-
-            if 'metadata' in session_results \
-                    and session_results['metadata']['tasks_in_response'] == session_tasks_count:
-                break
-            elif 0 < timeout_sec < time.time() - start_time:
-                # We have timed out!
-                logging.error("Get Results Timed Out")
-                break
-            time.sleep(self.__dynamodb_results_pull_intervall)
-
-        for i, completed_task in enumerate(session_results[TASK_STATE_FINISHED]):
-            stdout_bytes = self.in_out_manager.get_output_to_bytes(completed_task)
-            # print("stdout_bytes: {}".format(stdout_bytes))
-
-            output = base64.b64decode(stdout_bytes).decode('utf-8')
-
-            session_results[TASK_STATE_FINISHED + '_OUTPUT'][i] = output
-
-        logging.info("Finish get_results")
         return session_results
 
     # TODO this should be private
