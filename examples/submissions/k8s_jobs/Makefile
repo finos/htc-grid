@@ -25,5 +25,7 @@ generated:
 
 	mkdir -p $(GENERATED) && cat portfolio-pricing-book.yaml.tpl | sed "s/{{account_id}}/$(ACCOUNT_ID)/;s/{{region}}/$(REGION)/;s/{{image_name}}/$(SUBMITTER_IMAGE_NAME)/;s/{{image_tag}}/$(TAG)/" > $(GENERATED)/portfolio-pricing-book.yaml
 
+	mkdir -p $(GENERATED) && cat simple-task-v2-test.yaml.tpl | sed "s/{{account_id}}/$(ACCOUNT_ID)/;s/{{region}}/$(REGION)/;s/{{image_name}}/$(SUBMITTER_IMAGE_NAME)/;s/{{image_tag}}/$(TAG)/" > $(GENERATED)/simple-task-v2-test.yaml
+
 clean:
 	rm -rf $(GENERATED)
