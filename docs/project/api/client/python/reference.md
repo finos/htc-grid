@@ -4,7 +4,7 @@
 
 This section outlines how client application can connect and interact with a deployed HTC-Grid.
 
-AWSConnector is the main class responsible for communication with the HTC-Grid. Upon creating the 
+AWSConnector is the main class responsible for communication with the HTC-Grid. Upon creating the
 
 ```python
 class api.connector.AWSConnector
@@ -248,7 +248,7 @@ Function returns dictionary of processed session IDs.
 ```
 
 * `string` - keys of the response dictionary are session IDs that were passed in for cancellation. Sub-dictionaries contain information about how many tasks were moved into canceled state.
-   * `cancellet_retying` - number of tasks moved from retrying state into canceled state
-   * `cancellet_pending` - number of tasks moved from pending state into canceled state
-   * `cancellet_processing` - number of tasks moved from processing state into canceled state. **Note**, in current version, while state of tasks has been moved into canceled processing will not be preemptively terminated (processing will continue until task is completed or failed). Failed tasks will not be retried.
-   * `tatal_cancelled_tasks` - total number of tasks that has been affected by this invocation.
+   * `cancelled_retying` - number of tasks moved from retrying state into canceled state
+   * `cancelled_pending` - number of tasks moved from pending state into canceled state
+   * `cancelled_processing` - number of tasks moved from the processing state into canceled state.
+   * `total_cancelled_tasks` - total number of tasks that has been affected by this invocation.

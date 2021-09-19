@@ -388,13 +388,13 @@ class AWSConnector:
                 "cancelled_retrying": 0,
                 "cancelled_pending": 5,
                 "cancelled_processing": 1,
-                "tatal_cancelled_tasks": 6
+                "total_cancelled_tasks": 6
             },
             "6398f57e-6911-11eb-b5fb-060372291b89-part024": {
                 "cancelled_retrying": 0,
                 "cancelled_pending": 9,
                 "cancelled_processing": 0,
-                "tatal_cancelled_tasks": 9
+                "total_cancelled_tasks": 9
             }
         }
 
