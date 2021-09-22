@@ -72,6 +72,15 @@ variable "ddb_state_table" {
   description = "htc DinamoDB table name"
 }
 
+variable "task_queue_service" {
+  default = "SQS"
+  description = "Configuration string for the type of queuing service to be used"
+}
+
+variable "task_queue_config" {
+  default = "{'priorities':3}"
+  description = "dictionary queue config"
+}
 variable "sqs_queue" {
   default  = "htc_task_queue"
   description = "htc SQS queue name"
@@ -287,7 +296,7 @@ variable "dynamodb_results_pull_interval_sec" {
   default = 0.5
 }
 
-variable "agent_sqs_visibility_timeout_sec" {
+variable "agent_task_visibility_timeout_sec" {
   description = "default visibility timeout for SQS messages"
   default = 3600
 }

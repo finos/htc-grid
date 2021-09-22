@@ -2,10 +2,16 @@
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
+import logging
 import boto3
 import time
 import os
 
+
+from api.queue_manager import queue_manager
+
+# TODO - retrieve the endpoint url from Terraform
+region = os.environ["REGION"]
 
 def lambda_handler(event, context):
     # For every x minute
@@ -15,10 +21,14 @@ def lambda_handler(event, context):
     # - DimensionName: given in the environment variable DIMENSION_NAME
 
     # TODO - retrieve the endpoint url from Terraform
-    sqs = boto3.resource('sqs', endpoint_url=f'https://sqs.{os.environ["REGION"]}.amazonaws.com')
-    queue = sqs.get_queue_by_name(QueueName=os.environ["SQS_QUEUE_NAME"])
-    task_pending = int(queue.attributes.get('ApproximateNumberOfMessages'))
-    print("pending task in DDB = {}".format(task_pending))
+    task_queue = queue_manager(
+        task_queue_service=os.environ['TASK_QUEUE_SERVICE'],
+        task_queue_config=os.environ['TASK_QUEUE_CONFIG'],
+        tasks_queue_name=os.environ['TASKS_QUEUE_NAME'],
+        region=region)
+
+    task_pending = task_queue.get_queue_length()
+    logging.info("Scaling Metrics: pending task in DDB = {}".format(task_pending))
     # Create CloudWatch client
     cloudwatch = boto3.client('cloudwatch')
     period = int(os.environ["PERIOD"])

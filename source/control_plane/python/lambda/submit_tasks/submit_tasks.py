@@ -21,12 +21,18 @@ import utils.grid_error_logger as errlog
 from utils.state_table_common import TASK_STATE_PENDING
 
 from api.in_out_manager import in_out_manager
+from api.queue_manager import queue_manager
 from api.state_table_manager import state_table_manager
 
 region = os.environ["REGION"]
 
 sqs = boto3.resource('sqs', endpoint_url=f'https://sqs.{region}.amazonaws.com')
-queue = sqs.get_queue_by_name(QueueName=os.environ['TASKS_QUEUE_NAME'])
+
+tasks_queue = queue_manager(
+    task_queue_service=os.environ['TASK_QUEUE_SERVICE'],
+    task_queue_config=os.environ['TASK_QUEUE_CONFIG'],
+    tasks_queue_name=os.environ['TASKS_QUEUE_NAME'],
+    region=region)
 
 state_table = state_table_manager(
     os.environ['STATE_TABLE_SERVICE'],
@@ -63,18 +69,20 @@ def write_to_dynamodb(task_json, batch):
     return response
 
 
-def write_to_sqs(sqs_batch_entries):
+def write_to_sqs(sqs_batch_entries, session_priority=0):
     """
-
     Args:
-      sqs_batch_entries: return:
+      sqs_batch_entries: batch of tasks monikers to be submitted for scheduling
 
     Returns:
 
     """
     try:
-        response = queue.send_messages(
-            Entries=sqs_batch_entries
+        response = tasks_queue.send_messages(
+            message_bodies=sqs_batch_entries,
+            message_attributes={
+                "priority": session_priority
+            }
         )
         if response.get('Failed') is not None:
             # Should also send to DLQ
@@ -229,7 +237,7 @@ def lambda_handler(event, context):
         sqs_batch_chunks = [sqs_batch_entries[x:x + sqs_max_batch_size] for x in
                             range(0, len(sqs_batch_entries), sqs_max_batch_size)]
         for chunk in sqs_batch_chunks:
-            write_to_sqs(chunk)
+            write_to_sqs(chunk, session_priority)
 
         # <3.> Non performance critical code, statistics and book-keeping.
         event_counter = EventsCounter(["count_submitted_tasks", "count_ddb_batch_backoffs", "count_ddb_batch_write_max",
