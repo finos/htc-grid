@@ -476,7 +476,10 @@ def update_ttl_if_required(task, sqs_msg):
                     # <1.> delete task from task queue so it wont be picked by other workers.
                     sqs_msg.delete()
 
-                    # <2.> terminate/restart the agent container; entire pod will be auto-restarted.
+                    # <2.> Terminate worker lambda function first
+                    terminate_worker_lambda_container()
+
+                    # <3.> Then terminate/restart the agent container;
                     logging.warning(f"Task {task['task_id']} has been cancelled during processing, restarting pod.")
                     os.kill(os.getpid(), signal.SIGKILL)
 
@@ -562,6 +565,13 @@ async def run_task(task, sqs_msg):
     logging.info("Finished Task: {}".format(task))
     return True
 
+def terminate_worker_lambda_container():
+    for proc in psutil.process_iter():
+        logging.info("running process : {}".format(proc.name()))
+        # check whether the process name matches
+        if proc.name() == 'aws-lambda-rie':
+            logging.info("stop lambda emulated environment after the last request")
+            proc.terminate()
 
 def event_loop():
     logging.info("Starting main event loop")
@@ -579,12 +589,8 @@ def event_loop():
                          format(timeout)
                          )
             time.sleep(timeout)
-    for proc in psutil.process_iter():
-        logging.info("running process : {}".format(proc.name()))
-        # check whether the process name matches
-        if proc.name() == 'aws-lambda-rie':
-            logging.info("stop lambda emulated environment after the last request")
-            proc.terminate()
+
+    terminate_worker_lambda_container()
     logging.info("agent and lambda gracefully stopped")
 
 
