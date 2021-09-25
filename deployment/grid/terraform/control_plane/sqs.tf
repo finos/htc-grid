@@ -3,11 +3,8 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 variable "priorities" {
-
   default     = {
     "__0" = 0
-    "__1" = 1
-    "__2" = 2
   }
 }
 resource "aws_sqs_queue" "htc_task_queue" {

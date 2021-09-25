@@ -3,7 +3,6 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
-
 import logging
 import json
 import traceback
@@ -20,7 +19,6 @@ logging.basicConfig(
 
 
 class QueuePrioritySQS:
-
     def __init__(self, endpoint_url, task_queue_config, first_queue_name, region):
         """
         QueuePrioritySQS implemented using multiple SQS queues. This class is a wrapper
@@ -43,7 +41,6 @@ class QueuePrioritySQS:
             queue_name = first_queue_name.split("__")[0] + "__{}".format(priority)
 
             self.priority_to_queue_lookup[priority] = QueueSQS(endpoint_url, queue_name, region)
-
 
     def send_messages(self, message_bodies=[], message_attributes={}):
         """
@@ -100,7 +97,9 @@ class QueuePrioritySQS:
             queue_sqs_response = queue.receive_message(wait_time_sec)
 
             if "body" in queue_sqs_response:
-                self.msg_handle_to_queue_lookup[queue_sqs_response["properties"]["message_handle_id"]] = queue
+                self.msg_handle_to_queue_lookup[
+                    queue_sqs_response["properties"]["message_handle_id"]
+                ] = queue
 
                 return queue_sqs_response
 

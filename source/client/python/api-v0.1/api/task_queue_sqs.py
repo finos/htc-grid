@@ -16,6 +16,7 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
+
 class QueueSQS:
     def __init__(self, endpoint_url, queue_name, region):
 
@@ -39,7 +40,6 @@ class QueueSQS:
             errlog.log(msg)
             raise TaskQueueException(e, msg, traceback.format_exc())
 
-
     def send_messages(self, message_bodies=[], message_attributes={}):
         """
         Sends a single message or a batch of messages into SQS queue
@@ -61,8 +61,6 @@ class QueueSQS:
             msg = f"QueueSQS: failed to send {len(message_bodies)} messages [{message_bodies}], Exception: [{e}] [{traceback.format_exc()}]"
             errlog.log(msg)
             raise TaskQueueException(e, msg, traceback.format_exc())
-
-
 
     def receive_message(self, wait_time_sec=10):
         """
@@ -120,7 +118,9 @@ class QueueSQS:
 
         return None
 
-    def change_visibility(self, message_handle_id, visibility_timeout_sec, task_priority=None) -> None:
+    def change_visibility(
+        self, message_handle_id, visibility_timeout_sec, task_priority=None
+    ) -> None:
         """Changes visibility timeout of the message by its handle id
 
         Args:
