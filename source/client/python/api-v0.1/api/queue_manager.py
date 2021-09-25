@@ -11,23 +11,10 @@ from api.task_queue_priority_sqs import QueuePrioritySQS
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(filename)s - %(funcName)s  - %(lineno)d - %(message)s",
                     datefmt='%H:%M:%S', level=logging.INFO)
 
-
-class TaskQueueException(Exception):
-
-    def __init__(self, original_message, supplied_message):
-
-        super().__init__(original_message)
-        self.original_message = original_message
-        self.supplied_message = supplied_message
-
-    def __str__(self):
-        return f"TaskQueueException: Original Message: {self.original_message}, supplied_message: {self.supplied_message}"
-
-
 def queue_manager(task_queue_service, task_queue_config, tasks_queue_name, region):
     # TODO due to the way variables are propagated from terraform to AWS Lambda and to Agent file
-    # double quotes can not be escaped during the deployment. As a way around queue configuration is
-    # passed with the single quotes and then converted here.
+    # double quotes can not be escaped during the deployment. As a way around, task queue configuration is
+    # passed with the single quotes and then converted into double quotes here.
     task_queue_config = task_queue_config.replace("'", "\"")
 
     if task_queue_service == "SQS":
