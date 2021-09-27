@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
+import logging
 import boto3
 import time
 import os
@@ -10,10 +11,10 @@ from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key, Attr
 
 from utils.performance_tracker import EventsCounter, performance_tracker_initializer
-from utils.state_table_common import *
 from utils import grid_error_logger as errlog
 
 from utils.state_table_common import TASK_STATE_RETRYING, TASK_STATE_INCONSISTENT, TASK_STATE_FAILED
+from api.queue_manager import queue_manager
 
 region = os.environ["REGION"]
 
@@ -29,10 +30,18 @@ state_table = state_table_manager(
     os.environ['STATE_TABLE_CONFIG'],
     os.environ['STATE_TABLE_NAME'])
 
-sqs_res = boto3.resource('sqs', region_name=region, endpoint_url=f'https://sqs.{region}.amazonaws.com')
-sqs_cli = boto3.client('sqs', endpoint_url=f'https://sqs.{region}.amazonaws.com')
-queue = sqs_res.get_queue_by_name(QueueName=os.environ['TASKS_QUEUE_NAME'])
-dlq = sqs_res.get_queue_by_name(QueueName=os.environ['TASKS_QUEUE_DLQ_NAME'])
+queue = queue_manager(
+    task_queue_service=os.environ['TASK_QUEUE_SERVICE'],
+    task_queue_config=os.environ['TASK_QUEUE_CONFIG'],
+    tasks_queue_name=os.environ['TASKS_QUEUE_NAME'],
+    region=region)
+
+dlq = queue_manager(
+    task_queue_service=os.environ['TASK_QUEUE_SERVICE'],
+    task_queue_config=os.environ['TASK_QUEUE_CONFIG'],
+    tasks_queue_name=os.environ['TASKS_QUEUE_DLQ_NAME'],
+    region=region)
+
 
 TTL_LAMBDA_ID = 'TTL_LAMBDA'
 TTL_LAMBDA_TMP_STATE = TASK_STATE_RETRYING
@@ -61,10 +70,8 @@ def lambda_handler(event, context):
 
     for expired_tasks in state_table.query_expired_tasks():
 
-        # expired_tasks = retreive_expired_tasks(ddb_part_str)
         event_counter.increment("counter_expired_tasks", len(expired_tasks))
-        event_counter.increment("counter_tasks_queue_size",
-                                int(queue.attributes.get('ApproximateNumberOfMessages')))
+        event_counter.increment("counter_tasks_queue_size", queue.get_queue_length())
 
         for item in expired_tasks:
             print("Processing expired task: {}".format(item))
@@ -80,8 +87,8 @@ def lambda_handler(event, context):
                     event_counter.increment("counter_failed_to_acquire")
                     continue
 
-                # retreive current number of retries and SQS_handler
-                retries, sqs_handler_id, task_priority = retreive_retries_and_sqs_handler_and_priority(task_id)
+                # retreive current number of retries and task message handler
+                retries, task_handler_id, task_priority = retreive_retries_and_task_handler_and_priority(task_id)
                 print("Number of retires for task[{}]: {} Priority: {}".format(task_id, retries, task_priority))
                 print("Last owner for task [{}]: {}".format(task_id, owner_id))
 
@@ -89,7 +96,7 @@ def lambda_handler(event, context):
                 if retries == MAX_RETRIES:
                     print("Failing task {} after {} retries".format(task_id, retries))
                     event_counter.increment("counter_failed_tasks")
-                    fail_task(task_id, sqs_handler_id, task_priority)
+                    fail_task(task_id, task_handler_id, task_priority)
                     continue
 
                 event_counter.increment("counter_released_tasks")
@@ -98,14 +105,14 @@ def lambda_handler(event, context):
 
                 try:
                     # Task can be acquired by an agent from this point
-                    reset_sqs_vto(sqs_handler_id, task_priority)
+                    reset_task_msg_vto(task_handler_id, task_priority)
                     print("SUCCESS FIX for {}".format(task_id))
 
                 except ClientError:
 
                     try:
                         errlog.log('Failed to reset VTO trying to delete: {} '.format(task_id))
-                        delete_message_from_queue(sqs_handler_id)
+                        delete_message_from_queue(task_handler_id)
                     except ClientError:
                         errlog.log('Inconsistent task: {} sending do DLQ'.format(task_id))
                         event_counter.increment("counter_inconsistent_state")
@@ -133,12 +140,12 @@ def lambda_handler(event, context):
     perf_tracker.submit_measurements()
 
 
-def fail_task(task_id, sqs_handler_id, task_priority):
+def fail_task(task_id, task_handler_id, task_priority):
     """This function set the task_status of task to fail
 
     Args:
       task_id(str): the id of the task to update
-      sqs_handler_id(str): the sqs handler associated to this task
+      task_handler_id(str): the task handler associated to this task
       task_priority(int): the priority of the task.
 
     Returns:
@@ -149,7 +156,7 @@ def fail_task(task_id, sqs_handler_id, task_priority):
 
     """
     try:
-      delete_message_from_queue(sqs_handler_id, task_priority)
+      delete_message_from_queue(task_handler_id, task_priority)
 
       state_table.update_task_status_to_failed(task_id)
 
@@ -176,41 +183,38 @@ def set_task_inconsistent(task_id):
         state_table.update_task_status_to_inconsistent(task_id)
 
     except ClientError as e:
-        errlog.log("Cannot set task to inconsystent {} : {}".format(task_id, e))
+        errlog.log("Cannot set task to inconsistent {} : {}".format(task_id, e))
         raise e
 
 
-def delete_message_from_queue(sqs_handler_id, task_priority):
-    """This function delete a message from a SQS queue
+def delete_message_from_queue(task_handler_id, task_priority):
+    """This function delete the message from the task queue
 
     Args:
-      sqs_handler_id(str): the sqs handler associated of the message to be deleted
+      task_handler_id(str): the task handler associated of the message to be deleted
       task_priority(int): priority of the task
 
     Returns:
       Nothing
 
     Raises:
-      ClientError: if SQS queue cannot be updated
+      ClientError: if task queue cannot be updated
 
     """
 
     try:
-        sqs_cli.delete_message(
-            QueueUrl=queue.url,
-            ReceiptHandle=sqs_handler_id
-        )
+        queue.delete_message(task_handler_id, task_priority)
     except ClientError as e:
-        errlog.log("Cannot delete message {} : {}".format(sqs_handler_id, e))
+        errlog.log("Cannot delete message {} : {}".format(task_handler_id, e))
         raise e
 
 
 
 
 
-def retreive_retries_and_sqs_handler_and_priority(task_id):
+def retreive_retries_and_task_handler_and_priority(task_id):
     """This function retrieve (i) the number of retries,
-    (ii) the SQS handler associated to an expired task
+    (ii) the task's handler associated to an expired task
     and (iii) and the priority under which this task was executed.
 
     Args:
@@ -228,7 +232,7 @@ def retreive_retries_and_sqs_handler_and_priority(task_id):
         resp_task = state_table.get_task_by_id(task_id)
         # CHeck if 1 and only 1
         return resp_task.get('retries'),\
-               resp_task.get('sqs_handler_id'),\
+               resp_task.get('task_handler_id'),\
                resp_task.get('task_priority')
 
     except ClientError as e:
@@ -236,22 +240,19 @@ def retreive_retries_and_sqs_handler_and_priority(task_id):
         raise e
 
 
-def reset_sqs_vto(handler_id, task_priority):
-    """
+def reset_task_msg_vto(handler_id, task_priority):
+    """Function makes message re-appear in the tasks queue.
 
     Args:
-      handler_id:
+      handler_id: reference of the message/task.
+      task_priority: priority of the task. Identifies which queue to use (if applicable)
 
-    Returns:
+    Returns: Nothing
 
     """
     try:
         visibility_timeout_sec = 0
-        sqs_cli.change_message_visibility(
-            QueueUrl=queue.url,
-            ReceiptHandle=handler_id,
-            VisibilityTimeout=0
-        )
+        queue.change_visibility(handler_id, visibility_timeout_sec, task_priority)
 
     except ClientError as e:
         errlog.log("Cannot reset VTO for message {} : {}".format(handler_id, e))
@@ -269,5 +270,5 @@ def send_to_dlq(task):
     Returns:
 
     """
-    print("Sending task [{}] to DLQ".format(task))
-    dlq.send_message(MessageBody=str(task))
+    logging.warning(f"Sending task [{task}] to DLQ")
+    dlq.send_message(message_bodies=[str(task)])

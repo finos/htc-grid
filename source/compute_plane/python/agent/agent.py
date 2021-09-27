@@ -24,6 +24,7 @@ from aws_xray_sdk import global_sdk_config
 
 from botocore.exceptions import ClientError
 from api.in_out_manager import in_out_manager
+from api.queue_manager import queue_manager
 from utils.performance_tracker import EventsCounter, performance_tracker_initializer
 from utils.state_table_common import TASK_STATE_CANCELLED, StateTableException
 from api.state_table_manager import state_table_manager
@@ -70,7 +71,7 @@ work_proc_status_pull_interval_sec = agent_config_data['work_proc_status_pull_in
 task_ttl_expiration_offset_sec = agent_config_data['task_ttl_expiration_offset_sec']
 task_ttl_refresh_interval_sec = agent_config_data['task_ttl_refresh_interval_sec']
 task_input_passed_via_external_storage = agent_config_data['task_input_passed_via_external_storage']
-agent_sqs_visibility_timeout_sec = agent_config_data['agent_sqs_visibility_timeout_sec']
+agent_task_visibility_timeout_sec = agent_config_data['agent_task_visibility_timeout_sec']
 USE_CC = agent_config_data['agent_use_congestion_control']
 IS_XRAY_ENABLE = agent_config_data['enable_xray']
 region = agent_config_data["region"]
@@ -88,7 +89,12 @@ except KeyError:
 # TODO - retreive the endpoint url from Terraform
 sqs = boto3.resource('sqs', endpoint_url=agent_config_data['sqs_endpoint'], region_name=region)
 # sqs = boto3.resource('sqs', region_name=region)
-tasks_queue = sqs.get_queue_by_name(QueueName=agent_config_data['sqs_queue'])
+
+tasks_queue = queue_manager(
+    task_queue_service=agent_config_data['task_queue_service'],
+    task_queue_config=agent_config_data['task_queue_config'],
+    tasks_queue_name=agent_config_data['tasks_queue_name'],
+    region=region)
 
 
 lambda_cfg = botocore.config.Config(retries={'max_attempts': 3}, read_timeout=2000, connect_timeout=2000,
@@ -195,27 +201,27 @@ def try_to_acquire_a_task():
 
     """
     global AGENT_EXEC_TIMESTAMP_MS
-    logging.info("waiting for SQS message")
-    messages = tasks_queue.receive_messages(MaxNumberOfMessages=1, WaitTimeSeconds=10)
+
+    logging.info("Waiting for a task in the queue...")
+    message = tasks_queue.receive_message(wait_time_sec=10)
 
     task_pick_up_from_sqs_ms = get_time_now_ms()
 
-    logging.info("try_to_acquire_a_task, message: {}".format(messages))
+    logging.info(f"try_to_acquire_a_task, message: {message}")
     # print(len(messages))
 
-    if len(messages) == 0:
+    if "body" not in message:
         event_counter_pre.increment("agent_no_messages_in_tasks_queue")
         return None, None
 
-    message = messages[0]
     AGENT_EXEC_TIMESTAMP_MS = get_time_now_ms()
 
-    task = json.loads(message.body)
-    logging.info("try_to_acquire_a_task, task: {}".format(task))
+    task = json.loads(message["body"])
+    logging.debug(f"try_to_acquire_a_task, task: {task}")
 
-    # Since we read this message from the queue, now we need to associate an
-    # sqs handler with this message, to be able to delete it later
-    task["sqs_handle_id"] = message.receipt_handle
+    # Since we read this message from the task queue, now we need to associate
+    # message handler with this message, so it is possible to manipulate this message via handler
+    task["sqs_handle_id"] = message["properties"]["message_handle_id"]
     try:
 
         logging.info(f"Calling: {__name__} task_id: {task['task_id']}, agent_id: {SELF_ID}")
@@ -238,7 +244,8 @@ def try_to_acquire_a_task():
             if is_task_has_been_cancelled(task["task_id"]):
                 logging.info("Task [{}] has been already cancelled, skipping".format(task['task_id']))
 
-                message.delete()
+                tasks_queue.delete_message(message_handle_id=task["sqs_handle_id"])
+                
                 return None, None
 
             else:
@@ -251,11 +258,10 @@ def try_to_acquire_a_task():
             e, traceback.format_exc()))
         raise e
 
-    # if e.response['Error']['Code'] == 'ResourceNotFoundException':
-    # If we have succesfully ackquired a message we should change its visibility timeout
-    message.change_visibility(VisibilityTimeout=agent_sqs_visibility_timeout_sec)
-    task["stats"]["stage3_agent_01_task_acquired_sqs_tstmp"]["tstmp"] = task_pick_up_from_sqs_ms
+    # Message should not re-appear in the queue until task is completed
+    tasks_queue.change_visibility(message["properties"]["message_handle_id"], visibility_timeout_sec=agent_task_visibility_timeout_sec)
 
+    task["stats"]["stage3_agent_01_task_acquired_sqs_tstmp"]["tstmp"] = task_pick_up_from_sqs_ms
     task["stats"]["stage3_agent_02_task_acquired_ddb_tstmp"]["tstmp"] = get_time_now_ms()
     event_counter_pre.increment("agent_successful_acquire_a_task")
 
@@ -345,7 +351,7 @@ def process_subprocess_completion(perf_tracker, task, sqs_msg, fname_stdout, std
             "We have successfully marked task as completed in dynamodb."
             " Deleting message from the SQS... for task [{}]".format(
                 task["task_id"]))
-        sqs_msg.delete()
+        tasks_queue.delete_message(sqs_msg["properties"]["message_handle_id"])
 
     logging.info("Exec time1: {} {}".format(get_time_now_ms() - AGENT_EXEC_TIMESTAMP_MS, AGENT_EXEC_TIMESTAMP_MS))
     event_counter_post.increment("agent_total_time_ms", get_time_now_ms() - AGENT_EXEC_TIMESTAMP_MS)
