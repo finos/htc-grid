@@ -101,7 +101,7 @@ This should display a similar json configuration file to this one:
   "task_ttl_expiration_offset_sec" : 30,
   "task_ttl_refresh_interval_sec" : 5,
   "dynamodb_results_pull_interval_sec" : 0.5,
-  "agent_sqs_visibility_timeout_sec" : 3600,
+  "agent_task_visibility_timeout_sec" : 3600,
   "task_input_passed_via_external_storage" : 1,
   "lambda_name_ttl_checker": "ttl_checker-main",
   "lambda_name_submit_tasks": "submit_task-main",

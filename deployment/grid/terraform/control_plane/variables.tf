@@ -34,6 +34,14 @@ variable "grid_storage_service" {
   description = "Configuration string for internal results storage system"
 }
 
+variable "task_queue_service" {
+  description = "Configuration string for the type of queuing service to use"
+}
+
+variable "task_queue_config" {
+  description = "Dictionary configuration of the tasks queue"
+}
+
 variable "task_input_passed_via_external_storage" {
   description = "Indicator for passing the args through stdin"
 }
