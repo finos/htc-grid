@@ -28,7 +28,8 @@ paths:
           content:
             application/json:
               schema:
-                type: string
+                type: object
+                $ref: '#/components/schemas/PostCancelResponse'
         542:
           description: Invalid status value
           content: { }
@@ -154,3 +155,5 @@ components:
             type: string
         session_id:
           type: string
+    PostCancelResponse:
+      type: object

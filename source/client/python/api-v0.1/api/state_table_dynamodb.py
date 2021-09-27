@@ -134,13 +134,13 @@ class StateTableDDB:
     # ---------------------------------------------------------------------------------------------
 
     def update_task_status_to_failed(self, task_id):
-        self.__finalize_tasks_status(task_id, TASK_STATE_FAILED, self.__get_state_partition_from_task_id(task_id))
+        self.__finalize_tasks_state(task_id, TASK_STATE_FAILED)
 
     def update_task_status_to_inconsistent(self, task_id):
-        self.__finalize_tasks_status(task_id, TASK_STATE_INCONSISTENT, self.__get_state_partition_from_task_id(task_id))
+        self.__finalize_tasks_state(task_id, TASK_STATE_INCONSISTENT)
 
     def update_task_status_to_cancelled(self, task_id):
-        self.__finalize_tasks_status(task_id, TASK_STATE_CANCELLED, self.__get_state_partition_from_task_id(task_id))
+        self.__finalize_tasks_state(task_id, TASK_STATE_CANCELLED)
 
     def acquire_task_for_ttl_lambda(self, task_id, current_owner, current_heartbeat_timestamp):
         """
@@ -476,7 +476,7 @@ class StateTableDDB:
                 ExpressionAttributeNames={
                     "#var_task_status": "task_status"
                 },
-                ConditionExpression=Key('task_status').eq(
+                                ConditionExpression=Key('task_status').eq(
                     self.__make_task_state_from_session_id(TASK_STATE_PROCESSING, session_id)
                 ) & Key('task_owner').eq(agent_id)
             )
@@ -517,7 +517,7 @@ class StateTableDDB:
     def make_task_state_from_session_id(self, task_state, session_id):
         return self.__make_task_state_from_session_id(task_state, session_id)
 
-    def get_tasks_by_status(self, session_id, task_status):
+    def get_tasks_by_state(self, session_id, task_status):
         """
         Returns:
             Returns a list of tasks in the specified status from the associated session
@@ -525,9 +525,9 @@ class StateTableDDB:
 
         key_expression = Key('session_id').eq(session_id) & Key('task_status').eq(self.__make_task_state_from_session_id(task_status, session_id))
 
-        return self.__get_tasks_by_status_key_expression(session_id, key_expression)
+        return self.__get_tasks_by_state_key_expression(session_id, key_expression)
 
-    def __get_tasks_by_status_key_expression(self, session_id, key_expression):
+    def __get_tasks_by_state_key_expression(self, session_id, key_expression):
         """
         Returns:
             Returns a list of tasks in the specified status from the associated session
@@ -626,7 +626,7 @@ class StateTableDDB:
 
         return res
 
-    def __finalize_tasks_status(self, task_id, new_task_state):
+    def __finalize_tasks_state(self, task_id, new_task_state):
         """
         This function called to move tasks into its final states.
         This function does not check the conditions and simply overwrites old state with the new.
@@ -643,7 +643,7 @@ class StateTableDDB:
             Exception for all other errors
         """
         if new_task_state not in [TASK_STATE_FAILED, TASK_STATE_INCONSISTENT, TASK_STATE_CANCELLED]:
-            logging.error("__finalize_tasks_status called with incorrect input: {}".format(
+            logging.error("__finalize_tasks_state called with incorrect input: {}".format(
                 new_task_state
             ))
 

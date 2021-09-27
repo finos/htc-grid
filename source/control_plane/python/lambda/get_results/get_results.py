@@ -37,10 +37,17 @@ def get_time_now_ms():
 def get_tasks_statuses_in_session(session_id):
 
     assert(session_id is not None)
-    response = {}
+    response = {
+        "finished": [],
+        "finished_OUTPUT": [],
+        "cancelled": [],
+        "cancelled_OUTPUT": [],
+        "failed": [],
+        "failed_OUTPUT": []
+    }
 
     # <1.> Process finished Tasks
-    finished_tasks_resp = state_table.get_tasks_by_status(session_id, TASK_STATE_FINISHED)
+    finished_tasks_resp = state_table.get_tasks_by_state(session_id, TASK_STATE_FINISHED)
 
     finished_tasks = finished_tasks_resp["Items"]
     if len(finished_tasks) > 0:
@@ -48,7 +55,7 @@ def get_tasks_statuses_in_session(session_id):
         response[TASK_STATE_FINISHED + '_OUTPUT'] = ["read_from_dataplane" for x in finished_tasks]
 
     # <2.> Process cancelled Tasks
-    cancelled_tasks_resp = state_table.get_tasks_by_status(session_id, TASK_STATE_CANCELLED)
+    cancelled_tasks_resp = state_table.get_tasks_by_state(session_id, TASK_STATE_CANCELLED)
 
     cancelled_tasks = cancelled_tasks_resp["Items"]
     if len(cancelled_tasks) > 0:
@@ -56,7 +63,7 @@ def get_tasks_statuses_in_session(session_id):
         response[TASK_STATE_CANCELLED + '_OUTPUT'] = ["read_from_dataplane" for x in cancelled_tasks]
 
     # <3.> Process failed Tasks
-    failed_tasks_resp = state_table.get_tasks_by_status(session_id, TASK_STATE_FAILED)
+    failed_tasks_resp = state_table.get_tasks_by_state(session_id, TASK_STATE_FAILED)
 
     failed_tasks = failed_tasks_resp["Items"]
     if len(failed_tasks) > 0:
