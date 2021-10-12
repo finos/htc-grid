@@ -66,10 +66,20 @@ variable "sqs_queue" {
   description = "HTC SQS queue name"
 }
 
+variable "tasks_queue_name" {
+  description = "HTC queue name"
+}
 variable "namespace_metrics" {
   description = "NameSpace for metrics"
 }
 
+variable "task_queue_service" {
+  description = "Configuration string for the type of queuing service to use"
+}
+
+variable "task_queue_config" {
+  description = "Dictionary configuration of the tasks queue"
+}
 
 variable "dimension_name_metrics" {
   description = "Dimensions name/value for the CloudWatch metrics"

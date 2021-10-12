@@ -50,6 +50,8 @@ module "scaling_metrics" {
     METRICS_NAME=var.metric_name,
     SQS_QUEUE_NAME=var.sqs_queue,
     REGION = var.region
+    TASK_QUEUE_SERVICE = var.task_queue_service,
+    TASK_QUEUE_CONFIG = var.task_queue_config,
   }
    tags = {
     service     = "htc-grid"

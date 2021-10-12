@@ -11,7 +11,7 @@ import traceback
 
 import utils.grid_error_logger as errlog
 
-from utils.state_table_common import TASK_STATE_PENDING, TASK_STATE_PROCESSING, TASK_STATE_RETRYING
+from utils.state_table_common import TASK_STATE_PENDING, TASK_STATE_PROCESSING, TASK_STATE_RETRYING, StateTableException
 
 client = boto3.client('dynamodb')
 dynamodb = boto3.resource('dynamodb')
@@ -38,16 +38,22 @@ def cancel_tasks_by_status(session_id, task_state):
 
     """
 
-    response = state_table.get_tasks_by_status(session_id, task_state)
-    print(response)
+    response = state_table.get_tasks_by_state(session_id, task_state)
+    print(f"state_table.get_tasks_by_state: {response}")
 
-    for row in response['Items']:
 
-        res = state_table.update_task_status_to_cancelled(session_id, row['task_id'])
+    try:
+        for row in response['Items']:
+            state_table.update_task_status_to_cancelled(row['task_id'])
 
-        print(res)
-        if not res:
-            raise Exception("Failed to set task status to Cancelled.")
+    except StateTableException as e:
+        errlog.log("StateTableException error in setting task's status to cancelled {} [{}]".format(
+                e, traceback.format_exc()))
+        raise e
+    except Exception as e:
+        errlog.log("Unexpected error in in setting task's status to cancelled {} [{}]".format(
+                e, traceback.format_exc()))
+        raise e
 
     return response['Items']
 
@@ -76,7 +82,7 @@ def cancel_session(session_id):
 
         all_cancelled_tasks += res
 
-    lambda_response["tatal_cancelled_tasks"] = len(all_cancelled_tasks)
+    lambda_response["total_cancelled_tasks"] = len(all_cancelled_tasks)
 
     return(lambda_response)
 
@@ -102,7 +108,7 @@ def get_session_id_from_event(event):
         return event['session_ids_to_cancel']
 
     else:
-        errlog.log("Uniplemented path, exiting")
+        errlog.log("Unimplemented path, exiting")
         assert(False)
 
 

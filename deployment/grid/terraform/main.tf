@@ -24,6 +24,7 @@ locals {
     cluster_name = "${var.cluster_name}-${local.project_name}"
     ddb_state_table = "${var.ddb_state_table}-${local.project_name}"
     sqs_queue = "${var.sqs_queue}-${local.project_name}"
+    tasks_queue_name = "${var.sqs_queue}-${local.project_name}__0"
     sqs_dlq = "${var.sqs_dlq}-${local.project_name}"
     lambda_name_get_results = "${var.lambda_name_get_results}-${local.project_name}"
     lambda_name_submit_tasks = "${var.lambda_name_submit_tasks}-${local.project_name}"
@@ -111,6 +112,7 @@ module "compute_plane" {
     lambda_runtime = var.lambda_runtime
     ddb_state_table = local.ddb_state_table
     sqs_queue = local.sqs_queue
+    tasks_queue_name = local.tasks_queue_name
     namespace_metrics = var.namespace_metrics
     dimension_name_metrics = var.dimension_name_metrics
     htc_path_logs = var.htc_path_logs
@@ -129,6 +131,8 @@ module "compute_plane" {
     graceful_termination_delay = var.graceful_termination_delay
     aws_xray_daemon_version = var.aws_xray_daemon_version
     enable_private_subnet = var.enable_private_subnet
+    task_queue_service = var.task_queue_service
+    task_queue_config = var.task_queue_config
     depends_on  = [
         module.vpc
     ]
@@ -168,6 +172,8 @@ module "control_plane" {
     sqs_dlq = local.sqs_dlq
     s3_bucket = local.s3_bucket
     grid_storage_service = var.grid_storage_service
+    task_queue_service = var.task_queue_service
+    task_queue_config = var.task_queue_config
     state_table_service = var.state_table_service
     state_table_config = var.state_table_config
     task_input_passed_via_external_storage = var.task_input_passed_via_external_storage
