@@ -96,7 +96,6 @@ tasks_queue = queue_manager(
     tasks_queue_name=agent_config_data['tasks_queue_name'],
     region=region)
 
-
 lambda_cfg = botocore.config.Config(retries={'max_attempts': 3}, read_timeout=2000, connect_timeout=2000,
                                     region_name=region)
 lambda_client = boto3.client('lambda', config=lambda_cfg, endpoint_url=os.environ['LAMBDA_ENDPOINT_URL'],
@@ -162,6 +161,7 @@ def get_time_now_ms():
 
 
 ttl_gen = TTLExpirationGenerator(task_ttl_refresh_interval_sec, task_ttl_expiration_offset_sec)
+
 
 # {'Items': [{'session_size': Decimal('10'), 'submission_timestamp': Decimal('1612276891690'), 'task_id': 'bd88ea18-6564-11eb-b5fb-060372291b89-part007_9', 'task_status': 'processing-part007', 'task_definition': 'passed_via_storage_size_75_bytes', 'task_owner': 'htc-agent-6d54fd8dfd-7wgpk', 'heartbeat_expiration_timestamp': Decimal('1612277256'), 'session_id': 'bd88ea18-6564-11eb-b5fb-060372291b89-part007', 'sqs_handler_id': 'AQEB19gkPrI8MNJlqfdu+kH4Xr/QOnZWvH9E6qcMTVuHOEKZdhvCeGdW3opZ38k5uIngM94MEzaIZyciDpZYNuwNgXozpp2vpRz5x952R80GAt26FsPmuQQoJ6gdm7dJabHqblYghXw8r+92yTdmSZRnzAr7fpkF2f7C6LoP3AEPVa8DV/6MYbrkKBqjeQLWctQmmTwvcqVkIWJH4KqokjMx+WQt1tGHLBrdd8xPwFlb8kGgwq1d6qeu5hHkdTizoaUDqbLShSYhSWlfysZ7r9its9owIkiZiYDc5/SdPKEi2hga9SH7E1GTtKetk9mUgoH2p4lCFdH2jIDnpY5EVHoicyviCWA2AMOolDZrIeTBtPklWXOnw3Wkljr2qtWbCHS7s6R1Qpis82n+5pVJUjoNfA==', 'task_completion_timestamp': Decimal('0'), 'retries': Decimal('1'), 'parent_session_id': 'bd88ea18-6564-11eb-b5fb-060372291b89-part007'}]
 
@@ -243,9 +243,7 @@ def try_to_acquire_a_task():
 
             if is_task_has_been_cancelled(task["task_id"]):
                 logging.info("Task [{}] has been already cancelled, skipping".format(task['task_id']))
-
                 tasks_queue.delete_message(message_handle_id=task["sqs_handle_id"])
-                
                 return None, None
 
             else:
@@ -259,7 +257,8 @@ def try_to_acquire_a_task():
         raise e
 
     # Message should not re-appear in the queue until task is completed
-    tasks_queue.change_visibility(message["properties"]["message_handle_id"], visibility_timeout_sec=agent_task_visibility_timeout_sec)
+    tasks_queue.change_visibility(message["properties"]["message_handle_id"],
+                                  visibility_timeout_sec=agent_task_visibility_timeout_sec)
 
     task["stats"]["stage3_agent_01_task_acquired_sqs_tstmp"]["tstmp"] = task_pick_up_from_sqs_ms
     task["stats"]["stage3_agent_02_task_acquired_ddb_tstmp"]["tstmp"] = get_time_now_ms()
@@ -474,7 +473,7 @@ def update_ttl_if_required(task, sqs_msg):
 
                     t2 = get_time_now_ms()
 
-                    errlog.log(f"Agent TTL@StateTable Throttling for #{count} times for {t2-t1} ms")
+                    errlog.log(f"Agent TTL@StateTable Throttling for #{count} times for {t2 - t1} ms")
 
                     continue
                 elif e.caused_by_condition and is_task_has_been_cancelled(task["task_id"]):
@@ -571,6 +570,7 @@ async def run_task(task, sqs_msg):
     logging.info("Finished Task: {}".format(task))
     return True
 
+
 def terminate_worker_lambda_container():
     for proc in psutil.process_iter():
         logging.info("running process : {}".format(proc.name()))
@@ -578,6 +578,7 @@ def terminate_worker_lambda_container():
         if proc.name() == 'aws-lambda-rie':
             logging.info("stop lambda emulated environment after the last request")
             proc.terminate()
+
 
 def event_loop():
     logging.info("Starting main event loop")
