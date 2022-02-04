@@ -11,7 +11,7 @@ main: mock_compute_engine.cpp
 	g++ mock_compute_engine.cpp  -std=c++11  -O3 -o mock_compute_engine
 
 build-env: mock_compute_engine.cpp
-	docker build . -f ./Dockerfile.Build -t builded-env:$(TAG)
+	docker build . -f ./Dockerfile.Build --build-arg HTCGRID_ACCOUNT=$(ACCOUNT_ID) --build-arg HTCGRID_REGION=$(REGION) -t builded-env:$(TAG)
 
 compile: build-env
 	docker run --rm -v  $(shell pwd):/app/build  builded-env:$(TAG)
