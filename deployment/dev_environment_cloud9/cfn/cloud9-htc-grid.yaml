@@ -147,7 +147,7 @@ Resources:
         Ref: AWS::StackName
       EnvironmentId:
         Ref: C9Instance
-      LabIdeInstanceProfileArn: !If [ NotEventEngine, !GetAtt C9InstanceProfile.Arn, !Sub 'arn:aws:iam::${AWS::AccountId}:instance-profile/TeamRoleInstanceProfile' ]
+      LabIdeInstanceProfileArn: !If [ NotEventEngine, 'not_event_engine', !Sub 'arn:aws:iam::${AWS::AccountId}:instance-profile/TeamRoleInstanceProfile' ]
 
   C9BootstrapInstanceLambdaFunction:
     Type: AWS::Lambda::Function
@@ -214,10 +214,10 @@ Resources:
                           print(f'waiting for the instance state to be "running", current instance_state: {instance_state}')
 
                       # attach instance profile
-                      print(f'Instance is running , about to associate iam_instance_profile: {iam_instance_profile}')
-                      response = ec2.associate_iam_instance_profile(IamInstanceProfile=iam_instance_profile, InstanceId=instance['InstanceId'])
-                      print(f'response - associate_iam_instance_profile: {response}')
-                      r_ec2 = boto3.resource('ec2')
+                      if iam_instance_profile['Arn'] != "not_event_engine":
+                          print(f'Instance is running , about to associate iam_instance_profile: {iam_instance_profile}')
+                          response = ec2.associate_iam_instance_profile(IamInstanceProfile=iam_instance_profile, InstanceId=instance['InstanceId'])
+                          print(f'response - associate_iam_instance_profile: {response}')
 
                       responseData = {'Success': 'Started bootstrapping for instance: '+instance['InstanceId']}
                       cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, 'CustomResourcePhysicalID')
@@ -279,10 +279,6 @@ Resources:
             - !Sub 'export EKSCTL_VERSION=${C9EKSctlVersion}'
             - curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/${EKSCTL_VERSION}/eksctl_Linux_amd64.tar.gz" | tar xz -C /tmp
             - sudo mv -v /tmp/eksctl /usr/local/bin
-            - echo '=== Install IAM Authenticator ==='
-            - curl --silent --location -o /usr/local/bin/aws-iam-authenticator https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/aws-iam-authenticator
-            - sudo chmod +x /usr/local/bin/aws-iam-authenticator
-            - echo "IAM Authenticator installed at /usr/local/bin/aws-iam-authenticator"
             - echo '=== Install Terraform ==='
             - !Sub 'export TERRAFORM_VERSION=${C9TerraformVersion}'
             - curl --silent --location -o /tmp/terraform.zip "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_386.zip"
@@ -300,9 +296,9 @@ Resources:
             - sudo growpart /dev/xvda 1
             - sudo resize2fs $(df -h |awk '/^\/dev/{print $1}')
             - echo "=== Downloading HTC-Grid project ==="
-            - curl --silent --location -o /home/ec2-user/environment/aws-htc-grid.tar.gz "https://github.com/awslabs/aws-htc-grid/archive/refs/tags/v0.3.1.tar.gz"
+            - curl --silent --location -o /home/ec2-user/environment/aws-htc-grid.tar.gz "https://github.com/awslabs/aws-htc-grid/archive/refs/tags/v0.3.2.tar.gz"
             - cd /home/ec2-user/environment; tar xzvf aws-htc-grid.tar.gz
-            - mv aws-htc-grid-0.3.1/ aws-htc-grid
+            - mv aws-htc-grid-0.3.2/ aws-htc-grid
             - sudo chown -R 501:501 /home/ec2-user/environment/
   C9BootstrapAssociation:
     Type: AWS::SSM::Association
