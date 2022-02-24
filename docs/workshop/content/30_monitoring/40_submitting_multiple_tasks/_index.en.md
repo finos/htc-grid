@@ -79,6 +79,11 @@ Remember, if you want to repeat the same exercise you will need to delete the cu
 kubectl delete -f ~/environment/aws-htc-grid/generated/batch-task-test.yaml  
 ```
 
+### Static Scaling
+
+You can also force a static scaling activity, instead of using the HPA
+
+
 ### Checking the dashboards
 
 To check how the Scaling exercise has gone, you can re-visit a few of the dashboards that we have already explored in this section.

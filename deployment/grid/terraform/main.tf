@@ -133,6 +133,8 @@ module "compute_plane" {
     enable_private_subnet = var.enable_private_subnet
     task_queue_service = var.task_queue_service
     task_queue_config = var.task_queue_config
+    error_log_group = local.error_log_group
+    error_logging_stream = local.error_logging_stream
     depends_on  = [
         module.vpc
     ]
