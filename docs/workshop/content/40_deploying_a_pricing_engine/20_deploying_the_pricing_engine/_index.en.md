@@ -41,7 +41,7 @@ The section highlighted provides a few information of the changes that we are ap
 To apply this change, we just need to point and apply the new configuration using terraform.
 
 ```
-make apply-custom-runtime  TAG=$TAG REGION=$HTCGRID_REGION
+make apply-python-runtime  TAG=$TAG REGION=$HTCGRID_REGION
 ```
 
 {{% notice note %}}
