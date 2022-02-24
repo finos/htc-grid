@@ -114,6 +114,14 @@ variable "metric_name" {
   description = "Metrics name"
 }
 
+variable "error_log_group" {
+  description = "Log group for errors"
+}
+
+variable "error_logging_stream" {
+  description = "Log stream for errors"
+}
+
 variable "metrics_event_rule_time" {
   description = "Fires event rule to put metrics"
 }

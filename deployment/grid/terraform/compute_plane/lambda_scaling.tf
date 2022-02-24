@@ -27,7 +27,29 @@ module "scaling_metrics" {
 
   source  = "terraform-aws-modules/lambda/aws"
   version = "v2.11.0"
-  source_path = "../../../source/compute_plane/python/lambda/scaling_metrics/"
+  source_path = [
+    "../../../source/compute_plane/python/lambda/scaling_metrics/",
+    {
+      path = "../../../source/client/python/api-v0.1/"
+      patterns = [
+        "!README\\.md",
+        "!setup\\.py",
+        "!LICENSE*",
+      ]
+    },
+    {
+      path = "../../../source/client/python/utils/"
+      patterns = [
+        "!README\\.md",
+        "!setup\\.py",
+        "!LICENSE*",
+      ]
+    },
+    {
+      pip_requirements = "../../../source/compute_plane/python/lambda/scaling_metrics/requirements.txt"
+    }
+  ]
+
   function_name = var.lambda_name_scaling_metrics
   handler = "scaling_metrics.lambda_handler"
   memory_size = 1024
@@ -52,6 +74,9 @@ module "scaling_metrics" {
     REGION = var.region
     TASK_QUEUE_SERVICE = var.task_queue_service,
     TASK_QUEUE_CONFIG = var.task_queue_config,
+    ERROR_LOG_GROUP=var.error_log_group,
+    ERROR_LOGGING_STREAM=var.error_logging_stream,
+    TASKS_QUEUE_NAME=var.tasks_queue_name,
   }
    tags = {
     service     = "htc-grid"

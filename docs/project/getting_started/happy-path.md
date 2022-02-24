@@ -57,16 +57,13 @@ The HTC-Grid project has external software dependencies that are deployed as con
     ```
     make ecr-login
     ```
-2. As you'll be downloading images to the ECR public gallery, to avoid timeouts, refresh your ECR authentication token for ECR public registries:
-    ```
-    make public-ecr-login
-    ```
-3. The following command will go to the `~/environment/aws-htc-grid/deployment/image_repository/terraform` and initialize the Terraform project using the bucket `$S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME` as the bucket that will hold the Terraform state:
+
+2. The following command will go to the `~/environment/aws-htc-grid/deployment/image_repository/terraform` and initialize the Terraform project using the bucket `$S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME` as the bucket that will hold the Terraform state:
     ```
     make init-images  TAG=$TAG REGION=$HTCGRID_REGION
     ```
 
-4. If successful, you can now run *terraform apply* to create the HTC-Grid infrastructure. This can take between 10 and 15 minutes depending on the Internet connection.
+3. If successful, you can now run *terraform apply* to create the HTC-Grid infrastructure. This can take between 10 and 15 minutes depending on the Internet connection.
 
     ```bash
     make transfer-images  TAG=$TAG REGION=$HTCGRID_REGION
@@ -88,7 +85,7 @@ name unknown: The repository with name 'xxxxxxxxx' does not exist in the registr
 HTC artifacts include: python packages, docker images, configuration files for HTC and k8s. To build and install these:
 
 
-2. Now build the images for the HTC agent. Return to  `<project_root>`  and run the command:
+1. Now build the images for the HTC agent. Return to  `<project_root>`  and run the command:
 
    ```bash
    make happy-path TAG=$TAG REGION=$HTCGRID_REGION
@@ -116,11 +113,11 @@ Some important parameters are:
 
 The deployment time is about 30 min.
 
-2. Initialize terraform state for the grid
+1. Initialize terraform state for the grid
    ```bash
    make init-grid-deployment  TAG=$TAG REGION=$HTCGRID_REGION
    ```
-3. All the dependencies have been created and are now ready. We are now ready to deploy the HTC-Grid project. There is one last thing to note. HTC-Grid deploys a Grafana version behind [Amazon Cognito](https://aws.amazon.com/cognito/). While you can modify and select which passwords to use in Cognito, the Grafana internal deployment still requires an admin password. Select a memorable password change the value in the placeholder `<my_grafana_admin_password>` below (make this password follows [Cognito default policy](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html)):
+2. All the dependencies have been created and are now ready. We are now ready to deploy the HTC-Grid project. There is one last thing to note. HTC-Grid deploys a Grafana version behind [Amazon Cognito](https://aws.amazon.com/cognito/). While you can modify and select which passwords to use in Cognito, the Grafana internal deployment still requires an admin password. Select a memorable password change the value in the placeholder `<my_grafana_admin_password>` below (make this password follows [Cognito default policy](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html)):
    ```bash
    make apply-custom-runtime  TAG=$TAG REGION=$HTCGRID_REGION GRAFANA_ADMIN_PASSWORD=<my_grafana_admin_password>
    ```
@@ -167,7 +164,7 @@ We will use a Kubernetes Jobs to submit  one execution of 1 second of this C++ p
    ```bash
    kubectl apply -f ./generated/single-task-test.yaml
    ```
-4look at the log of the submission:
+4. look at the log of the submission:
    ```bash
    kubectl logs job/single-task -f
    ```
