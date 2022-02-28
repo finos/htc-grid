@@ -9,7 +9,7 @@ BUCKET_NAME=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --reg
 
 
 build-env: portfolio_pricing_engine.py
-	docker build . -f ./Dockerfile.Build -t builded-env:$(TAG)
+	docker build . -f ./Dockerfile.Build --build-arg HTCGRID_ACCOUNT=$(ACCOUNT_ID) --build-arg HTCGRID_REGION=$(REGION) -t builded-env:$(TAG)
 
 compile: build-env
 	docker run --rm -v  $(shell pwd):/app/build  builded-env:$(TAG)
