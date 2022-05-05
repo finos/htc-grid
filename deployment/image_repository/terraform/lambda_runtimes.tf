@@ -12,7 +12,7 @@ resource null_resource "build_provided" {
     always_run = timestamp()
   }
   provisioner "local-exec" {
-    command = "docker build --build-arg HTCGRID_REGION=${var.region} --build-arg HTCGRID_ACCOUNT=${data.aws_caller_identity.current.account_id} -t ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda:provided -f ./lambda_runtimes/Dockerfile.provided ./lambda_runtimes"
+    command = "docker build --build-arg HTCGRID_REGION=${var.region} --build-arg HTCGRID_ACCOUNT=${data.aws_caller_identity.current.account_id} -t ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda:provided -f ../lambda_runtimes/Dockerfile.provided ../lambda_runtimes"
   }
   # depends_on = [
   #   null_resource.authenticate_to_ecr_public_repository

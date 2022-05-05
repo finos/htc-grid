@@ -29,6 +29,14 @@ For first time users or Windows users, we do recommend the use of Cloud9 as the 
     - `ap-southeast-1`
 
 
+3. Define the infrastructure as code tool used for deployment
+   ```bash
+   export IAS=<tool>
+   ```
+   `tool` can take two values:
+   - `cdk`
+   - `terraform`
+
 ## Create the infrastructure for storing the state of the HTC Grid
 
 The following step creates 3 S3 buckets that will be needed during the installation:
