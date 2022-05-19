@@ -15,17 +15,19 @@ import * as path from "path";
 
 interface LambdaDrainerScalingProps extends cdk.NestedStackProps {
   vpc: ec2.IVpc;
-  vpc_default_sg: ec2.ISecurityGroup;
+  vpcDefaultSg: ec2.ISecurityGroup;
   cluster: eks.ICluster;
-  worker_info: IWorkerInfo[];
+  workerInfo: IWorkerInfo[];
+  privateSubnetSelector: ec2.SubnetSelection;
   // nodeGroupBlocker: eks.Nodegroup[];
 }
 
 export class LambdaDrainerScalingStack extends cdk.NestedStack {
   private vpc: ec2.IVpc;
-  private vpc_default_sg: ec2.ISecurityGroup;
+  private vpcDefaultSg: ec2.ISecurityGroup;
   private cluster: eks.ICluster;
-  private worker_info: IWorkerInfo[];
+  private workerInfo: IWorkerInfo[];
+  private privateSubnetSelector: ec2.SubnetSelection;
   // private nodeGroupBlocker: eks.Nodegroup[];
 
   private readyCheckProvider: cr.Provider;
@@ -38,9 +40,10 @@ export class LambdaDrainerScalingStack extends cdk.NestedStack {
     super(scope, id, props);
 
     this.vpc = props.vpc;
-    this.vpc_default_sg = props.vpc_default_sg;
+    this.vpcDefaultSg = props.vpcDefaultSg;
     this.cluster = props.cluster;
-    this.worker_info = props.worker_info;
+    this.workerInfo = props.workerInfo;
+    this.privateSubnetSelector = props.privateSubnetSelector;
 
     this.readyCheckProvider = this.createReadyCheckHandler();
 
@@ -98,10 +101,9 @@ export class LambdaDrainerScalingStack extends cdk.NestedStack {
         memorySize: 1024,
         timeout: cdk.Duration.seconds(900),
         role: function_role,
-        vpcSubnets: this.vpc.selectSubnets({
-          subnetType: ec2.SubnetType.PRIVATE,
-        }),
-        securityGroups: [this.vpc_default_sg],
+        vpc: this.vpc,
+        vpcSubnets: this.privateSubnetSelector,
+        securityGroups: [this.vpcDefaultSg],
         environment: {
           CLUSTER_NAME: this.cluster.clusterName,
         },
@@ -142,7 +144,7 @@ export class LambdaDrainerScalingStack extends cdk.NestedStack {
   private createAutoscalingEvent(lambda: lambdaPy.PythonFunction) {
     const timeout = this.node.tryGetContext("graceful_termination_delay");
     const lambda_target = new LambdaFunction(lambda);
-    this.worker_info.forEach((worker, index) => {
+    this.workerInfo.forEach((worker, index) => {
       const autoScalingGroup = this.getAutoScalingGroupFromNodeGroup(
         worker.configs.name
       );
@@ -248,10 +250,9 @@ export class LambdaDrainerScalingStack extends cdk.NestedStack {
       memorySize: 1024,
       timeout: cdk.Duration.seconds(60),
       role: function_role,
-      vpcSubnets: this.vpc.selectSubnets({
-        subnetType: ec2.SubnetType.PRIVATE,
-      }),
-      securityGroups: [this.vpc_default_sg],
+      vpc: this.vpc,
+      vpcSubnets: this.privateSubnetSelector,
+      securityGroups: [this.vpcDefaultSg],
       environment: {
         STATE_TABLE_CONFIG: this.node.tryGetContext("ddb_state_table"),
         NAMESPACE: this.node.tryGetContext("namespace_metrics"),

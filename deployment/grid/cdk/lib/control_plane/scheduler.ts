@@ -13,9 +13,10 @@ import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as lambda from "aws-cdk-lib/aws-lambda";
-import * as lambdaPy from "@aws-cdk/aws-lambda-python-alpha";
+//import * as lambdaPy from "@aws-cdk/aws-lambda-python-alpha";
 import * as eks from "aws-cdk-lib/aws-eks";
 import * as secretsmanager from"aws-cdk-lib/aws-secretsmanager";
+import { IgnoreMode } from "aws-cdk-lib";
 
 
 interface SchedulerProps extends cdk.StackProps {
@@ -40,6 +41,7 @@ interface SchedulerProps extends cdk.StackProps {
     readonly metricsCancelTasksLambdaConnectionString: string;
     readonly metricsGetResultsLambdaConnectionString: string;
     readonly metricsTtlCheckerLambdaConnectionString: string;
+    readonly nlbInfluxdb: string;
     readonly errorLogGroup: string;
     readonly errorLoggingStream: string;
     readonly taskInputPassedViaExternalStorage: number ;
@@ -48,6 +50,7 @@ interface SchedulerProps extends cdk.StackProps {
     readonly lambdaNameCancelTasks: string;
     readonly lambdaNameGetResults: string;
     readonly lambdaNameTtlChecker: string;
+    readonly privateSubnetSelector: ec2.SubnetSelection;
 }
 
 export class SchedulerStack extends cdk.Stack {
@@ -88,7 +91,7 @@ export class SchedulerStack extends cdk.Stack {
     private vpc: ec2.IVpc;
     private vpcDefaultSg: ec2.ISecurityGroup;
     private cognitoUserpool: cognito.IUserPool;
-    private lambdaLayers: lambda.LayerVersion[];
+    //private lambdaLayers: lambda.LayerVersion[];
     private lambdaStsAssumeRole: iam.PolicyDocument;
     private clusterName: string;
 
@@ -98,14 +101,17 @@ export class SchedulerStack extends cdk.Stack {
     private htcStdoutBucket: s3.Bucket;
     private sqsQueue: sqs.Queue;
     private sqsDlq: sqs.Queue;
-    private submitTaskFunction: lambdaPy.PythonFunction;
-    private getResultsFunction: lambdaPy.PythonFunction;
-    private cancelTasksFunction: lambdaPy.PythonFunction;
-    private ttlCheckerFunction: lambdaPy.PythonFunction;
+    private privateSubnetSelector: ec2.SubnetSelection;
+    private submitTaskFunction: lambda.Function;
+    private getResultsFunction: lambda.Function;
+    private cancelTasksFunction: lambda.Function;
+    private ttlCheckerFunction: lambda.Function;
+    private lambdaBase: cdk.DockerImage;
 
     private submitTaskIntegration: apigw.LambdaIntegration;
     private getResultsIntegration: apigw.LambdaIntegration;
     private cancelTasksIntegration: apigw.LambdaIntegration;
+
 
     public apiKeySecret: secretsmanager.ISecret ;
     public apiKey: apigw.IApiKey ;
@@ -130,6 +136,7 @@ export class SchedulerStack extends cdk.Stack {
         this.ddbDefaultWrite=props.ddbDefaultWrite;
         this.sqsQueueName=props.sqsQueue;
         this.sqsDlqName =props.sqsDlq;
+        this.privateSubnetSelector = props.privateSubnetSelector;
         this.metricsAreEnabled=props.metricsAreEnabled;
         this.metricsSubmitTasksLambdaConnectionString=props.metricsSubmitTasksLambdaConnectionString;
         this.metricsCancelTasksLambdaConnectionString=props.metricsCancelTasksLambdaConnectionString;
@@ -146,8 +153,13 @@ export class SchedulerStack extends cdk.Stack {
         this.lambdaNameGetResultsRole = `role_lambda_get_results-${this.projectName}`;
         this.lambdaNameTtlChecker=props.lambdaNameTtlChecker
         this.lambdaNameTtlCheckerRole = `role_lambda_ttl_checker-${this.projectName}`;
+        this.nlbInfluxdb = props.nlbInfluxdb ;
         this.taskInputPassedViaExternalStorage = props.taskInputPassedViaExternalStorage ;
 
+
+        this.lambdaBase = cdk.DockerImage.fromBuild("../../../", {
+            file: "deployment/grid/cdk/lib/control_plane/Dockerfile"
+        })
         this.taskstatusTable = this.createDynamodb();
 
         this.elasticacheCluster = this.createRedisCluster();
@@ -156,23 +168,7 @@ export class SchedulerStack extends cdk.Stack {
 
         [this.sqsQueue, this.sqsDlq] = this.createQueues();
 
-        this.lambdaLayers = [
-            new lambda.LayerVersion(this, "api_layer", {
-                code: lambda.Code.fromAsset("../../../", {
-                    bundling: this.get_lambda_bundle("source/client/python/api-v0.1/"),
-                    exclude:["**/node_modules","venv","**/.terraform","**/cdk.out"]
-                }),
-            }),
-            // new lambdaPy.PythonLayerVersion(this, 'api_layer', {
-            //   entry: '../../../source/client/python/api-v0.1/'
-            // }),
-            // new lambda.LayerVersion(this, 'utils_layer', {
-            //   code: lambda.Code.fromAsset('../../../', {bundling: this.get_lambda_bundle('source/client/python/utils/')})
-            // }),
-            new lambdaPy.PythonLayerVersion(this, "utils_layer", {
-                entry: "../../../source/client/python/utils/",
-            }),
-        ];
+
         this.lambdaStsAssumeRole = new iam.PolicyDocument({
             statements: [
                 new iam.PolicyStatement({
@@ -207,16 +203,27 @@ export class SchedulerStack extends cdk.Stack {
         this.privateApiGwUrl = privateApiInfo[0].url;
         this.redisUrl = this.elasticacheCluster.attrRedisEndpointAddress;
     }
-    private get_lambda_bundle(working_dir: string): cdk.BundlingOptions {
+    private get_lambda_function_bundle(working_dir: string): cdk.BundlingOptions {
         return {
-            image: lambda.Runtime.PYTHON_3_7.bundlingImage,
+            image: this.lambdaBase,
             command: [
                 "bash",
                 "-c",
-                `cd ${working_dir} && pip install --no-cache -r requirements_layer.txt -t /asset-output && cp -au . /asset-output`,
+                `cd ${working_dir} && cp -r /asset-temp/* /asset-output && cp -au . /asset-output`,
             ],
+
         };
     }
+    // private get_lambda_bundle(working_dir: string): cdk.BundlingOptions {
+    //     return {
+    //         image: lambda.Runtime.PYTHON_3_7.bundlingImage,
+    //         command: [
+    //             "bash",
+    //             "-c",
+    //             `cd ${working_dir} && pip install --no-cache -r requirements_layer.txt -t /asset-output && cp -au . /asset-output`,
+    //         ],
+    //     };
+    // }
     private createDynamodb(): dynamodb.Table {
         const ddb_gsi_ttl_read = this.ddbDefaultRead;
         const ddb_gsi_ttl_write = this.ddbDefaultWrite;
@@ -406,7 +413,7 @@ export class SchedulerStack extends cdk.Stack {
         cdk.Tags.of(queue).add("service", "htc-aws");
         return queue;
     }
-    private createSubmitLambda(): lambdaPy.PythonFunction {
+    private createSubmitLambda(): lambda.Function {
         const submit_task_lambda_role = new iam.Role(
             this,
             "submit_task_lambda_role",
@@ -418,23 +425,24 @@ export class SchedulerStack extends cdk.Stack {
                 },
             }
         );
-        const submit_task_function = new lambdaPy.PythonFunction(
+        const submit_task_function = new lambda.Function(
             this,
-            "submit_task_lambda_functions",
-            {
-                // If requirements.txt exists at entry path, don't need to explicitly state path like terraform
-                entry: "../../../source/control_plane/python/lambda/submit_tasks",
-                index: "submit_tasks.py",
-                handler: "lambda_handler",
-                layers: this.lambdaLayers,
+            "submit_task_lambda_functions", {
+                //handler: "lambda_handler", runtime: lambda.Runtime.PYTHON_3_7,
+                code: lambda.Code.fromAsset("../../../source/control_plane/python/lambda/submit_tasks", {
+                    bundling: this.get_lambda_function_bundle("."),
+                    ignoreMode: IgnoreMode.GIT,
+                    exclude: ["node_modules/","venv/","cdk.out/",".terraform/","builds/"]
+                }),
+                //index: "source/control_plane/python/lambda/submit_tasks/submit_tasks.py",
+                handler: "submit_tasks.lambda_handler",
                 functionName: this.lambdaNameSubmitTasks,
                 runtime: lambda.Runtime.PYTHON_3_7,
                 memorySize: 1024,
                 timeout: cdk.Duration.seconds(300),
                 role: submit_task_lambda_role,
-                vpcSubnets: this.vpc.selectSubnets({
-                    subnetType: ec2.SubnetType.PRIVATE,
-                }),
+                vpc: this.vpc,
+                vpcSubnets: this.privateSubnetSelector,
                 securityGroups: [this.vpcDefaultSg],
                 environment: {
                     STATE_TABLE_NAME: this.taskstatusTable.tableName,
@@ -456,13 +464,13 @@ export class SchedulerStack extends cdk.Stack {
                     REDIS_URL: this.elasticacheCluster.attrRedisEndpointAddress,
                     METRICS_GRAFANA_PRIVATE_IP: this.nlbInfluxdb,
                     REGION: this.region,
-                },
+                }
             }
         );
         cdk.Tags.of(submit_task_function).add("service", "htc-grid");
         return submit_task_function;
     }
-    private createGetLambda(): lambdaPy.PythonFunction {
+    private createGetLambda(): lambda.Function {
         const get_results_lambda_role = new iam.Role(
             this,
             "get_results_lambda_role",
@@ -474,23 +482,27 @@ export class SchedulerStack extends cdk.Stack {
                 },
             }
         );
-        const get_results_function = new lambdaPy.PythonFunction(
+        const get_results_function = new lambda.Function(
             this,
             "get_results_lambda_functions",
             {
                 // If requirements.txt exists at entry path, don't need to explicitly state path like terraform
-                entry: "../../../source/control_plane/python/lambda/get_results",
-                index: "get_results.py",
-                handler: "lambda_handler",
-                layers: this.lambdaLayers,
+                //entry: "../../../source/control_plane/python/lambda/get_results",
+                code: lambda.Code.fromAsset("../../..", {
+                    bundling: this.get_lambda_function_bundle("source/control_plane/python/lambda/get_results"),
+                    ignoreMode: IgnoreMode.GIT,
+                    exclude: ["node_modules/","venv/","cdk.out/",".terraform/","builds/"]
+                }),
+                //index: "get_results.py",
+                handler: "get_results.lambda_handler",
+                //layers: this.lambdaLayers,
                 functionName: this.lambdaNameGetResults,
                 runtime: lambda.Runtime.PYTHON_3_7,
                 memorySize: 1024,
                 timeout: cdk.Duration.seconds(300),
                 role: get_results_lambda_role,
-                vpcSubnets: this.vpc.selectSubnets({
-                    subnetType: ec2.SubnetType.PRIVATE,
-                }),
+                vpc: this.vpc,
+                vpcSubnets: this.privateSubnetSelector,
                 securityGroups: [this.vpcDefaultSg],
                 environment: {
                     STATE_TABLE_NAME: this.taskstatusTable.tableName,
@@ -518,7 +530,7 @@ export class SchedulerStack extends cdk.Stack {
         cdk.Tags.of(get_results_function).add("service", "htc-grid");
         return get_results_function;
     }
-    private createCancelLambda(): lambdaPy.PythonFunction {
+    private createCancelLambda(): lambda.Function {
         const cancel_task_lambda_role = new iam.Role(
             this,
             "cancel_task_lambda_role",
@@ -530,23 +542,27 @@ export class SchedulerStack extends cdk.Stack {
                 },
             }
         );
-        const cancel_tasks_function = new lambdaPy.PythonFunction(
+        const cancel_tasks_function = new lambda.Function(
             this,
             "cancel_tasks_lambda_functions",
             {
                 // If requirements.txt exists at entry path, don't need to explicitly state path like terraform
-                entry: "../../../source/control_plane/python/lambda/cancel_tasks",
-                index: "cancel_tasks.py",
-                handler: "lambda_handler",
-                layers: this.lambdaLayers,
+                //entry: "../../../source/control_plane/python/lambda/cancel_tasks",
+                code: lambda.Code.fromAsset("../../..", {
+                    bundling: this.get_lambda_function_bundle("source/control_plane/python/lambda/cancel_tasks"),
+                    ignoreMode: IgnoreMode.GIT,
+                    exclude: ["node_modules/","venv/","cdk.out/",".terraform/","builds/"]
+                }),
+                //index: "cancel_tasks.py",
+                handler: "cancel_tasks.lambda_handler",
+                //layers: this.lambdaLayers,
                 functionName: this.lambdaNameCancelTasks,
                 runtime: lambda.Runtime.PYTHON_3_7,
                 memorySize: 1024,
                 timeout: cdk.Duration.seconds(300),
                 role: cancel_task_lambda_role,
-                vpcSubnets: this.vpc.selectSubnets({
-                    subnetType: ec2.SubnetType.PRIVATE,
-                }),
+                vpc: this.vpc,
+                vpcSubnets: this.privateSubnetSelector,
                 securityGroups: [this.vpcDefaultSg],
                 environment: {
                     STATE_TABLE_NAME: this.taskstatusTable.tableName,
@@ -574,7 +590,7 @@ export class SchedulerStack extends cdk.Stack {
         cdk.Tags.of(cancel_tasks_function).add("service", "htc-grid");
         return cancel_tasks_function;
     }
-    private createTtlLambda(): lambdaPy.PythonFunction {
+    private createTtlLambda(): lambda.Function {
         const ttl_checker_lambda_role = new iam.Role(
             this,
             "ttl_checker_lambda_role",
@@ -587,23 +603,27 @@ export class SchedulerStack extends cdk.Stack {
             }
         );
 
-        const ttl_checker_function = new lambdaPy.PythonFunction(
+        const ttl_checker_function = new lambda.Function(
             this,
             "ttl_checker_lambda_function",
             {
                 // If requirements.txt exists at entry path, don't need to explicitly state path like terraform
-                entry: "../../../source/control_plane/python/lambda/ttl_checker",
-                index: "ttl_checker.py",
-                handler: "lambda_handler",
-                layers: this.lambdaLayers,
+                //entry: "../../../source/control_plane/python/lambda/ttl_checker",
+                code: lambda.Code.fromAsset("../../..", {
+                    bundling: this.get_lambda_function_bundle("source/control_plane/python/lambda/ttl_checker"),
+                    ignoreMode: IgnoreMode.GIT,
+                    exclude: ["node_modules/","venv/","cdk.out/",".terraform/","builds/"]
+                }),
+                //index: "ttl_checker.py",
+                handler: "ttl_checker.lambda_handler",
+                //layers: this.lambdaLayers,
                 functionName: this.lambdaNameTtlChecker,
                 runtime: lambda.Runtime.PYTHON_3_7,
                 memorySize: 1024,
                 timeout: cdk.Duration.seconds(55),
                 role: ttl_checker_lambda_role,
-                vpcSubnets: this.vpc.selectSubnets({
-                    subnetType: ec2.SubnetType.PRIVATE,
-                }),
+                vpc: this.vpc,
+                vpcSubnets: this.privateSubnetSelector,
                 securityGroups: [this.vpcDefaultSg],
                 logRetention: logs.RetentionDays.FIVE_DAYS,
                 // use_existing_cloudwatch_log_group = true
@@ -716,7 +736,7 @@ export class SchedulerStack extends cdk.Stack {
                     effect: iam.Effect.DENY,
                     conditions: {
                         StringNotEquals: {
-                            "aws:SourceVpce": this.vpc.vpcId,
+                            "aws:SourceVpc": this.vpc.vpcId,
                         },
                     },
                 }),

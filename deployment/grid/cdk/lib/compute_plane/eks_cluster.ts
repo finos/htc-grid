@@ -15,8 +15,9 @@ interface EksClusterStackProps extends cdk.StackProps {
   clusterName: string;
   kubernetesVersion: string;
   inputRoles: IInputRole[];
-  enablePrivateSubnet: string ;
+  enablePrivateSubnet: boolean ;
   eksWorkerGroups: IWorkerGroup[];
+  privateSubnetSelector: ec2.SubnetSelection;
 }
 
 
@@ -36,7 +37,7 @@ export class EksClusterStack extends cdk.Stack {
     var clusterName = props.clusterName;
 
     // Need to transform user configured bool into proper eks.EndpointAccess class value
-    var endpointAccess = Boolean(props.enablePrivateSubnet)
+    var endpointAccess = props.enablePrivateSubnet
       ? eks.EndpointAccess.PUBLIC_AND_PRIVATE
       : eks.EndpointAccess.PUBLIC;
 
@@ -49,10 +50,12 @@ export class EksClusterStack extends cdk.Stack {
       version: eks.KubernetesVersion.of(k8sVersion),
       defaultCapacity: 0,
       clusterName: clusterName,
+      vpcSubnets: [{
+        subnetType: ec2.SubnetType.PUBLIC
+      }, props.privateSubnetSelector],
       endpointAccess: endpointAccess,
-      vpcSubnets: [{ subnetType: ec2.SubnetType.PRIVATE }],
       vpc: vpc,
-      mastersRole: masterRole,
+      mastersRole: masterRole,    
     });
     cdk.Tags.of(cluster).add("Environment", "training");
     cdk.Tags.of(cluster).add("GithubRepo", "cdk-aws-eks"); // terraform-aws-eks
@@ -64,11 +67,12 @@ export class EksClusterStack extends cdk.Stack {
     const eks_helper = new EksClusterHelperStack(this, "eks-helper-stack", {
       cluster: cluster,
       vpc: vpc,
-      vpc_default_sg: vpcDefaultSg,
-      eksWorkerGroups: props.eksWorkerGroups
+      vpcDefaultSg: vpcDefaultSg,
+      eksWorkerGroups: props.eksWorkerGroups,
+      privateSubnetSelector: props.privateSubnetSelector
     });
     this.eksCluster = cluster;
-    this.workerInfo = eks_helper.worker_info;
+    this.workerInfo = eks_helper.workerInfo;
   }
   private mapInputRole(cluster: eks.Cluster, inputRoles: IInputRole[]) {
     inputRoles.forEach((inputRole: IInputRole, index: number) => {

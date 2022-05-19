@@ -54,6 +54,7 @@ const clusterStack = new EksClusterStack(app, `${tag}-EksClusterStack`, {
   enablePrivateSubnet: htcGridConfig.enable_private_subnet,
   inputRoles: htcGridConfig.input_roles,
   kubernetesVersion: htcGridConfig.kubernetes_version,
+  privateSubnetSelector: vpcStack.privateSubnetSelector
 });
 
 const namespacesStack = new NamespacesStack(app, `${tag}-ClusterNamespaces`, {
@@ -100,6 +101,7 @@ const authStack = new CognitoAuthStack(app, `${tag}-AuthStack`, {
 const schedulerStack = new SchedulerStack(app, `${tag}-SchedulerStack`, {
   env: env,
   vpc: vpcStack.vpc,
+  privateSubnetSelector: vpcStack.privateSubnetSelector,
   ddbConfig: htcGridConfig.state_table_config,
   ddbDefaultRead: htcGridConfig.dynamodb_table_defaul_read_capacity,
   ddbDefaultWrite: htcGridConfig.dynamodb_table_default_write_capacity,
@@ -117,6 +119,7 @@ const schedulerStack = new SchedulerStack(app, `${tag}-SchedulerStack`, {
   metricsGetResultsLambdaConnectionString: htcGridConfig.metrics_get_results_lambda_connection_string,
   metricsSubmitTasksLambdaConnectionString: htcGridConfig.metrics_submit_tasks_lambda_connection_string,
   metricsTtlCheckerLambdaConnectionString: htcGridConfig.metrics_ttl_checker_lambda_connection_string,
+  nlbInfluxdb: namespacesStack.nlbInfluxDb,
   projectName: htcGridConfig.project_name,
   s3BucketName: htcGridConfig.s3_bucket,
   sqsDlq: htcGridConfig.sqs_dlq,

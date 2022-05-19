@@ -60,6 +60,8 @@ interface NamespacesProps extends cdk.StackProps {
 
 export class NamespacesStack extends cdk.Stack {
   public clusterManager: ClusterManagerPlus;
+  public nlbInfluxDb : string;
+
   constructor(scope: Construct, id: string, props: NamespacesProps) {
     super(scope, id, props);
     const cluster = props.cluster;
@@ -86,10 +88,11 @@ export class NamespacesStack extends cdk.Stack {
     );
     containerInsightsStack.addDependency(kubeSystemStack);
     // no dependencies
-    new InfluxdbStack(this, "influxdb", {
+    const influxDb  = new InfluxdbStack(this, "influxdb", {
       clusterManager: this.clusterManager,
       influxDbTag: props.influxDbTag
     });
+    this.nlbInfluxDb = influxDb.nlbInfluxDb ;
     // no dependencies
     new PrometheusStack(this, "prometheus", {
       alertManagerTag: props.alertManagerTag,

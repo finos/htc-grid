@@ -11,6 +11,7 @@ interface InfluxdbProps extends cdk.NestedStackProps {
 }
 
 export class InfluxdbStack extends cdk.NestedStack {
+  public nlbInfluxDb : string
   constructor(scope: Construct, id: string, props: InfluxdbProps) {
     super(scope, id, props);
 
@@ -63,6 +64,14 @@ export class InfluxdbStack extends cdk.NestedStack {
         },
       },
     });
+
+    this.nlbInfluxDb = new eks.KubernetesObjectValue(this, 'LoadBalancerAttribute', {
+      cluster: clusterManager.cluster,
+      objectType: 'service',
+      objectName: 'influxdb',
+      objectNamespace: "influxdb",
+      jsonPath: '.status.loadBalancer.ingress[0].hostname', // https://kubernetes.io/docs/reference/kubectl/jsonpath/
+    }).value;
 
     influxdb.node.addDependency(influxdb_namespace);
   }

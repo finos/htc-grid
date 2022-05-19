@@ -136,9 +136,9 @@ export interface IHTCGridConfig {
   agent_configuration: IAgentDeploymentConfig;
   grafana_configuration: IGrafanaConfig;
   prometheus_configuration: IPrometheusConfig;
-  public_subnets: string[];
-  private_subnets: string[];
-  enable_private_subnet: string;
+  public_subnets: number;
+  private_subnets: number;
+  enable_private_subnet: boolean;
   kubernetes_version: string;
   k8s_ca_version: string;
   cwa_version:string;
