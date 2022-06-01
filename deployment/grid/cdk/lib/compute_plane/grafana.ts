@@ -1,6 +1,6 @@
 // Namespace: grafana
 import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib"
+import * as cdk from "aws-cdk-lib";
 import * as path from "path";
 import * as fs from "fs";
 import * as forge from "node-forge";
@@ -9,6 +9,7 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as eks from "aws-cdk-lib/aws-eks";
 import * as asset from "aws-cdk-lib/aws-s3-assets";
+import * as secretsmanager from"aws-cdk-lib/aws-secretsmanager";
 import { ClusterManagerPlus } from "../shared/cluster-manager-plus/cluster-manager-plus";
 
 interface GrafanaProps extends cdk.NestedStackProps {
@@ -22,8 +23,15 @@ interface GrafanaProps extends cdk.NestedStackProps {
 
 export class GrafanaStack extends cdk.NestedStack {
   public readonly albCertArn: string;
+  public grafanaPasswordSecret: secretsmanager.ISecret ;
   constructor(scope: Construct, id: string, props: GrafanaProps) {
     super(scope, id, props);
+
+
+    this.grafanaPasswordSecret = new secretsmanager.Secret(this, "Secret", {
+      description: "Password required for login to the grafana dashboard",
+      secretStringValue: cdk.SecretValue.unsafePlainText(props.grafanaAdminPassword)
+    });
 
     const NAMESPACE = "grafana";
     const clusterManager = props.clusterManager;
@@ -139,16 +147,12 @@ export class GrafanaStack extends cdk.NestedStack {
           "kubernetes.io/ingress.class": "alb",
           "alb.ingress.kubernetes.io/scheme": "internet-facing",
           "alb.ingress.kubernetes.io/listen-ports":
-            '[{"HTTP": 80},{"HTTPS":443}]',
+            "[{\"HTTP\": 80},{\"HTTPS\":443}]",
           "alb.ingress.kubernetes.io/certificate-arn": this.albCertArn,
           "alb.ingress.kubernetes.io/actions.ssl-redirect":
-            '{"Type": "redirect", "RedirectConfig": { "Protocol": "HTTPS", "Port": "443", "StatusCode": "HTTP_301"}}',
-          // "alb.ingress.kubernetes.io/auth-type"= "cognito"
-          // "alb.ingress.kubernetes.io/auth-scope"= "openid"
-          // "alb.ingress.kubernetes.io/auth-session-timeout"= "3600"
-          // "alb.ingress.kubernetes.io/auth-session-cookie"= "AWSELBAuthSessionCookie"
-          // "alb.ingress.kubernetes.io/auth-on-unauthenticated-request" = "authenticate"
-          // "alb.ingress.kubernetes.io/auth-idp-cognito" = "{\"UserPoolArn\": \"arn:aws:cognito-idp:eu-west-1:123456789012:userpool/eu-west-1_tobereplaced\",\"UserPoolClientId\":\"ToBeReplaced\",\"UserPoolDomain\":\"${lower(local.suffix)}\"}"
+            "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}",
+          "alb.ingress.kubernetes.io/subnets" : clusterManager.cluster.vpc.publicSubnets.join(",")
+
         },
       },
       spec: {

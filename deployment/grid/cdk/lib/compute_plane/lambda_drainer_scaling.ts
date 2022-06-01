@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib"
+import * as cdk from "aws-cdk-lib";
 import * as asg from "aws-cdk-lib/aws-autoscaling";
 import * as cr from "aws-cdk-lib/custom-resources";
 import * as eks from "aws-cdk-lib/aws-eks";
@@ -12,20 +12,60 @@ import { LambdaFunction } from "aws-cdk-lib/aws-events-targets";
 import * as logs from "aws-cdk-lib/aws-logs";
 import { IWorkerInfo } from "../shared/cluster-interfaces";
 import * as path from "path";
+import * as yaml from 'yaml'
+import * as fs from 'fs'
+
 
 interface LambdaDrainerScalingProps extends cdk.NestedStackProps {
-  vpc: ec2.IVpc;
-  vpc_default_sg: ec2.ISecurityGroup;
-  cluster: eks.ICluster;
-  worker_info: IWorkerInfo[];
+  readonly  vpc: ec2.IVpc;
+  readonly vpcDefaultSg: ec2.ISecurityGroup;
+  readonly cluster: eks.ICluster;
+  readonly workerInfo: IWorkerInfo[];
+  readonly privateSubnetSelector: ec2.SubnetSelection;
+  readonly drainerLambdaRole: iam.IRole;
+  readonly gracefulTerminationDelay: number;
+  readonly projectName: string;
+  readonly ddbTableName : string;
+  readonly taskService :string ;
+  readonly taskConfig : string;
+  readonly sqsQueue: string;
+  readonly errorLogGroup: string;
+  readonly errorLoggingStream: string;
+  readonly lambdaNameScalingMetrics: string;
+  readonly namespaceMetrics: string;
+  readonly dimensionNameMetrics: string;
+  readonly periodMetrics: string;
+  readonly metricsName: string;
+  readonly metricsEventRuleTime: string;
+  readonly tasksQueueName: string;
+
   // nodeGroupBlocker: eks.Nodegroup[];
 }
 
 export class LambdaDrainerScalingStack extends cdk.NestedStack {
   private vpc: ec2.IVpc;
-  private vpc_default_sg: ec2.ISecurityGroup;
+  private vpcDefaultSg: ec2.ISecurityGroup;
   private cluster: eks.ICluster;
-  private worker_info: IWorkerInfo[];
+  private workerInfo: IWorkerInfo[];
+  private privateSubnetSelector: ec2.SubnetSelection;
+  private ddbTableName: string;
+  private lambdaNameScalingMetrics: string;
+  private namespaceMetrics: string;
+  private dimensionNameMetrics: string;
+  private periodMetrics: string;
+  private metricsName: string;
+  private metricsEventRuleTime: string;
+
+  private taskService: string;
+  private taskConfig: string;
+  private sqsQueueName: string;
+  private errorLogGroup: string;
+  private errorLoggingStream: string;
+  private tasksQueueName: string;
+  private drainerLambdaRole: iam.IRole;
+
+
+
   // private nodeGroupBlocker: eks.Nodegroup[];
 
   private readyCheckProvider: cr.Provider;
@@ -38,16 +78,31 @@ export class LambdaDrainerScalingStack extends cdk.NestedStack {
     super(scope, id, props);
 
     this.vpc = props.vpc;
-    this.vpc_default_sg = props.vpc_default_sg;
+    this.vpcDefaultSg = props.vpcDefaultSg;
     this.cluster = props.cluster;
-    this.worker_info = props.worker_info;
-
+    this.workerInfo = props.workerInfo;
+    this.privateSubnetSelector = props.privateSubnetSelector;
+    this.ddbTableName = props.ddbTableName;
+    this.taskService=props.taskService;
+    this.taskConfig=props.taskConfig;
+    this.sqsQueueName=props.sqsQueue;
+    this.privateSubnetSelector = props.privateSubnetSelector;
+    this.errorLogGroup=props.errorLogGroup;
+    this.errorLoggingStream=props.errorLoggingStream;
+    this.lambdaNameScalingMetrics = props.lambdaNameScalingMetrics
     this.readyCheckProvider = this.createReadyCheckHandler();
+    this.namespaceMetrics = props.namespaceMetrics;
+    this.dimensionNameMetrics = props.dimensionNameMetrics;
+    this.periodMetrics = props.periodMetrics;
+    this.metricsName = props.metricsName;
+    this.metricsEventRuleTime = props.metricsEventRuleTime;
+    this.tasksQueueName = props.tasksQueueName;
+    this.drainerLambdaRole = props.drainerLambdaRole;
 
-    const drainer_function = this.createDrainerFunction();
-    this.createAutoscalingEvent(drainer_function);
+    const drainerFunction =  this.createDrainerFunction(props.projectName);
+    this.createAutoscalingEvent(drainerFunction,props.gracefulTerminationDelay);
     // this.addDrainerEksRole();
-    const scaling_function = this.createScalingFunction();
+    const scaling_function = this.createScalingFunction(props.projectName);
     this.createScalingMetricsEvent(scaling_function);
   }
   private createReadyCheckHandler() {
@@ -61,7 +116,12 @@ export class LambdaDrainerScalingStack extends cdk.NestedStack {
     });
     handler.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ["eks:DescribeNodegroup"],
+        actions: [
+          "eks:DescribeNodegroup",
+          "ec2:CreateNetworkInterface",
+          "ec2:DeleteNetworkInterface",
+          "ec2:DescribeNetworkInterfaces",
+        ],
         resources: ["*"],
       })
     );
@@ -69,23 +129,8 @@ export class LambdaDrainerScalingStack extends cdk.NestedStack {
       onEventHandler: handler,
     });
   }
-  private createDrainerFunction(): lambdaPy.PythonFunction {
+  private createDrainerFunction(projectName: string): lambdaPy.PythonFunction {
     // Is this needed? CDK should create this, but may create extra permissions as well..
-    const function_role = new iam.Role(this, "drainer_lambda_role", {
-      roleName: `role_lambda_drainer-${this.node.tryGetContext("tag")}`,
-      assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
-      inlinePolicies: {
-        AssumeRole: new iam.PolicyDocument({
-          statements: [
-            new iam.PolicyStatement({
-              actions: ["sts:AssumeRole"],
-              effect: iam.Effect.ALLOW,
-              resources: ["*"],
-            }),
-          ],
-        }),
-      },
-    });
     const drainer_function = new lambdaPy.PythonFunction(
       this,
       "drainer-function",
@@ -93,56 +138,38 @@ export class LambdaDrainerScalingStack extends cdk.NestedStack {
         entry: "../../../source/compute_plane/python/lambda/drainer",
         index: "handler.py",
         handler: "lambda_handler",
-        functionName: `lambda_drainer-${this.node.tryGetContext("tag")}`,
+        functionName: `lambda_drainer-${projectName}`,
         runtime: lambda.Runtime.PYTHON_3_7,
         memorySize: 1024,
         timeout: cdk.Duration.seconds(900),
-        role: function_role,
-        vpcSubnets: this.vpc.selectSubnets({
-          subnetType: ec2.SubnetType.PRIVATE,
-        }),
-        securityGroups: [this.vpc_default_sg],
+        role: this.drainerLambdaRole,
+        vpc: this.vpc,
+        vpcSubnets: this.privateSubnetSelector,
+        securityGroups: [this.vpcDefaultSg],
         environment: {
           CLUSTER_NAME: this.cluster.clusterName,
         },
       }
     );
+
+
+
+    const rBacYamlManifest = yaml.parseAllDocuments(fs.readFileSync('./lib/compute_plane/lambda_rbac.yaml', 'utf-8'))
+
+    const rBacManifest = rBacYamlManifest.map(document => document.toJS())
+
+    this.cluster.addManifest("DrainerRbac",...rBacManifest)
     cdk.Tags.of(drainer_function).add("service", "htc-aws");
     // Agent permissions
     // Believe CDK will already add this, but adding for terraform: cdk consistency (for now)
-    function_role.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName(
-        "service-role/AWSLambdaBasicExecutionRole"
-      )
-    );
-    new iam.Policy(this, "lambda_drainer_policy", {
-      document: new iam.PolicyDocument({
-        statements: [
-          new iam.PolicyStatement({
-            resources: ["*"],
-            actions: [
-              "ec2:CreateNetworkInterface",
-              "ec2:DeleteNetworkInterface",
-              "ec2:DescribeNetworkInterfaces",
-              "autoscaling:CompleteLifecycleAction",
-              "ec2:DescribeInstances",
-              "eks:DescribeCluster",
-              "sts:GetCallerIdentity",
-            ],
-            effect: iam.Effect.ALLOW,
-          }),
-        ],
-      }),
-      policyName: "lambda-drainer-policy",
-      roles: [function_role],
-    });
+
     return drainer_function;
   }
 
-  private createAutoscalingEvent(lambda: lambdaPy.PythonFunction) {
-    const timeout = this.node.tryGetContext("graceful_termination_delay");
+  private createAutoscalingEvent(lambda: lambdaPy.PythonFunction, gracefulTerminationDelay: number) {
+    const timeout = gracefulTerminationDelay;
     const lambda_target = new LambdaFunction(lambda);
-    this.worker_info.forEach((worker, index) => {
+    this.workerInfo.forEach((worker, index) => {
       const autoScalingGroup = this.getAutoScalingGroupFromNodeGroup(
         worker.configs.name
       );
@@ -170,62 +197,12 @@ export class LambdaDrainerScalingStack extends cdk.NestedStack {
       });
     });
   }
-  // lambda_drainer-eks.tf
-  // Error when trying to add:
-  // 'Error from server (AlreadyExists): error when creating "/tmp/manifest.yaml":
-  // clusterroles.rbac.authorization.k8s.io "lambda-cluster-access" already exists\n'
-  // commenting out for now
-  // private addDrainerEksRole() {
-  //     const cluster_role_name = 'lambda-cluster-access';
-  //     const cluster_role = {
-  //         apiVersion: 'rbac.authorization.k8s.io/v1',
-  //         kind: 'ClusterRole',
-  //         metadata: {
-  //             name: cluster_role_name
-  //         },
-  //         rules: [
-  //             {
-  //                 apiGroups: [""],
-  //                 resources: ["pods", "pods/eviction", "nodes"],
-  //                 verbs: ["create", "list", "patch"]
-  //             }
-  //         ]
-  //     };
-  //     const cluster_role_binding = {
-  //         apiVersion: 'rbac.authorization.k8s.io/v1',
-  //         kind: 'RoleBinding',
-  //         metadata: {
-  //             name: 'lambda-user-cluster-role-binding'
-  //         },
-  //         subjects: [
-  //             {
-  //                 kind: 'User',
-  //                 name: 'lambda'
-  //             }
-  //         ],
-  //         roleRef: {
-  //             kind: 'ClusterRole',
-  //             name: cluster_role_name,
-  //             apiGroup: 'rbac.authorization.k8s.io'
-  //         }
-  //     };
-  //     const role_manifest = new eks.KubernetesManifest(this, 'lambda_cluster_role', {
-  //         cluster: this.cluster,
-  //         manifest: [cluster_role]
-  //     });
-  //     const role_binding_manifest = new eks.KubernetesManifest(this, 'lambda_cluster_role_binding', {
-  //         cluster: this.cluster,
-  //         manifest: [cluster_role_binding]
-  //     });
-  //     role_binding_manifest.node.addDependency(role_manifest);
-  // }
-  private createScalingFunction(): lambdaPy.PythonFunction {
-    const lambda_name = `${this.node.tryGetContext(
-      "lambda_name_scaling_metrics"
-    )}-${this.node.tryGetContext("tag")}`;
+
+  private createScalingFunction(projectName: string): lambdaPy.PythonFunction {
+    const lambda_name = this.lambdaNameScalingMetrics;
     // Is this needed? CDK should create this, but may create extra permissions as well..
     const function_role = new iam.Role(this, "role_lambda_metrics", {
-      roleName: `role_lambda_metrics-${this.node.tryGetContext("tag")}`,
+      roleName: `role_lambda_metrics-${projectName}`,
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
       inlinePolicies: {
         AssumeRole: new iam.PolicyDocument({
@@ -239,34 +216,6 @@ export class LambdaDrainerScalingStack extends cdk.NestedStack {
         }),
       },
     });
-    const scaling_function = new lambdaPy.PythonFunction(this, lambda_name, {
-      entry: "../../../source/compute_plane/python/lambda/scaling_metrics",
-      index: "scaling_metrics.py",
-      handler: "lambda_handler",
-      functionName: lambda_name,
-      runtime: lambda.Runtime.PYTHON_3_7,
-      memorySize: 1024,
-      timeout: cdk.Duration.seconds(60),
-      role: function_role,
-      vpcSubnets: this.vpc.selectSubnets({
-        subnetType: ec2.SubnetType.PRIVATE,
-      }),
-      securityGroups: [this.vpc_default_sg],
-      environment: {
-        STATE_TABLE_CONFIG: this.node.tryGetContext("ddb_state_table"),
-        NAMESPACE: this.node.tryGetContext("namespace_metrics"),
-        DIMENSION_NAME: this.node.tryGetContext("dimension_name_metrics"),
-        DIMENSION_VALUE: this.cluster.clusterName,
-        PERIOD: this.node.tryGetContext("period_metrics"),
-        METRICS_NAME: this.node.tryGetContext("metrics_name"), // metrics_name in variables.tf, but metric_name in lambda_scaling.tf... need to investigate
-        SQS_QUEUE_NAME: this.node.tryGetContext("sqs_queue"),
-        REGION: this.region,
-        TASK_QUEUE_SERVICE: this.node.tryGetContext("task_queue_service"),
-        TASK_QUEUE_CONFIG: this.node.tryGetContext("task_queue_config"),
-      },
-      logRetention: logs.RetentionDays.FIVE_DAYS,
-    });
-    cdk.Tags.of(scaling_function).add("service", "htc-aws");
     new iam.Policy(this, "lambda_metrics_logging_policy", {
       document: new iam.PolicyDocument({
         statements: [
@@ -304,14 +253,62 @@ export class LambdaDrainerScalingStack extends cdk.NestedStack {
       policyName: "lambda_metrics_data_policy",
       roles: [function_role],
     });
+
+    const lambdaBase = cdk.DockerImage.fromBuild("../../../", {
+      file: "deployment/grid/cdk/lib/compute_plane/Dockerfile",
+      buildArgs: {
+        HTCGRID_ACCOUNT: cdk.Stack.of(this).account,
+        HTCGRID_REGION:cdk.Stack.of(this).region
+      }
+    });
+
+    const bundlingOptions = {
+      image: lambdaBase,
+        command: [
+      "bash",
+      "-c",
+      `cp -r /asset-temp/* /asset-output && cp -au . /asset-output`,
+    ],
+
+    };
+
+    const scaling_function = new lambda.Function(this, lambda_name, {
+      code: lambda.Code.fromAsset("../../../source/compute_plane/python/lambda/scaling_metrics", {
+        bundling: bundlingOptions,
+      }),
+      handler: "scaling_metrics.lambda_handler",
+      functionName: lambda_name,
+      runtime: lambda.Runtime.PYTHON_3_7,
+      memorySize: 1024,
+      timeout: cdk.Duration.seconds(60),
+      role: function_role,
+      vpc: this.vpc,
+      vpcSubnets: this.privateSubnetSelector,
+      securityGroups: [this.vpcDefaultSg],
+      environment: {
+        STATE_TABLE_CONFIG: this.ddbTableName,
+        NAMESPACE: this.namespaceMetrics,
+        DIMENSION_NAME: this.dimensionNameMetrics,
+        DIMENSION_VALUE: this.cluster.clusterName,
+        PERIOD: this.periodMetrics,
+        METRICS_NAME: this.metricsName, // metrics_name in variables.tf, but metric_name in lambda_scaling.tf... need to investigate
+        SQS_QUEUE_NAME: this.sqsQueueName,
+        TASKS_QUEUE_NAME: this.tasksQueueName,
+        REGION: this.region,
+        TASK_QUEUE_SERVICE: this.taskService,
+        TASK_QUEUE_CONFIG: this.taskConfig,
+        ERROR_LOG_GROUP: this.errorLogGroup,
+        ERROR_LOGGING_STREAM: this.errorLoggingStream,
+      },
+      logRetention: logs.RetentionDays.FIVE_DAYS,
+    });
+    cdk.Tags.of(scaling_function).add("service", "htc-aws");
     return scaling_function;
   }
   // Should add necessary permissions for rule to invoke
   private createScalingMetricsEvent(lambda: lambdaPy.PythonFunction) {
     const rule_name = "scaling_metrics_event_rule";
-    const schedule_expression = this.node.tryGetContext(
-      "metrics_event_rule_time"
-    );
+    const schedule_expression = this.metricsEventRuleTime
     const lambda_target = new LambdaFunction(lambda);
     new events.Rule(this, rule_name, {
       ruleName: rule_name,

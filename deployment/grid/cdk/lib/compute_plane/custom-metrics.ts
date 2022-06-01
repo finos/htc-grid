@@ -1,6 +1,6 @@
 import * as path from "path";
 import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib"
+import * as cdk from "aws-cdk-lib";
 import * as eks from "aws-cdk-lib/aws-eks";
 import * as asset from "aws-cdk-lib/aws-s3-assets";
 import { ClusterManagerPlus } from "../shared/cluster-manager-plus/cluster-manager-plus";

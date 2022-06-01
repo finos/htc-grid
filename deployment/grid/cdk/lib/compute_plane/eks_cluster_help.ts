@@ -1,20 +1,39 @@
 import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib"
+import * as cdk from "aws-cdk-lib";
 import * as eks from "aws-cdk-lib/aws-eks";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { IWorkerGroup, IWorkerInfo } from "../shared/cluster-interfaces";
 import { EksIamStack } from "./eks_iam_conf";
 import { LambdaDrainerScalingStack } from "./lambda_drainer_scaling";
+import * as iam from "aws-cdk-lib/aws-iam";
 
 interface EksClusterHelperStackProps extends cdk.NestedStackProps {
-  cluster: eks.Cluster;
-  vpc: ec2.IVpc;
-  vpc_default_sg: ec2.ISecurityGroup;
-  eksWorkerGroups: IWorkerGroup[];
+  readonly cluster: eks.Cluster;
+  readonly vpc: ec2.IVpc;
+  readonly vpcDefaultSg: ec2.ISecurityGroup;
+  readonly eksWorkerGroups: IWorkerGroup[];
+  readonly privateSubnetSelector: ec2.SubnetSelection;
+  readonly projectName: string;
+  readonly ddbTableName : string;
+  readonly taskService :string ;
+  readonly taskConfig : string;
+  readonly sqsQueue: string;
+  readonly gracefulTerminationDelay: number;
+  readonly errorLogGroup: string;
+  readonly errorLoggingStream: string;
+  readonly lambdaNameScalingMetrics: string;
+  readonly namespaceMetrics: string;
+  readonly dimensionNameMetrics: string;
+  readonly periodMetrics: string;
+  readonly metricsName: string;
+  readonly metricsEventRuleTime: string;
+  readonly tasksQueueName: string;
+  readonly lambdaDrainerRole: iam.IRole
+
 }
 
 export class EksClusterHelperStack extends cdk.NestedStack {
-  public readonly worker_info: IWorkerInfo[] = [];
+  public readonly workerInfo: IWorkerInfo[] = [];
   constructor(
     scope: Construct,
     id: string,
@@ -23,11 +42,11 @@ export class EksClusterHelperStack extends cdk.NestedStack {
     super(scope, id, props);
     const cluster = props.cluster;
 
-    this.addWorkerGroup(cluster,props.eksWorkerGroups);
-    const workerInfo = this.worker_info;
+    this.addWorkerGroup(cluster,props.privateSubnetSelector,props.eksWorkerGroups);
+    const workerInfo = this.workerInfo;
     const worker_roles = [
       ...(function* () {
-        for (let info of workerInfo) yield info.role;
+        for (const info of workerInfo) yield info.role;
       })(),
     ];
 
@@ -36,20 +55,40 @@ export class EksClusterHelperStack extends cdk.NestedStack {
       cluster_id: cluster.clusterName,
     });
 
+
     new LambdaDrainerScalingStack(this, "eks-drainer-scaling", {
       vpc: props.vpc,
-      vpc_default_sg: props.vpc_default_sg,
+      vpcDefaultSg: props.vpcDefaultSg,
       cluster: cluster,
-      worker_info: this.worker_info,
+      drainerLambdaRole: props.lambdaDrainerRole,
+      workerInfo: this.workerInfo,
+      privateSubnetSelector: props.privateSubnetSelector,
+      projectName:props.projectName,
+      gracefulTerminationDelay:props.gracefulTerminationDelay,
+      ddbTableName: props.ddbTableName,
+      dimensionNameMetrics: props.dimensionNameMetrics,
+      errorLogGroup: props.errorLogGroup,
+      errorLoggingStream: props.errorLoggingStream,
+      lambdaNameScalingMetrics: props.lambdaNameScalingMetrics,
+      metricsEventRuleTime: props.metricsEventRuleTime,
+      metricsName: props.metricsName,
+      namespaceMetrics: props.namespaceMetrics,
+      periodMetrics: props.periodMetrics,
+      sqsQueue: props.sqsQueue,
+      taskConfig: props.taskConfig,
+      taskService: props.taskService,
+      tasksQueueName: props.tasksQueueName
+
     });
   }
+
   private addClusterRoleMapping(cluster: eks.Cluster, worker_node_role: any) {
     cluster.awsAuth.addRoleMapping(worker_node_role, {
       groups: ["system:bootstrappers", "system:nodes"],
       username: "system:node:{{EC2PrivateDNSName}}", // Need to figure out what this should be referencing
     });
   }
-  private addWorkerGroup(cluster: eks.Cluster, workerGroups: IWorkerGroup[]) {
+  private addWorkerGroup(cluster: eks.Cluster, privateSubnetSelector: ec2.SubnetSelection, workerGroups: IWorkerGroup[]) {
     // Get worker groups from context
     const finalWorkerGroup: eks.Nodegroup[] = [];
     workerGroups.forEach((worker: IWorkerGroup) => {
@@ -65,10 +104,12 @@ export class EksClusterHelperStack extends cdk.NestedStack {
         maxSize: worker.asg_max_size,
         desiredSize: worker.asg_desired_capacity,
         nodegroupName: worker.name,
+        subnets: privateSubnetSelector
+
         // nodeRole: worker_role,
       });
       this.addClusterRoleMapping(cluster, temp_worker_group.role);
-      this.worker_info.push({
+      this.workerInfo.push({
         configs: worker,
         role: temp_worker_group.role,
         nodegroup: temp_worker_group,
@@ -89,6 +130,7 @@ export class EksClusterHelperStack extends cdk.NestedStack {
       maxSize: opsWorker.asg_max_size,
       minSize: opsWorker.asg_min_size,
       nodegroupName: opsWorker.name,
+      subnets: privateSubnetSelector,
       instanceTypes: [
         new ec2.InstanceType("m5.xlarge"),
         new ec2.InstanceType("m5d.xlarge"),
@@ -105,7 +147,7 @@ export class EksClusterHelperStack extends cdk.NestedStack {
       ],
     });
     this.addClusterRoleMapping(cluster, opsWorkerGroup.role);
-    this.worker_info.push({
+    this.workerInfo.push({
       configs: opsWorker,
       role: opsWorkerGroup.role,
       nodegroup: opsWorkerGroup,

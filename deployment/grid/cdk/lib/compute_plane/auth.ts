@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib"
+import * as cdk from "aws-cdk-lib";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as eks from "aws-cdk-lib/aws-eks";
 import { ClusterManagerPlus } from "../shared/cluster-manager-plus/cluster-manager-plus";
@@ -22,6 +22,7 @@ export class CognitoAuthStack extends cdk.Stack {
     this.project_name = props.projectName ;
     this.cognito_userpool = new cognito.UserPool(this, "htc_pool", {
       userPoolName: "htc_pool",
+      selfSignUpEnabled: true,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
     this.cognito_userpool_client = this.createClients();
@@ -47,7 +48,7 @@ export class CognitoAuthStack extends cdk.Stack {
       }
     ).value;
 
-    const userpoolClient = new cognito.UserPoolClient(this, "htc_client", {
+    const userPoolClient = new cognito.UserPoolClient(this, "htc_client", {
       userPool: this.cognito_userpool,
       userPoolClientName: "client",
       disableOAuth: false,
@@ -68,7 +69,7 @@ export class CognitoAuthStack extends cdk.Stack {
         //ALLOW_REFRESH_TOKEN_AUTH
       },
     });
-    new cognito.UserPoolClient(this, "htc_data_client", {
+    const userPoolDataClient = new cognito.UserPoolClient(this, "htc_data_client", {
       userPool: this.cognito_userpool,
       userPoolClientName: "user_data_client",
       authFlows: {
@@ -79,8 +80,8 @@ export class CognitoAuthStack extends cdk.Stack {
     });
 
     this.clusterManager.customKubectl(this, {
-      kubectlCreateCmd: `-n grafana annotate ingress grafana-ingress --overwrite alb.ingress.kubernetes.io/auth-idp-cognito="{\\"UserPoolArn\\": \\"${this.cognito_userpool.userPoolArn}\\",\\"UserPoolClientId\\":\\"${userpoolClient.userPoolClientId}\\",\\"UserPoolDomain\\":\\"${this.project_name}\\"}" alb.ingress.kubernetes.io/auth-on-unauthenticated-reques=authenticate alb.ingress.kubernetes.io/auth-scope=openid alb.ingress.kubernetes.io/auth-session-cookie=AWSELBAuthSessionCookie alb.ingress.kubernetes.io/auth-session-timeout="3600" alb.ingress.kubernetes.io/auth-type=cognito`,
+      kubectlCreateCmd: `-n grafana annotate ingress grafana-ingress --overwrite alb.ingress.kubernetes.io/auth-idp-cognito="{\\"UserPoolArn\\": \\"${this.cognito_userpool.userPoolArn}\\",\\"UserPoolClientId\\":\\"${userPoolClient.userPoolClientId}\\",\\"UserPoolDomain\\":\\"${this.project_name}\\"}" alb.ingress.kubernetes.io/auth-on-unauthenticated-reques=authenticate alb.ingress.kubernetes.io/auth-scope=openid alb.ingress.kubernetes.io/auth-session-cookie=AWSELBAuthSessionCookie alb.ingress.kubernetes.io/auth-session-timeout="3600" alb.ingress.kubernetes.io/auth-type=cognito`,
     });
-    return userpoolClient;
+    return userPoolDataClient;
   }
 }

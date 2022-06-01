@@ -5,7 +5,7 @@
 
 resource "helm_release" "alb_ingress_controller" {
   name       = "alb-controller"
-  chart      = "./compute_plane/charts/aws-load-balancer-controller"
+  chart      = "../charts/aws-load-balancer-controller"
   #repository = "https://aws.github.io/eks-charts"
   namespace  = "kube-system"
 

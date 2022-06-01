@@ -1,7 +1,7 @@
 // Resources Stack
 
 import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib"
+import * as cdk from "aws-cdk-lib";
 import * as eks from "aws-cdk-lib/aws-eks";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as iam from "aws-cdk-lib/aws-iam";
@@ -10,13 +10,29 @@ import {IWorkerInfo, IInputRole, IWorkerGroup} from "../shared/cluster-interface
 import { EksClusterHelperStack } from "./eks_cluster_help";
 
 interface EksClusterStackProps extends cdk.StackProps {
-  vpc: ec2.IVpc;
-  vpcDefaultSg: ec2.ISecurityGroup;
-  clusterName: string;
-  kubernetesVersion: string;
-  inputRoles: IInputRole[];
-  enablePrivateSubnet: string ;
-  eksWorkerGroups: IWorkerGroup[];
+  readonly vpc: ec2.IVpc;
+  readonly vpcDefaultSg: ec2.ISecurityGroup;
+  readonly clusterName: string;
+  readonly kubernetesVersion: string;
+  readonly inputRoles: IInputRole[];
+  readonly enablePrivateSubnet: boolean ;
+  readonly eksWorkerGroups: IWorkerGroup[];
+  readonly gracefulTerminationDelay: number;
+  readonly privateSubnetSelector: ec2.SubnetSelection;
+  readonly projectName: string;
+  readonly ddbTableName : string;
+  readonly taskService :string ;
+  readonly taskConfig : string;
+  readonly sqsQueue: string;
+  readonly errorLogGroup: string;
+  readonly errorLoggingStream: string;
+  readonly lambdaNameScalingMetrics: string;
+  readonly namespaceMetrics: string;
+  readonly dimensionNameMetrics: string;
+  readonly periodMetrics: string;
+  readonly metricsName: string;
+  readonly metricsEventRuleTime: string;
+  readonly tasksQueueName: string;
 }
 
 
@@ -32,11 +48,11 @@ export class EksClusterStack extends cdk.Stack {
     const vpc = props.vpc;
     const vpcDefaultSg = props.vpcDefaultSg;
 
-    var k8sVersion = props.kubernetesVersion;
-    var clusterName = props.clusterName;
+    const k8sVersion = props.kubernetesVersion;
+    const clusterName = props.clusterName;
 
     // Need to transform user configured bool into proper eks.EndpointAccess class value
-    var endpointAccess = Boolean(props.enablePrivateSubnet)
+    const endpointAccess = props.enablePrivateSubnet
       ? eks.EndpointAccess.PUBLIC_AND_PRIVATE
       : eks.EndpointAccess.PUBLIC;
 
@@ -49,8 +65,10 @@ export class EksClusterStack extends cdk.Stack {
       version: eks.KubernetesVersion.of(k8sVersion),
       defaultCapacity: 0,
       clusterName: clusterName,
+      vpcSubnets: [{
+        subnetType: ec2.SubnetType.PUBLIC
+      }, props.privateSubnetSelector],
       endpointAccess: endpointAccess,
-      vpcSubnets: [{ subnetType: ec2.SubnetType.PRIVATE }],
       vpc: vpc,
       mastersRole: masterRole,
     });
@@ -61,19 +79,90 @@ export class EksClusterStack extends cdk.Stack {
 
     this.enableClusterLogging(cluster);
     this.mapInputRole(cluster,props.inputRoles);
+    const lambdaDrainerRole = new iam.Role(this, "drainerLambdaRole", {
+      roleName: `roleLambdaDrainer-${props.projectName}`,
+      assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
+      inlinePolicies: {
+        AssumeRole: new iam.PolicyDocument({
+          statements: [
+            new iam.PolicyStatement({
+              actions: ["sts:AssumeRole"],
+              effect: iam.Effect.ALLOW,
+              resources: ["*"],
+            }),
+          ],
+        }),
+      },
+    });
+
+    lambdaDrainerRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: [
+          "ec2:CreateNetworkInterface",
+          "ec2:DeleteNetworkInterface",
+          "ec2:DescribeNetworkInterfaces",
+        ],
+        resources: ["*"],
+      })
+    );
+    lambdaDrainerRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName(
+        "service-role/AWSLambdaBasicExecutionRole"
+      )
+    );
+    new iam.Policy(this, "lambda_drainer_policy", {
+      document: new iam.PolicyDocument({
+        statements: [
+          new iam.PolicyStatement({
+            resources: ["*"],
+            actions: [
+              "ec2:CreateNetworkInterface",
+              "ec2:DeleteNetworkInterface",
+              "ec2:DescribeNetworkInterfaces",
+              "autoscaling:CompleteLifecycleAction",
+              "ec2:DescribeInstances",
+              "eks:DescribeCluster",
+              "sts:GetCallerIdentity",
+            ],
+            effect: iam.Effect.ALLOW,
+          }),
+        ],
+      }),
+      policyName: "lambda-drainer-policy",
+      roles: [lambdaDrainerRole],
+    });
+    cluster.awsAuth.addMastersRole(lambdaDrainerRole,"lambda")
+
     const eks_helper = new EksClusterHelperStack(this, "eks-helper-stack", {
+      ddbTableName: props.ddbTableName,
+      dimensionNameMetrics: props.dimensionNameMetrics,
+      errorLogGroup: props.errorLogGroup,
+      errorLoggingStream: props.errorLoggingStream,
+      lambdaNameScalingMetrics: props.lambdaNameScalingMetrics,
+      metricsEventRuleTime: props.metricsEventRuleTime,
+      metricsName: props.metricsName,
+      namespaceMetrics: props.namespaceMetrics,
+      periodMetrics: props.periodMetrics,
+      sqsQueue: props.sqsQueue,
+      taskConfig: props.taskConfig,
+      taskService: props.taskService,
+      tasksQueueName: props.tasksQueueName,
       cluster: cluster,
       vpc: vpc,
-      vpc_default_sg: vpcDefaultSg,
-      eksWorkerGroups: props.eksWorkerGroups
+      vpcDefaultSg: vpcDefaultSg,
+      eksWorkerGroups: props.eksWorkerGroups,
+      privateSubnetSelector: props.privateSubnetSelector,
+      projectName: props.projectName,
+      gracefulTerminationDelay: props.gracefulTerminationDelay,
+      lambdaDrainerRole: lambdaDrainerRole
     });
     this.eksCluster = cluster;
-    this.workerInfo = eks_helper.worker_info;
+    this.workerInfo = eks_helper.workerInfo;
   }
   private mapInputRole(cluster: eks.Cluster, inputRoles: IInputRole[]) {
     inputRoles.forEach((inputRole: IInputRole, index: number) => {
-      console.log(inputRole)
-      let role = iam.Role.fromRoleArn(
+      console.log(inputRole);
+      const role = iam.Role.fromRoleArn(
         this,
         `InputRole${index + 1}`,
         inputRole.rolearn

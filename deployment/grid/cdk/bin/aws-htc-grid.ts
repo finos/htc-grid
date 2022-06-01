@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import * as cdk from "aws-cdk-lib"
+import * as cdk from "aws-cdk-lib";
 import { VpcStack } from "../lib/vpc/vpc";
 import { EksClusterStack } from "../lib/compute_plane/eks_cluster";
 import { NamespacesStack } from "../lib/compute_plane/namespaces";
@@ -7,8 +7,8 @@ import { CognitoAuthStack } from "../lib/compute_plane/auth";
 import { SchedulerStack } from "../lib/control_plane/scheduler";
 import { HtcAgentStack } from "../lib/htc-agent/htc-agent";
 
-import * as helper from "../lib/shared/cluster-interfaces"
-var appContext = {} as any;
+import * as helper from "../lib/shared/cluster-interfaces";
+const appContext = {} as any;
 
 const tag = process.env.TAG ?? "mainline";
 
@@ -22,7 +22,7 @@ const app = new cdk.App({
 const account : string =
   process.env.HTCGRID_ACCOUNT_ID || process.env.CDK_DEFAULT_ACCOUNT ||
   app.account || ""
-  ;
+;
 const region : string =
   process.env.HTCGRID_REGION || app.node.tryGetContext("region") || app.region;
 
@@ -32,7 +32,7 @@ const env = {
 };
 
 const configFileName = app.node.tryGetContext("config") || "";
-const htcGridConfig = helper.loadConfig(app,configFileName,account,region)
+const htcGridConfig = helper.loadConfig(app,configFileName,account,region);
 
 
 
@@ -46,14 +46,30 @@ const vpcStack = new VpcStack(app, `${tag}-VpcStack`, {
 });
 
 const clusterStack = new EksClusterStack(app, `${tag}-EksClusterStack`, {
+  ddbTableName: htcGridConfig.ddb_state_table,
+  dimensionNameMetrics: htcGridConfig.dimension_name_metrics,
+  errorLogGroup: htcGridConfig.error_log_group,
+  errorLoggingStream: htcGridConfig.error_logging_stream,
+  lambdaNameScalingMetrics: htcGridConfig.lambda_name_scaling_metric,
+  metricsEventRuleTime: htcGridConfig.metrics_event_rule_time,
+  metricsName: htcGridConfig.metrics_name,
+  namespaceMetrics: htcGridConfig.namespace_metrics,
+  periodMetrics: htcGridConfig.period_metrics,
+  sqsQueue: htcGridConfig.sqs_queue,
+  taskConfig: htcGridConfig.task_queue_config,
+  taskService: htcGridConfig.task_queue_service,
+  tasksQueueName: htcGridConfig.tasks_queue_name,
   env: env,
   vpc: vpcStack.vpc,
   vpcDefaultSg: vpcStack.defaultSecurityGroup,
   clusterName:htcGridConfig.cluster_name,
   eksWorkerGroups: htcGridConfig.eks_worker_groups,
   enablePrivateSubnet: htcGridConfig.enable_private_subnet,
+  gracefulTerminationDelay: htcGridConfig.graceful_termination_delay,
   inputRoles: htcGridConfig.input_roles,
   kubernetesVersion: htcGridConfig.kubernetes_version,
+  privateSubnetSelector: vpcStack.privateSubnetSelector,
+  projectName: htcGridConfig.project_name
 });
 
 const namespacesStack = new NamespacesStack(app, `${tag}-ClusterNamespaces`, {
@@ -100,6 +116,7 @@ const authStack = new CognitoAuthStack(app, `${tag}-AuthStack`, {
 const schedulerStack = new SchedulerStack(app, `${tag}-SchedulerStack`, {
   env: env,
   vpc: vpcStack.vpc,
+  privateSubnetSelector: vpcStack.privateSubnetSelector,
   ddbConfig: htcGridConfig.state_table_config,
   ddbDefaultRead: htcGridConfig.dynamodb_table_defaul_read_capacity,
   ddbDefaultWrite: htcGridConfig.dynamodb_table_default_write_capacity,
@@ -117,6 +134,7 @@ const schedulerStack = new SchedulerStack(app, `${tag}-SchedulerStack`, {
   metricsGetResultsLambdaConnectionString: htcGridConfig.metrics_get_results_lambda_connection_string,
   metricsSubmitTasksLambdaConnectionString: htcGridConfig.metrics_submit_tasks_lambda_connection_string,
   metricsTtlCheckerLambdaConnectionString: htcGridConfig.metrics_ttl_checker_lambda_connection_string,
+  nlbInfluxdb: namespacesStack.nlbInfluxDb,
   projectName: htcGridConfig.project_name,
   s3BucketName: htcGridConfig.s3_bucket,
   sqsDlq: htcGridConfig.sqs_dlq,
@@ -128,6 +146,7 @@ const schedulerStack = new SchedulerStack(app, `${tag}-SchedulerStack`, {
   cognito_userpool: authStack.cognito_userpool,
   eks_cluster: clusterStack.eksCluster
 });
+
 
 const htcStack = new HtcAgentStack(app, `${tag}-HtcAgentStack`, {
   agentDeploymentConfig: htcGridConfig.agent_configuration,
@@ -155,8 +174,8 @@ const htcStack = new HtcAgentStack(app, `${tag}-HtcAgentStack`, {
   metricsAreEnabled: htcGridConfig.metrics_are_enabled,
   metricsCancelTasksLambdaConnectionString: htcGridConfig.metrics_cancel_tasks_lambda_connection_string,
   metricsGetResultsLambdaConnectionString: htcGridConfig.metrics_get_results_lambda_connection_string,
-  metricsPostAgentTasksLambdaConnectionString: "",
-  metricsPreAgentTasksLambdaConnectionString: "",
+  metricsPostAgentTasksLambdaConnectionString: htcGridConfig.metrics_post_agent_connection_string,
+  metricsPreAgentTasksLambdaConnectionString: htcGridConfig.metrics_pre_agent_connection_string,
   metricsSubmitTasksLambdaConnectionString: htcGridConfig.metrics_submit_tasks_lambda_connection_string,
   metricsTtlCheckerLambdaConnectionString: htcGridConfig.metrics_ttl_checker_lambda_connection_string,
   minReplicas: htcGridConfig.min_htc_agents,
