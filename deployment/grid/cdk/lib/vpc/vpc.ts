@@ -1,7 +1,7 @@
 //vpc.ts
 import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib"
-import * as ec2 from "aws-cdk-lib/aws-ec2"
+import * as cdk from "aws-cdk-lib";
+import * as ec2 from "aws-cdk-lib/aws-ec2";
 
 
 export interface VpcStackProps extends cdk.StackProps {
@@ -26,19 +26,19 @@ export class VpcStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: VpcStackProps) {
     super(scope, id, props);
 
-    this.project = props.project
-    this.clusterName = props.clusterName
+    this.project = props.project;
+    this.clusterName = props.clusterName;
     
     
 
     this.vpc = this.createVpc(props.enablePrivateSubnet,props.publicSubnets,props.privateSubnets);
     this.publicSubnetSelector = {
       subnetType: ec2.SubnetType.PUBLIC
-    }
+    };
 
     this.privateSubnetSelector = {
       subnetType: (props.enablePrivateSubnet == true)? ec2.SubnetType.PRIVATE_ISOLATED:ec2.SubnetType.PRIVATE_WITH_NAT
-    }
+    };
 
     this.defaultSecurityGroup = this.createVpcSecurityGroup();
 
@@ -49,16 +49,16 @@ export class VpcStack extends cdk.Stack {
     const vpc = new ec2.Vpc(this, `${this.project}Vpc`, {
       cidr: "10.0.0.0/16",
       subnetConfiguration: [
-         {
-           cidrMask: publicMask,
-           name: 'public',
-           subnetType: ec2.SubnetType.PUBLIC,
-         },
-         {
-           cidrMask: privateMask,
-           name: (enablePrivateSubnet == true)? 'isolated':"private",
-           subnetType:  (enablePrivateSubnet == true)? ec2.SubnetType.PRIVATE_ISOLATED:ec2.SubnetType.PRIVATE_WITH_NAT,
-         }
+        {
+          cidrMask: publicMask,
+          name: "public",
+          subnetType: ec2.SubnetType.PUBLIC,
+        },
+        {
+          cidrMask: privateMask,
+          name: (enablePrivateSubnet == true)? "isolated":"private",
+          subnetType:  (enablePrivateSubnet == true)? ec2.SubnetType.PRIVATE_ISOLATED:ec2.SubnetType.PRIVATE_WITH_NAT,
+        }
       ],
       natGateways: (enablePrivateSubnet)?0:1,
       enableDnsHostnames: true,
@@ -66,14 +66,14 @@ export class VpcStack extends cdk.Stack {
       
     });
     vpc.selectSubnets(this.publicSubnetSelector).subnets.map(subnet => {
-      cdk.Tags.of(subnet).add("kubernetes.io/role/elb", "1")
-    })
+      cdk.Tags.of(subnet).add("kubernetes.io/role/elb", "1");
+    });
     vpc.selectSubnets(this.privateSubnetSelector).subnets.map(subnet => {
-      cdk.Tags.of(subnet).add("kubernetes.io/role/internal-elb", "1")
-    })
+      cdk.Tags.of(subnet).add("kubernetes.io/role/internal-elb", "1");
+    });
     vpc.selectSubnets().subnets.map(subnet => {
-      cdk.Tags.of(subnet).add(`kubernetes.io/cluster/${this.clusterName}`, "shared")
-    })
+      cdk.Tags.of(subnet).add(`kubernetes.io/cluster/${this.clusterName}`, "shared");
+    });
     cdk.Tags.of(vpc).add(`kubernetes.io/cluster/${this.clusterName}`, "shared");
     return vpc;
   }

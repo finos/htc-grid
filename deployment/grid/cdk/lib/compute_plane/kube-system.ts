@@ -6,7 +6,7 @@
 
 import * as path from "path";
 import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib"
+import * as cdk from "aws-cdk-lib";
 import * as eks from "aws-cdk-lib/aws-eks";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
@@ -27,7 +27,7 @@ export class KubeSystemStack extends cdk.NestedStack {
     const clusterManager = props.clusterManager;
     const NAMESPACE = "kube-system";
 
-    const aws_node_termination_handler_version = props.awsNodeTerminationHandlerTag
+    const aws_node_termination_handler_version = props.awsNodeTerminationHandlerTag;
     const cluster_autoscaler_version = props.clusterAutoscalerTag;
     const coredns_file = path.join(__dirname, "patch-toleration-selector.yaml");
     const coredns_patch_data = this.yamlToJson(coredns_file);
@@ -169,7 +169,7 @@ export class KubeSystemStack extends cdk.NestedStack {
       },
       data: {
         "config.yaml":
-          'TotalBufferSizeMB: 24\nSocket:\n  UDPAddress: "0.0.0.0:2000"\n  TCPAddress: "0.0.0.0:2000"\nVersion: 2',
+          "TotalBufferSizeMB: 24\nSocket:\n  UDPAddress: \"0.0.0.0:2000\"\n  TCPAddress: \"0.0.0.0:2000\"\nVersion: 2",
       },
     };
     const xray_service = {

@@ -91,9 +91,9 @@ init-grid-deployment: init-grid-deployment-$(IAS)
 reset-grid-deployment: reset-grid-deployment-$(IAS)
 
 init-grid-deployment-%: ./deployment/grid/%
-	@$(MAKE) -C $< init
+	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/grid_config.json init
 reset-grid-deployment-%: ./deployment/grid/%
-	@$(MAKE) -C $< reset
+	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/grid_config.json reset
 
 
 #################################

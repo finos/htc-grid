@@ -9,7 +9,7 @@
   "eks_worker_groups" : [
       {
         "name"                    : "worker-small-spot",
-        "override_instance_types" : ["m5.xlarge","m4.xlarge","m5d.xlarge","m5a.xlarge"],
+        "override_instance_types" : ["m5.xlarge","m5d.xlarge","m5a.xlarge"],
         "spot_instance_pools"     : 0,
         "asg_min_size"            : 0,
         "asg_max_size"            : 3,
@@ -18,7 +18,7 @@
       },
       {
         "name"                    : "worker-medium-spot",
-        "override_instance_types" : ["m5.2xlarge","m5d.2xlarge", "m5a.2xlarge","m4.2xlarge"],
+        "override_instance_types" : ["m5.2xlarge","m5d.2xlarge", "m5a.2xlarge"],
         "spot_instance_pools"     : 0,
         "asg_min_size"            : 0,
         "asg_max_size"            : 3,
@@ -38,8 +38,8 @@
     }
   },
   "enable_private_subnet" : true,
-  "vpc_cidr_block_public" :["10.0.192.0/24", "10.0.193.0/24", "10.0.194.0/24"],
-  "vpc_cidr_block_private" :["10.0.0.0/18","10.0.64.0/18", "10.0.128.0/18"],
+  "vpc_cidr_block_public" :24,
+  "vpc_cidr_block_private" :18,
   "input_role":[
       {
         "rolearn"  : "arn:aws:iam::{{account_id}}:role/Admin",

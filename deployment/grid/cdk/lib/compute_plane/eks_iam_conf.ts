@@ -1,6 +1,6 @@
 // iam configurations needed for resources deployed into cluster
 import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib"
+import * as cdk from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as alb from "./iam-policy-alb.json";
 

@@ -1,4 +1,6 @@
-FROM public.ecr.aws/sam/build-python3.7
+ARG HTCGRID_ACCOUNT
+ARG HTCGRID_REGION
+FROM ${HTCGRID_ACCOUNT}.dkr.ecr.${HTCGRID_REGION}.amazonaws.com/ecr-public/sam/build-python3.7
 RUN mkdir -p /asset-temp
 RUN mkdir -p /asset-input
 WORKDIR /asset-input

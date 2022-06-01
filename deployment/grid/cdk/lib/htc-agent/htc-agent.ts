@@ -1,8 +1,9 @@
 import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib"
+import * as cdk from "aws-cdk-lib";
 import * as path from "path";
 import * as asset from "aws-cdk-lib/aws-s3-assets";
 import * as eks from "aws-cdk-lib/aws-eks";
+import * as ssm from "aws-cdk-lib/aws-ssm";
 import { ClusterManagerPlus } from "../shared/cluster-manager-plus/cluster-manager-plus";
 import {IAgentDeploymentConfig} from "../shared/cluster-interfaces";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
@@ -170,6 +171,11 @@ export class HtcAgentStack extends cdk.Stack {
       enable_xray: props.enableXRay
 
     };
+    new ssm.StringParameter(this,"GridConfiguration",{
+      parameterName : `/${props.projectName}/grid/config`,
+      stringValue: this.toJsonString(agentConfigData),
+      description: "Configuration of the grid with runtime parameters"
+    })
     const agentConfigMap = {
       apiVersion: "v1",
       kind: "ConfigMap",

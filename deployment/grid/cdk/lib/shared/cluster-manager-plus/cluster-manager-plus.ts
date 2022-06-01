@@ -1,15 +1,15 @@
 // Write up design/reference doc
 
-import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib"
+import {Construct} from "constructs";
+import * as cdk from "aws-cdk-lib";
 import * as path from "path";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as eks from "aws-cdk-lib/aws-eks";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as cr from "aws-cdk-lib/custom-resources";
 import * as assets from "aws-cdk-lib/aws-s3-assets";
-import { KubectlLayer } from "aws-cdk-lib/lambda-layer-kubectl";
-import { AwsCliLayer } from "aws-cdk-lib/lambda-layer-awscli";
+import {KubectlLayer} from "aws-cdk-lib/lambda-layer-kubectl";
+import {AwsCliLayer} from "aws-cdk-lib/lambda-layer-awscli";
 
 export interface ClusterManagerPlusProps {
   readonly cluster: eks.ICluster;
@@ -56,6 +56,7 @@ enum ResourceType {
   Apply = "Custom::ClusterManagerPlus-Apply",
   Custom = "Custom::ClusterManagerPlus-Custom",
 }
+
 export class ClusterManagerPlus extends Construct {
   readonly stack: cdk.Stack;
   readonly cluster: eks.ICluster;
@@ -65,6 +66,7 @@ export class ClusterManagerPlus extends Construct {
   private provider: cr.Provider;
   private resourceCounter = 0;
   private readGranted = false;
+
   constructor(
     scope: Construct,
     id: string,
@@ -77,10 +79,15 @@ export class ClusterManagerPlus extends Construct {
     this.handler = this.createHandler();
     this.provider = this.createProvider();
   }
+
   private createHandler(): lambda.SingletonFunction {
     const memorySize = this.cluster.kubectlMemory
       ? this.cluster.kubectlMemory.toMebibytes()
       : 1024;
+    let roleArn = "";
+    if (this.cluster.kubectlRole !== undefined) {
+      roleArn = this.cluster.kubectlRole.roleArn;
+    }
     const handler = new lambda.SingletonFunction(this, "cmpKubectlHandler", {
       functionName: `${this.stack.stackName}-CdkEksClusterManagerPlus`,
       code: lambda.Code.fromAsset(this.codeResourcePath),
@@ -92,7 +99,7 @@ export class ClusterManagerPlus extends Construct {
       memorySize: memorySize,
       environment: {
         ClusterName: this.cluster.clusterName,
-        RoleArn: this.cluster.kubectlRole!.roleArn,
+        RoleArn: roleArn,
       },
       layers: [
         new KubectlLayer(this, "kubectlLayer"),
@@ -103,18 +110,24 @@ export class ClusterManagerPlus extends Construct {
         ? [this.cluster.kubectlSecurityGroup]
         : undefined,
       vpcSubnets: this.cluster.kubectlPrivateSubnets
-        ? { subnets: this.cluster.kubectlPrivateSubnets }
+        ? {subnets: this.cluster.kubectlPrivateSubnets}
         : undefined,
     });
-    handler.role!.addToPrincipalPolicy(
-      new iam.PolicyStatement({
-        actions: ["eks:DescribeCluster"],
-        resources: [this.cluster.clusterArn],
-      })
-    );
-    this.cluster.kubectlRole!.grant(handler.role!, "sts:AssumeRole");
+
+    if (handler.role !== undefined) {
+      handler.role.addToPrincipalPolicy(
+        new iam.PolicyStatement({
+          actions: ["eks:DescribeCluster"],
+          resources: [this.cluster.clusterArn],
+        })
+      );
+      if (this.cluster.kubectlRole !== undefined) {
+        this.cluster.kubectlRole.grant(handler.role, "sts:AssumeRole");
+      }
+    }
     return handler;
   }
+
   private createProvider(): cr.Provider {
     const provider = new cr.Provider(this, "CmpProvider", {
       onEventHandler: this.handler,
@@ -123,7 +136,7 @@ export class ClusterManagerPlus extends Construct {
         ? [this.cluster.kubectlSecurityGroup]
         : undefined,
       vpcSubnets: this.cluster.kubectlPrivateSubnets
-        ? { subnets: this.cluster.kubectlPrivateSubnets }
+        ? {subnets: this.cluster.kubectlPrivateSubnets}
         : undefined,
     });
     return provider;
@@ -176,17 +189,19 @@ export class ClusterManagerPlus extends Construct {
       },
     });
   }
+
   private isUrl(item: string | undefined): boolean {
     if (item?.includes("https") || item?.includes(".com")) {
       return true;
     }
     return false;
   }
+
   private getAsset(
     assetValues: assets.Asset[] | assets.Asset
   ): IS3Asset[] | IS3Asset {
     if (Array.isArray(assetValues)) {
-      var s3AssetValues: IS3Asset[] = [];
+      const s3AssetValues: IS3Asset[] = [];
       assetValues.forEach((asset) => {
         s3AssetValues.push({
           Bucket: asset.s3BucketName,
@@ -203,13 +218,15 @@ export class ClusterManagerPlus extends Construct {
       };
     }
   }
+
   private grantAssetAccess(assetResource: assets.Asset) {
-    if (!this.readGranted) {
-      assetResource.grantRead(this.handler.role!);
+    if (!this.readGranted && this.handler.role !== undefined) {
+      assetResource.grantRead(this.handler.role);
       this.readGranted = true;
     }
     return;
   }
+
   public applyManifest(
     stack: cdk.Stack,
     props: ApplyProps
@@ -229,6 +246,7 @@ export class ClusterManagerPlus extends Construct {
       },
     });
   }
+
   public customKubectl(
     stack: cdk.Stack,
     props: CustomKubectlProps

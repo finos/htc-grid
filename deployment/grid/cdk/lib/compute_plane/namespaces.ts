@@ -1,8 +1,9 @@
 // eks resource creation
 import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib"
+import * as cdk from "aws-cdk-lib";
 import * as eks from "aws-cdk-lib/aws-eks";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
+
 import { ClusterManagerPlus } from "../shared/cluster-manager-plus/cluster-manager-plus";
 import { GrafanaStack } from "./grafana";
 import { KubeSystemStack } from "./kube-system";
@@ -10,6 +11,9 @@ import { InfluxdbStack } from "./influxdb";
 import { PrometheusStack } from "./prometheus";
 import { CustomMetricsStack } from "./custom-metrics";
 import { ContainerInsightStack } from "./amazon-cloudwatch";
+import * as cr from "aws-cdk-lib/custom-resources";
+import * as iam from "aws-cdk-lib/aws-iam";
+import {RetentionDays} from "aws-cdk-lib/aws-logs";
 
 interface NamespacesProps extends cdk.StackProps {
   readonly vpc: ec2.IVpc;
@@ -114,6 +118,36 @@ export class NamespacesStack extends cdk.Stack {
 
     });
     grafanaStack.addDependency(kubeSystemStack);
+    const getGrafanaPasswordCall: cr.AwsSdkCall = {
+      service: "SecretsManager",
+      action: "getSecretValue",
+      parameters: {
+        SecretId: grafanaStack.grafanaPasswordSecret.secretName
+      },
+      physicalResourceId: cr.PhysicalResourceId.of(`SecretManager:${grafanaStack.grafanaPasswordSecret.secretName}`),
+    };
+
+    const getGrafanaPasswordCr = new cr.AwsCustomResource(this, "GetGrafanaPassword", {
+      policy: cr.AwsCustomResourcePolicy.fromStatements([
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          resources: [grafanaStack.grafanaPasswordSecret.secretArn],
+          actions: ["secretsmanager:GetSecretValue"],
+        }),
+      ]),
+      logRetention: RetentionDays.ONE_DAY,
+      onCreate: getGrafanaPasswordCall,
+      onUpdate: getGrafanaPasswordCall,
+    });
+
+    getGrafanaPasswordCr.node.addDependency(grafanaStack.grafanaPasswordSecret);
+    const getGrafanaPawsswordValue = getGrafanaPasswordCr.getResponseField("SecretString");
+
+    new cdk.CfnOutput(this,"GrafanaPasswordOutput", {
+      exportName: "grafanaAdminPassword",
+      description: "Password for logging to the grafana dashboard",
+      value: getGrafanaPawsswordValue
+    })
     // depends on ALB created in kubeSystemStack
     const customMetricsStack = new CustomMetricsStack(this, "customMetrics", {
       clusterManager: this.clusterManager,

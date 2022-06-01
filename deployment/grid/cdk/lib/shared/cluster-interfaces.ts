@@ -1,7 +1,8 @@
-import * as cdk from "aws-cdk-lib"
+import * as cdk from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as eks from "aws-cdk-lib/aws-eks";
 import * as fs from "fs" ;
+import {generate} from "generate-password";
 
 export interface IWorkerGroup {
   name: string;
@@ -103,7 +104,6 @@ export interface IHTCGridConfig {
   aws_htc_ecr: string;
   project_name: string;
   region: string;
-  grafana_admin_password: string;
   cluster_name: string;
   ddb_state_table: string;
   sqs_queue: string;
@@ -159,6 +159,8 @@ export interface IHTCGridConfig {
   metrics_get_results_lambda_connection_string: string;
   metrics_cancel_tasks_lambda_connection_string: string;
   metrics_ttl_checker_lambda_connection_string: string;
+  metrics_pre_agent_connection_string:string;
+  metrics_post_agent_connection_string: string;
   dynamodb_table_read_capacity: string;
   dynamodb_table_write_capacity: string;
   dynamodb_gsi_index_table_write_capacity: number;
@@ -178,29 +180,21 @@ export interface IHTCGridConfig {
 }
 
 function makeid(length:number) {
-  let result           = '';
-  let characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let charactersLength = characters.length;
+  let result           = "";
+  const characters       = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const charactersLength = characters.length;
   for ( let i = 0; i < length; i++ ) {
     result += characters.charAt(Math.floor(Math.random() *
-        charactersLength));
+      charactersLength));
   }
   return result;
 }
 
-export interface IGetLayerContainerConfig {
-
-}
-
-export interface ITestContainerConfig {
-
-}
-
 export function loadConfig(app: cdk.App, configFileName: string, account:string, region: string) {
-  const rawConfig = fs.readFileSync(configFileName, 'utf8')
-  const JSONconfig= JSON.parse(rawConfig)
-  const project_name : string = JSONconfig?.project_name || makeid(5)
-  const repositoryName: string =  JSONconfig?.aws_htc_ecr || `${account}.dkr.ecr.${region}.amazonaws.com`
+  const rawConfig = fs.readFileSync(configFileName, "utf8");
+  const JSONconfig= JSON.parse(rawConfig);
+  const project_name : string = JSONconfig?.project_name || makeid(5);
+  const repositoryName: string =  JSONconfig?.aws_htc_ecr || `${account}.dkr.ecr.${region}.amazonaws.com`;
   const config: IHTCGridConfig = <IHTCGridConfig>{
     agent_configuration: {
       agent_chart_url: JSONconfig?.agent_configuration?.agent_chart_url || app.node.tryGetContext("agent_chart_url"),
@@ -222,9 +216,9 @@ export function loadConfig(app: cdk.App, configFileName: string, account:string,
         maxMemory: JSONconfig?.agent_configuration?.lambda?.maxMemory || app.node.tryGetContext("lambda_max_memory"),
         minMemory: JSONconfig?.agent_configuration?.lambda?.minMemory || app.node.tryGetContext("lambda_min_memory"),
         location: JSONconfig?.agent_configuration?.lambda?.location || app.node.tryGetContext("lambda_configuration_location"),
-        function_name: JSONconfig?.agent_configuration?.lambda?.function_name || app.node.tryGetContext("lambda_configuration_function_name"),
+        function_name: JSONconfig?.agent_configuration?.lambda?.function_name || app.node.tryGetContext("function_name"),
         lambda_handler_file_name: JSONconfig?.agent_configuration?.lambda?.lambda_handler_file_name || app.node.tryGetContext("lambda_handler_file_name"),
-        lambda_handler_function_name: JSONconfig?.agent_configuration?.lambda?.lambda_handler_function_name || app.node.tryGetContext("lambda_handler_file_name"),
+        lambda_handler_function_name: JSONconfig?.agent_configuration?.lambda?.lambda_handler_function_name || app.node.tryGetContext("lambda_configuration_function_name"),
       },
       get_layer: {
         image: JSONconfig?.agent_configuration?.get_layer?.image || `${repositoryName}/lambda-init`,
@@ -265,14 +259,19 @@ export function loadConfig(app: cdk.App, configFileName: string, account:string,
     error_log_group: `${JSONconfig?.error_log_group || app.node.tryGetContext("error_log_group")}-${project_name}`,
     error_logging_stream: `${JSONconfig?.error_logging_stream || app.node.tryGetContext("error_logging_stream")}-${project_name}`,
     fluentbit_version: JSONconfig?.fluentbit_version || app.node.tryGetContext("fluentbit_version"),
-    graceful_termination_delay: JSONconfig?.graceful_termination_delay || app.node.tryGetContext("graceful_termination_delay"),
-    grafana_admin_password: JSONconfig?.grafana_admin_password || makeid(12),
     grafana_configuration: {
       downloadDashboardsImage_tag: JSONconfig?.grafana_configuration?.downloadDashboardsImage_tag || app.node.tryGetContext("grafana_configuration_downloadDashboardsImage_tag"),
       grafana_tag: JSONconfig?.grafana_configuration?.grafana_tag || app.node.tryGetContext("grafana_configuration_grafana_tag"),
       initChownData_tag: JSONconfig?.grafana_configuration?.initChownData_tag || app.node.tryGetContext("grafana_configuration_initChownData_tag"),
       sidecar_tag: JSONconfig?.grafana_configuration?.sidecar_tag || app.node.tryGetContext("grafana_configuration_sidecar_tag"),
-      admin_password: JSONconfig?.grafana_configuration?.admin_password || app.node.tryGetContext("grafana_configuration_admin_password")
+      admin_password: app.node.tryGetContext("grafana_admin_password") || generate({
+        strict: true,
+        symbols: true,
+        numbers:true,
+        uppercase: true,
+        lowercase: true,
+        length: 12
+      })
     },
     grid_storage_service: JSONconfig?.grid_storage_service || app.node.tryGetContext("grid_storage_service"),
     htc_agent_name: JSONconfig?.htc_agent_name || app.node.tryGetContext("htc_agent_name"),
@@ -285,7 +284,7 @@ export function loadConfig(app: cdk.App, configFileName: string, account:string,
     kubernetes_version: JSONconfig?.kubernetes_version || app.node.tryGetContext("kubernetes_version"),
     lambda_name_cancel_tasks: `${JSONconfig?.lambda_name_cancel_tasks || app.node.tryGetContext("lambda_name_cancel_tasks")}-${project_name}`,
     lambda_name_get_results: `${JSONconfig?.lambda_name_get_results || app.node.tryGetContext("lambda_name_get_results")}-${project_name}`,
-    lambda_name_scaling_metric: `${JSONconfig?.lambda_name_scaling_metric || app.node.tryGetContext("lambda_name_scaling_metric")}-${project_name}`,
+    lambda_name_scaling_metric: `${JSONconfig?.lambda_name_scaling_metrics || app.node.tryGetContext("lambda_name_scaling_metrics")}-${project_name}`,
     lambda_name_submit_tasks: `${JSONconfig?.lambda_name_submit_tasks || app.node.tryGetContext("lambda_name_submit_tasks")}-${project_name}`,
     lambda_name_ttl_checker: `${JSONconfig?.lambda_name_ttl_checker || app.node.tryGetContext("lambda_name_ttl_checker")}-${project_name}`,
     lambda_runtime: JSONconfig?.lambda_runtime || app.node.tryGetContext("lambda_runtime"),
@@ -297,6 +296,8 @@ export function loadConfig(app: cdk.App, configFileName: string, account:string,
     metrics_name: `${JSONconfig?.metrics_name || app.node.tryGetContext("metrics_name")}-${project_name}`,
     metrics_submit_tasks_lambda_connection_string: JSONconfig?.metrics_submit_tasks_lambda_connection_string || app.node.tryGetContext("metrics_submit_tasks_lambda_connection_string"),
     metrics_ttl_checker_lambda_connection_string: JSONconfig?.metrics_ttl_checker_lambda_connection_string || app.node.tryGetContext("metrics_ttl_checker_lambda_connection_string"),
+    metrics_pre_agent_connection_string: JSONconfig?.metrics_pre_agent_connection_string || app.node.tryGetContext("metrics_pre_agent_connection_string"),
+    metrics_post_agent_connection_string: JSONconfig?.metrics_post_agent_connection_string || app.node.tryGetContext("metrics_post_agent_connection_string"),
     min_htc_agents: JSONconfig?.min_htc_agents || app.node.tryGetContext("min_htc_agents"),
     namespace_metrics: JSONconfig?.namespace_metrics || app.node.tryGetContext("namespace_metrics"),
     period_metrics: JSONconfig?.period_metrics || app.node.tryGetContext("period_metrics"),
@@ -329,6 +330,6 @@ export function loadConfig(app: cdk.App, configFileName: string, account:string,
     work_proc_status_pull_interval_sec : JSONconfig?.work_proc_status_pull_interval_sec || app.node.tryGetContext("work_proc_status_pull_interval_sec"),
     dynamodb_results_pull_interval_sec:JSONconfig?.dynamodb_results_pull_interval_sec || app.node.tryGetContext("dynamodb_results_pull_interval_sec"),
     enable_xray: JSONconfig?.enable_xray || app.node.tryGetContext("enable_xray")
-  }
+  };
   return config ;
 }

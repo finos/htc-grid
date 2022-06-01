@@ -1,17 +1,35 @@
 import { Construct } from "constructs";
-import * as cdk from "aws-cdk-lib"
+import * as cdk from "aws-cdk-lib";
 import * as eks from "aws-cdk-lib/aws-eks";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { IWorkerGroup, IWorkerInfo } from "../shared/cluster-interfaces";
 import { EksIamStack } from "./eks_iam_conf";
 import { LambdaDrainerScalingStack } from "./lambda_drainer_scaling";
+import * as iam from "aws-cdk-lib/aws-iam";
 
 interface EksClusterHelperStackProps extends cdk.NestedStackProps {
-  cluster: eks.Cluster;
-  vpc: ec2.IVpc;
-  vpcDefaultSg: ec2.ISecurityGroup;
-  eksWorkerGroups: IWorkerGroup[];
-  privateSubnetSelector: ec2.SubnetSelection;
+  readonly cluster: eks.Cluster;
+  readonly vpc: ec2.IVpc;
+  readonly vpcDefaultSg: ec2.ISecurityGroup;
+  readonly eksWorkerGroups: IWorkerGroup[];
+  readonly privateSubnetSelector: ec2.SubnetSelection;
+  readonly projectName: string;
+  readonly ddbTableName : string;
+  readonly taskService :string ;
+  readonly taskConfig : string;
+  readonly sqsQueue: string;
+  readonly gracefulTerminationDelay: number;
+  readonly errorLogGroup: string;
+  readonly errorLoggingStream: string;
+  readonly lambdaNameScalingMetrics: string;
+  readonly namespaceMetrics: string;
+  readonly dimensionNameMetrics: string;
+  readonly periodMetrics: string;
+  readonly metricsName: string;
+  readonly metricsEventRuleTime: string;
+  readonly tasksQueueName: string;
+  readonly lambdaDrainerRole: iam.IRole
+
 }
 
 export class EksClusterHelperStack extends cdk.NestedStack {
@@ -28,7 +46,7 @@ export class EksClusterHelperStack extends cdk.NestedStack {
     const workerInfo = this.workerInfo;
     const worker_roles = [
       ...(function* () {
-        for (let info of workerInfo) yield info.role;
+        for (const info of workerInfo) yield info.role;
       })(),
     ];
 
@@ -37,14 +55,33 @@ export class EksClusterHelperStack extends cdk.NestedStack {
       cluster_id: cluster.clusterName,
     });
 
+
     new LambdaDrainerScalingStack(this, "eks-drainer-scaling", {
       vpc: props.vpc,
       vpcDefaultSg: props.vpcDefaultSg,
       cluster: cluster,
+      drainerLambdaRole: props.lambdaDrainerRole,
       workerInfo: this.workerInfo,
-      privateSubnetSelector: props.privateSubnetSelector
+      privateSubnetSelector: props.privateSubnetSelector,
+      projectName:props.projectName,
+      gracefulTerminationDelay:props.gracefulTerminationDelay,
+      ddbTableName: props.ddbTableName,
+      dimensionNameMetrics: props.dimensionNameMetrics,
+      errorLogGroup: props.errorLogGroup,
+      errorLoggingStream: props.errorLoggingStream,
+      lambdaNameScalingMetrics: props.lambdaNameScalingMetrics,
+      metricsEventRuleTime: props.metricsEventRuleTime,
+      metricsName: props.metricsName,
+      namespaceMetrics: props.namespaceMetrics,
+      periodMetrics: props.periodMetrics,
+      sqsQueue: props.sqsQueue,
+      taskConfig: props.taskConfig,
+      taskService: props.taskService,
+      tasksQueueName: props.tasksQueueName
+
     });
   }
+
   private addClusterRoleMapping(cluster: eks.Cluster, worker_node_role: any) {
     cluster.awsAuth.addRoleMapping(worker_node_role, {
       groups: ["system:bootstrappers", "system:nodes"],
