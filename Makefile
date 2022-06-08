@@ -57,10 +57,10 @@ init-grid-state-%: ./deployment/init_grid/cloudformation
 	$(MAKE) -C $< IAC_TOOL=$*
 
 delete-grid-state-%: ./deployment/init_grid/cloudformation
-	$(MAKE) -C $< delete IAC_TOOL=$%
+	$(MAKE) -C $< delete IAC_TOOL=$*
 
 clean-grid-state-%: ./deployment/init_grid/cloudformation
-	$(MAKE) -C $< clean IAC_TOOL=$%
+	$(MAKE) -C $< clean IAC_TOOL=$*
 
 
 ###########################################################################################

@@ -11,13 +11,13 @@ RUN ls -al
 
 
 WORKDIR /asset-input/source/control_plane/python/lambda/submit_tasks
-RUN pip install --no-cache -r requirements.txt -t /asset-temp
+RUN pip install --no-cache -r requirements_complete.txt -t /asset-temp
 
 WORKDIR /asset-input/source/control_plane/python/lambda/get_results
-RUN pip install  -r requirements.txt -t /asset-temp
+RUN pip install  -r requirements_complete.txt -t /asset-temp
 
 WORKDIR /asset-input/source/control_plane/python/lambda/cancel_tasks
-RUN pip install  -r requirements.txt -t /asset-temp
+RUN pip install  -r requirements_complete.txt -t /asset-temp
 
 WORKDIR /asset-input/source/control_plane/python/lambda/ttl_checker
-RUN pip install  -r requirements.txt -t /asset-temp
+RUN pip install  -r requirements_complete.txt -t /asset-temp
