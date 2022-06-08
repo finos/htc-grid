@@ -15,8 +15,9 @@ import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 //import * as lambdaPy from "@aws-cdk/aws-lambda-python-alpha";
 import * as eks from "aws-cdk-lib/aws-eks";
-import * as secretsmanager from"aws-cdk-lib/aws-secretsmanager";
-import { IgnoreMode } from "aws-cdk-lib";
+import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
+import * as lambda_event_sources  from 'aws-cdk-lib/aws-lambda-event-sources';
+import {IgnoreMode} from "aws-cdk-lib";
 import * as _ from "lodash";
 import * as yaml from 'yaml'
 import * as fs from 'fs'
@@ -194,7 +195,6 @@ export class SchedulerStack extends cdk.Stack {
 
     const privateApiInfo = this.createPrivateApiGW();
     const publicApiInfo = this.createPublicApiGW();
-
     this.apiGwKey = privateApiInfo[2];
     this.publicApiGwUrl = publicApiInfo.urlForPath();
     this.privateApiGwUrl = privateApiInfo[0].urlForPath();
@@ -760,6 +760,7 @@ export class SchedulerStack extends cdk.Stack {
 
 
     const privateApiGw = new apigw.SpecRestApi(this, 'private-api', {
+      restApiName: `${this.projectName}-private-api`,
       apiDefinition: apigw.ApiDefinition.fromInline(parsedPrivateApiDefinition),
       endpointTypes: [apigw.EndpointType.PRIVATE],
       policy: privateApiGwPolicy,
@@ -771,6 +772,34 @@ export class SchedulerStack extends cdk.Stack {
       }
     });
 
+    const methodOption = privateApiGw.root.getResource('/submit')?.defaultMethodOptions
+    privateApiGw.root.getResource("/submit")?.defaultIntegration
+    const eventSourceSubmit = new lambda_event_sources.ApiEventSource("POST","/submit",methodOption)
+    this.submitTaskFunction.addEventSource(eventSourceSubmit)
+    this.submitTaskFunction.addPermission(
+      'submitTaskFunctionPrivateAPI',  {
+        principal: new iam.ServicePrincipal("apigateway.amazonaws.com"),
+        action: "lambda:InvokeFunction",
+        sourceArn: privateApiGw.arnForExecuteApi()
+
+      }
+    )
+
+    this.getResultsFunction.addPermission(
+      'getResultsFunctionPrivateAPI',  {
+        principal: new iam.ServicePrincipal("apigateway.amazonaws.com"),
+        action: "lambda:InvokeFunction",
+        sourceArn: privateApiGw.arnForExecuteApi()
+      }
+    )
+
+    this.cancelTasksFunction.addPermission(
+      'cancelTasksFunctionPrivateAPI',  {
+        principal: new iam.ServicePrincipal("apigateway.amazonaws.com"),
+        action: "lambda:InvokeFunction",
+        sourceArn: privateApiGw.arnForExecuteApi()
+      }
+    )
 
     const privateApiUsagePlan = privateApiGw.addUsagePlan(
       "private_rest_api_usage_plab",
@@ -818,6 +847,7 @@ export class SchedulerStack extends cdk.Stack {
 
     const publicApiGw = new apigw.SpecRestApi(this, 'PublicApi', {
       apiDefinition: apigw.ApiDefinition.fromInline(parsedPublicApiDefinition),
+      restApiName: `${this.projectName}-public-api`,
       endpointTypes: [apigw.EndpointType.EDGE],
       deploy: true,
       deployOptions: {
@@ -826,8 +856,30 @@ export class SchedulerStack extends cdk.Stack {
         stageName: this.apiGatewayVersion,
       }
     });
+    this.submitTaskFunction.addPermission(
+      'submitTaskFunctionPublicAPI',  {
+        principal: new iam.ServicePrincipal("apigateway.amazonaws.com"),
+        action: "lambda:InvokeFunction",
+        sourceArn: publicApiGw.arnForExecuteApi()
 
+      }
+    )
 
+    this.getResultsFunction.addPermission(
+      'getResultsFunctionPublicAPI',  {
+        principal: new iam.ServicePrincipal("apigateway.amazonaws.com"),
+        action: "lambda:InvokeFunction",
+        sourceArn: publicApiGw.arnForExecuteApi()
+      }
+    )
+
+    this.cancelTasksFunction.addPermission(
+      'cancelTasksFunctionPublicAPI',  {
+        principal: new iam.ServicePrincipal("apigateway.amazonaws.com"),
+        action: "lambda:InvokeFunction",
+        sourceArn: publicApiGw.arnForExecuteApi()
+      }
+    )
     return publicApiGw;
   }
 }
