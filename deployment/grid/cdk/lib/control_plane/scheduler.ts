@@ -1,3 +1,8 @@
+// Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
+
 // Scheduler Resources
 import { Construct } from "constructs";
 import * as cdk from "aws-cdk-lib";
@@ -211,16 +216,7 @@ export class SchedulerStack extends cdk.Stack {
 
     };
   }
-  // private get_lambda_bundle(working_dir: string): cdk.BundlingOptions {
-  //     return {
-  //         image: lambda.Runtime.PYTHON_3_7.bundlingImage,
-  //         command: [
-  //             "bash",
-  //             "-c",
-  //             `cd ${working_dir} && pip install --no-cache -r requirements_layer.txt -t /asset-output && cp -au . /asset-output`,
-  //         ],
-  //     };
-  // }
+
   private createDynamodb(): dynamodb.Table {
     const ddb_gsi_ttl_read = this.ddbDefaultRead;
     const ddb_gsi_ttl_write = this.ddbDefaultWrite;
@@ -262,42 +258,6 @@ export class SchedulerStack extends cdk.Stack {
       nonKeyAttributes: ["task_id"],
     });
     return taskstatusTable;
-
-    // # attribute {
-    // #   name = "submission_timestamp"
-    // #   type = "N"
-    // # }
-
-    // # attribute {
-    // #   name = "task_completion_timestamp"
-    // #   type = "N"
-    // # }
-
-    // # attribute {
-    // #   name = "task_owner"
-    // #   type = "S"
-    // # }
-    // # default value "None"
-
-    // # attribute {
-    // #   name = "retries"
-    // #   type = "N"
-    // # }
-
-    // # attribute {
-    // #   name = "task_definition"
-    // #   type = "S"
-    // # }
-
-    // # attribute {
-    // #   name = "sqs_handler_id"
-    // #   type = "S"
-    // # }
-
-    // # attribute {
-    // #   name = "parent_session_id"
-    // #   type = "S"
-    // # }
   }
   private createRedisCluster(): elasticache.CfnCacheCluster {
     const subnets = this.vpc.privateSubnets;
@@ -312,7 +272,7 @@ export class SchedulerStack extends cdk.Stack {
       {
         description: "htc-grid elasticache subnet group", // required
         subnetIds: vpc_subnet_ids,
-        cacheSubnetGroupName: "stdin-stdout-cache-subnet", // stdin-stdout-cache-subnet-${lower(local.suffix)}
+        cacheSubnetGroupName: "stdin-stdout-cache-subnet",
       }
     );
 
@@ -346,14 +306,13 @@ export class SchedulerStack extends cdk.Stack {
       this,
       "stdin_stdout_cache",
       {
-        clusterName: "stdin-stdout-cache", // stdin-stdout-cache-${lower(local.suffix)}
+        clusterName: "stdin-stdout-cache",
         engine: "redis",
         cacheNodeType: "cache.r4.large",
         numCacheNodes: 1,
         engineVersion: "5.0.6",
         port: 6379,
         cacheSubnetGroupName: elasticacheSubnetGroup.cacheSubnetGroupName,
-        //cacheSecurityGroupNames:  [allowincomingRedis.securityGroupName],// secgroupids
         cacheParameterGroupName: elasticacheparamGroup.ref,
         vpcSecurityGroupIds: [allowincomingRedis.securityGroupId],
       }
@@ -457,7 +416,6 @@ export class SchedulerStack extends cdk.Stack {
           TASK_INPUT_PASSED_VIA_EXTERNAL_STORAGE: `${this.taskInputPassedViaExternalStorage}`,
           GRID_STORAGE_SERVICE: this.gridStorageService,
           S3_BUCKET: this.htcStdoutBucket.bucketName,
-          // Need to confirm if below is same as: aws_elasticache_cluster.stdin-stdout-cache.cache_nodes.0.address
           REDIS_URL: this.elasticacheCluster.attrRedisEndpointAddress,
           METRICS_GRAFANA_PRIVATE_IP: this.nlbInfluxdb,
           REGION: this.region,
@@ -483,16 +441,13 @@ export class SchedulerStack extends cdk.Stack {
       this,
       "get_results_lambda_functions",
       {
-        // If requirements.txt exists at entry path, don't need to explicitly state path like terraform
-        //entry: "../../../source/control_plane/python/lambda/get_results",
+
         code: lambda.Code.fromAsset("../../..", {
           bundling: this.get_lambda_function_bundle("source/control_plane/python/lambda/get_results"),
           ignoreMode: IgnoreMode.GIT,
           exclude: ["node_modules/","venv/","cdk.out/",".terraform/","builds/"]
         }),
-        //index: "get_results.py",
         handler: "get_results.lambda_handler",
-        //layers: this.lambdaLayers,
         functionName: this.lambdaNameGetResults,
         runtime: lambda.Runtime.PYTHON_3_7,
         memorySize: 1024,
@@ -517,7 +472,6 @@ export class SchedulerStack extends cdk.Stack {
           TASK_INPUT_PASSED_VIA_EXTERNAL_STORAGE: `${this.taskInputPassedViaExternalStorage}`,
           GRID_STORAGE_SERVICE: this.gridStorageService,
           S3_BUCKET: this.htcStdoutBucket.bucketName,
-          // Need to confirm if below is same as: aws_elasticache_cluster.stdin-stdout-cache.cache_nodes.0.address
           REDIS_URL: this.elasticacheCluster.attrRedisEndpointAddress,
           METRICS_GRAFANA_PRIVATE_IP: this.nlbInfluxdb,
           REGION: this.region,
@@ -543,16 +497,12 @@ export class SchedulerStack extends cdk.Stack {
       this,
       "cancel_tasks_lambda_functions",
       {
-        // If requirements.txt exists at entry path, don't need to explicitly state path like terraform
-        //entry: "../../../source/control_plane/python/lambda/cancel_tasks",
         code: lambda.Code.fromAsset("../../..", {
           bundling: this.get_lambda_function_bundle("source/control_plane/python/lambda/cancel_tasks"),
           ignoreMode: IgnoreMode.GIT,
           exclude: ["node_modules/","venv/","cdk.out/",".terraform/","builds/"]
         }),
-        //index: "cancel_tasks.py",
         handler: "cancel_tasks.lambda_handler",
-        //layers: this.lambdaLayers,
         functionName: this.lambdaNameCancelTasks,
         runtime: lambda.Runtime.PYTHON_3_7,
         memorySize: 1024,
@@ -577,7 +527,6 @@ export class SchedulerStack extends cdk.Stack {
           TASK_INPUT_PASSED_VIA_EXTERNAL_STORAGE:  `${this.taskInputPassedViaExternalStorage}`,
           GRID_STORAGE_SERVICE: this.gridStorageService,
           S3_BUCKET: this.htcStdoutBucket.bucketName,
-          // Need to confirm if below is same as: aws_elasticache_cluster.stdin-stdout-cache.cache_nodes.0.address
           REDIS_URL: this.elasticacheCluster.attrRedisEndpointAddress,
           METRICS_GRAFANA_PRIVATE_IP: this.nlbInfluxdb,
           REGION: this.region,
@@ -604,16 +553,12 @@ export class SchedulerStack extends cdk.Stack {
       this,
       "ttl_checker_lambda_function",
       {
-        // If requirements.txt exists at entry path, don't need to explicitly state path like terraform
-        //entry: "../../../source/control_plane/python/lambda/ttl_checker",
         code: lambda.Code.fromAsset("../../..", {
           bundling: this.get_lambda_function_bundle("source/control_plane/python/lambda/ttl_checker"),
           ignoreMode: IgnoreMode.GIT,
           exclude: ["node_modules/","venv/","cdk.out/",".terraform/","builds/"]
         }),
-        //index: "ttl_checker.py",
         handler: "ttl_checker.lambda_handler",
-        //layers: this.lambdaLayers,
         functionName: this.lambdaNameTtlChecker,
         runtime: lambda.Runtime.PYTHON_3_7,
         memorySize: 1024,
@@ -623,7 +568,6 @@ export class SchedulerStack extends cdk.Stack {
         vpcSubnets: this.privateSubnetSelector,
         securityGroups: [this.vpcDefaultSg],
         logRetention: logs.RetentionDays.FIVE_DAYS,
-        // use_existing_cloudwatch_log_group = true
         environment: {
           STATE_TABLE_NAME: this.taskstatusTable.tableName,
           STATE_TABLE_SERVICE: this.ddbService,
@@ -646,7 +590,6 @@ export class SchedulerStack extends cdk.Stack {
     return ttl_checker_function;
   }
   private enableLambdaLogging() {
-    // CDK should create necessary permissions for event rule to trigger lambda target, will test
     new events.Rule(this, "ttl-checker-event-rule", {
       ruleName: `ttl_checker_event_rule-${this.projectName}`,
       description: "Fires event to trigger TTL Checker Lambda",

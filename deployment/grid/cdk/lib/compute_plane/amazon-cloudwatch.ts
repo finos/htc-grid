@@ -1,7 +1,12 @@
+// Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
+
 import { Construct } from "constructs";
 import * as cdk from "aws-cdk-lib";
 import * as eks from "aws-cdk-lib/aws-eks";
-// import * as iam from "@aws-cdk/aws-iam";
+
 import { ClusterManagerPlus } from "../shared/cluster-manager-plus/cluster-manager-plus";
 
 interface ContainerInsightProps extends cdk.NestedStackProps {
@@ -727,18 +732,6 @@ export class ContainerInsightStack extends cdk.NestedStack {
   // Stops taken from CDK doc: https://github.com/aws/aws-cdk/blob/a4f04186f2448fdf5c8d85f7733c05fd84940738/packages/%40aws-cdk/aws-eks/lib/service-account.ts#L41
   private createServiceAccount(saName: string): eks.KubernetesManifest {
     const cluster = this.clusterManager.cluster;
-    // Merged from clemerey fixes
-    // const conditions = new cdk.CfnJson(this, `${saName}ConditionJson`, {
-    //   value: {
-    //     [`${cluster.openIdConnectProvider.openIdConnectProviderIssuer}:aud`]: 'sts.amazonaws.com',
-    //     [`${cluster.openIdConnectProvider.openIdConnectProviderIssuer}:sub`]: `system:serviceaccount:${this.NAMESPACE}:${saName}`,
-    //   },
-    // });
-    // const principal = new iam.OpenIdConnectPrincipal(cluster.openIdConnectProvider).withConditions({
-    //   StringEquals: conditions,
-    // });
-    // const role = new iam.Role(this, `${saName}Role`, { assumedBy: principal });
-
     return new eks.KubernetesManifest(
       this,
       `manifest-${saName}ServiceAccountResource`,
@@ -752,10 +745,7 @@ export class ContainerInsightStack extends cdk.NestedStack {
               name: saName,
               namespace: this.NAMESPACE,
               labels: {
-                "app.kubernetes.io/name": saName,
-                // },
-                // annotations: {
-                //   'eks.amazonaws.com/role-arn': role.roleArn,
+                "app.kubernetes.io/name": saName
               },
             },
           },

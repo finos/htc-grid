@@ -1,3 +1,8 @@
+// Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
+
 import { Construct } from "constructs";
 import * as cdk from "aws-cdk-lib";
 import * as s3 from "aws-cdk-lib/aws-s3";
@@ -8,15 +13,6 @@ export class BucketsStack extends cdk.Stack {
     super(scope, id, props);
 
     const tag = this.node.tryGetContext("tag").toLowerCase();
-
-    // is this bucket even needed?
-    // new s3.Bucket(this, 'imageTfstateBucket', {
-    //     bucketName: `${tag}-image-tfstate-htc-grid-${this.node.addr}`.substring(0, 63)
-    // });
-
-    // new s3.Bucket(this, 'tfstateBucket', {
-    //     bucketName: `${tag}-tfstate-htc-grid-${this.node.addr}`.substring(0, 63)
-    // });
     const lambdaS3 = new s3.Bucket(this, "lambdaBucket", {
       bucketName: `${tag}-lambda-unit-htc-grid-${this.node.addr}`.substring(
         0,

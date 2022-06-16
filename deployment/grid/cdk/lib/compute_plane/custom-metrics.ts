@@ -1,3 +1,8 @@
+// Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
+
 import * as path from "path";
 import { Construct } from "constructs";
 import * as cdk from "aws-cdk-lib";
@@ -51,9 +56,6 @@ export class CustomMetricsStack extends cdk.NestedStack {
       }
     );
 
-    // inconsistent on deployments. errors differ each run:
-    // error calling include: template: no template "aws-load-balancer-controller.gen-certs" associated with template "gotpl
-    // template "aws-node-termination-handler.serviceAccountName" not defined
     const cwadapter = clusterManager.createHelmChart(this, {
       chart: "cloudwatch-adapter",
       assetChart: new asset.Asset(this, "HtcCWAdapterChart", {
@@ -65,7 +67,6 @@ export class CustomMetricsStack extends cdk.NestedStack {
       namespace: "custom-metrics",
       release: "cloudwatch-adapter",
       values: {
-        // 'repository' : '${var.AWS_SAN_ECR}/k8s-cloudwatch-adapter',
         image: {
           tag: props.cwaTag, //var.CWA_VERSION, //variable
           repository: `${this.account}.dkr.ecr.${this.region}.amazonaws.com/k8s-cloudwatch-adapter`,

@@ -14,10 +14,10 @@ init:
 	npm install && AWS_REGION=$(REGION) cdk bootstrap -c images=../images_config.json
 
 apply: $(TF_SRCS) $(GRID_CONFIG)
-	AWS_REGION=$(REGION) cdk deploy -c images=../images_config.json ImagesStack
+	AWS_REGION=$(REGION) cdk deploy -c images=../images_config.json -c region=$(REGION) ImagesStack
 
 destroy:
-	AWS_REGION=$(REGION) cdk destroy  -c images=../images_config.json ImagesStack
+	AWS_REGION=$(REGION) cdk destroy  -c images=../images_config.json -c region=$(REGION) ImagesStack
 
 reset:
 	rm -rf node_modules

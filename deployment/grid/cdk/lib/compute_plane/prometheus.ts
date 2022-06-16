@@ -1,3 +1,8 @@
+// Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
+
 // Namespace: prometheus
 import * as path from "path";
 import { Construct } from "constructs";
@@ -17,14 +22,6 @@ interface PrometheusProps extends cdk.NestedStackProps {
 
 }
 
-// interface IPrometheusConfig {
-//     node_exporter_tag: string,
-//     server_tag: string,
-//     alertmanager_tag: string,
-//     kube_state_metrics_tag: string,
-//     pushgateway_tag: string,
-//     configmap_reload_tag: string
-// }
 
 export class PrometheusStack extends cdk.NestedStack {
   constructor(scope: Construct, id: string, props: PrometheusProps) {

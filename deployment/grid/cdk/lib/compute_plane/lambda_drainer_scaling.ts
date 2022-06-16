@@ -1,3 +1,7 @@
+// Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
 import { Construct } from "constructs";
 import * as cdk from "aws-cdk-lib";
 import * as asg from "aws-cdk-lib/aws-autoscaling";
@@ -38,8 +42,6 @@ interface LambdaDrainerScalingProps extends cdk.NestedStackProps {
   readonly metricsName: string;
   readonly metricsEventRuleTime: string;
   readonly tasksQueueName: string;
-
-  // nodeGroupBlocker: eks.Nodegroup[];
 }
 
 export class LambdaDrainerScalingStack extends cdk.NestedStack {
@@ -63,11 +65,6 @@ export class LambdaDrainerScalingStack extends cdk.NestedStack {
   private errorLoggingStream: string;
   private tasksQueueName: string;
   private drainerLambdaRole: iam.IRole;
-
-
-
-  // private nodeGroupBlocker: eks.Nodegroup[];
-
   private readyCheckProvider: cr.Provider;
 
   constructor(
