@@ -201,35 +201,10 @@ export class LambdaDrainerScalingStack extends cdk.NestedStack {
     const function_role = new iam.Role(this, "role_lambda_metrics", {
       roleName: `role_lambda_metrics-${projectName}`,
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
-      inlinePolicies: {
-        AssumeRole: new iam.PolicyDocument({
-          statements: [
-            new iam.PolicyStatement({
-              actions: ["sts:AssumeRole"],
-              effect: iam.Effect.ALLOW,
-              resources: ["*"],
-            }),
-          ],
-        }),
-      },
     });
-    new iam.Policy(this, "lambda_metrics_logging_policy", {
-      document: new iam.PolicyDocument({
-        statements: [
-          new iam.PolicyStatement({
-            resources: ["arn:aws:logs:*:*:*"],
-            actions: [
-              "logs:CreateLogGroup",
-              "logs:CreateLogStream",
-              "logs:PutLogEvents",
-            ],
-            effect: iam.Effect.ALLOW,
-          }),
-        ],
-      }),
-      policyName: "lambda_metrics_logging_policy",
-      roles: [function_role],
-    });
+    function_role.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaVPCAccessExecutionRole")
+    )
     new iam.Policy(this, "lambda_metrics_data_policy", {
       document: new iam.PolicyDocument({
         statements: [
@@ -239,9 +214,6 @@ export class LambdaDrainerScalingStack extends cdk.NestedStack {
               "dynamodb:*",
               "sqs:*",
               "cloudwatch:PutMetricData",
-              "ec2:CreateNetworkInterface",
-              "ec2:DeleteNetworkInterface",
-              "ec2:DescribeNetworkInterfaces",
             ],
             effect: iam.Effect.ALLOW,
           }),

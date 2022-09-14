@@ -9,12 +9,12 @@ import { Construct } from "constructs";
 import * as cdk from "aws-cdk-lib";
 import * as path from "path";
 import * as fs from "fs";
+import * as yaml from 'yaml'
 import * as forge from "node-forge";
 import * as cr from "aws-cdk-lib/custom-resources";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as eks from "aws-cdk-lib/aws-eks";
-import * as asset from "aws-cdk-lib/aws-s3-assets";
 import * as secretsmanager from"aws-cdk-lib/aws-secretsmanager";
 import { ClusterManagerPlus } from "../shared/cluster-manager-plus/cluster-manager-plus";
 
@@ -70,37 +70,61 @@ export class GrafanaStack extends cdk.NestedStack {
       }
     );
 
+    const grafanaPlacementConfiguration = yaml.parse(fs.readFileSync(path.join(__dirname, "./grafana_placement_conf.yaml")).toString())
+    const grafanaDashboardConfiguration = yaml.parse(fs.readFileSync(path.join(__dirname, "./grafana_dashboard_k8s.yaml")).toString())
     const grafana = clusterManager.createHelmChart(this, {
       namespace: NAMESPACE,
       chart: "grafana",
       repository: "https://grafana.github.io/helm-charts/",
       release: "grafana",
-      assetValues: [
-        new asset.Asset(this, "GrafanaPlacement", {
-          path: path.join(__dirname, "./grafana_placement_conf.yaml"),
-        }),
-        new asset.Asset(this, "GrafanaDashboard", {
-          path: path.join(__dirname, "./grafana_dashboard_k8s.yaml"),
-        }),
-      ],
+      // assetValues: [
+      //   new asset.Asset(this, "GrafanaPlacement", {
+      //     path: path.join(__dirname, "./grafana_placement_conf.yaml"),
+      //   }),
+      //   new asset.Asset(this, "GrafanaDashboard", {
+      //     path: path.join(__dirname, "./grafana_dashboard_k8s.yaml"),
+      //   }),
+      // ],
       values: {
-        "persistence.enabled": "false",
+        ...grafanaPlacementConfiguration,
+        ...grafanaDashboardConfiguration,
+        persistence : {
+          enabled: false
+        },
+
         // if admin pw is blank, set it to default pw
         adminPassword: props.grafanaAdminPassword ?? "htcadmin",
-        "ingress.annotations.alb\\.ingress\\.kubernetes\\.io/subnets":
-          clusterManager.cluster.vpc.privateSubnets.join("\\,"),
-        "alb\\.ingress\\.kubernetes\\.io/load-balancer-attributes":
-          "access_logs\\.s3\\.enabled=true\\,access_logs\\.s3\\.bucket=htc-grid-2020\\,access_logs\\.s3\\.prefix=my-app",
-        "service.type": "NodePort",
-        "initChownData.image.repository": `${this.account}.dkr.ecr.${this.region}.amazonaws.com/busybox`,
-        "initChownData.image.tag": props.busyboxTag,
-        "image.repository": `${this.account}.dkr.ecr.${this.region}.amazonaws.com/grafana`,
-        "image.tag": props.grafanaTag,
-        "downloadDashboardsImage.repository": `${this.account}.dkr.ecr.${this.region}.amazonaws.com/curl`,
-        "downloadDashboardsImage.tag": props.curlTag,
-        "sidecar.image.repository": `${this.account}.dkr.ecr.${this.region}.amazonaws.com/k8s-sidecar`,
-        "sidecar.image.tag": props.k8sSideCarTag,
-        "sidecar.dashboards.enabled": "true",
+        ingress: {
+          annotations: {
+            "alb.ingress.kubernetes.io/subnets" : clusterManager.cluster.vpc.privateSubnets.map(subnet => subnet.subnetId).join(","),
+          }
+        },
+        initChownData : {
+          image: {
+            repository : `${this.account}.dkr.ecr.${this.region}.amazonaws.com/busybox`,
+            tag : props.busyboxTag
+          }
+        },
+        image: {
+          repository: `${this.account}.dkr.ecr.${this.region}.amazonaws.com/grafana`,
+          tag: props.grafanaTag
+        },
+        downloadDashboardsImage : {
+          repository: `${this.account}.dkr.ecr.${this.region}.amazonaws.com/curl`,
+          tag: props.curlTag,
+        },
+        sidecar : {
+          dashboards: {
+            enabled: true
+          },
+          image : {
+            tag:props.k8sSideCarTag,
+            repository: `${this.account}.dkr.ecr.${this.region}.amazonaws.com/k8s-sidecar`,
+          }
+        },
+        service : {
+          type: "NodePort"
+        }
       },
     });
 
@@ -113,32 +137,21 @@ export class GrafanaStack extends cdk.NestedStack {
       apiVersion: "v1",
       kind: "ConfigMap",
       metadata: {
-        namespace: NAMESPACE,
+        namespace: "grafana",
         name: "grafana-dashboard",
         labels: {
           grafana_dashboard: "1",
         },
       },
       data: {
-        "htc-metrics.json": this.toJsonString(htc_metrics_data),
-        "kubernetes-metrics.json": this.toJsonString(k8s_metrics_data),
+        "htc-metrics.json": htc_metrics_data.toString(),
+        "kubernetes-metrics.json": k8s_metrics_data.toString(),
       },
     };
 
-    const dashboardsManifestFile = path.join(
-      __dirname,
-      "htc-dashboard-manifest.json"
-    );
-    fs.writeFileSync(
-      dashboardsManifestFile,
-      JSON.stringify(htc_dashboards_manifest),
-      "utf8"
-    );
-
-    const htc_dashboards = clusterManager.applyManifest(this, {
-      assetManifest: new asset.Asset(this, "HtcDashboardManifestAsset", {
-        path: dashboardsManifestFile,
-      }),
+    const htc_dashboards = new eks.KubernetesManifest(this, "HtcDashboardDefinition",{
+      cluster: clusterManager.cluster,
+      manifest: [htc_dashboards_manifest]
     });
 
     htc_dashboards.node.addDependency(grafana_namespace);
@@ -211,11 +224,11 @@ export class GrafanaStack extends cdk.NestedStack {
     cert.serialNumber = "01";
     cert.validity.notBefore = new Date();
     cert.validity.notAfter = new Date();
-    cert.validity.notAfter.setHours(cert.validity.notBefore.getHours() + 12);
+    cert.validity.notAfter.setHours(cert.validity.notBefore.getDay() + 12);
     const attrs = [
       {
         name: "commonName",
-        value: "amazon.com",
+        value: "amazonaws.com",
       },
       {
         name: "countryName",

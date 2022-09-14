@@ -7,11 +7,16 @@ rules:
     resources: ["pods", "pods/eviction", "nodes"]
     verbs: ["create", "list", "patch"]
 ---
-kind: ClusterRole
+kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: lambda-cluster-access
-rules:
-  - apiGroups: [""]
-    resources: ["pods", "pods/eviction", "nodes"]
-    verbs: ["create", "list", "patch"]
+  name: lambda-user-cluster-role-binding
+subjects:
+  - kind: User
+    name: lambda
+roleRef:
+  # "roleRef" specifies the binding to a Role / ClusterRole
+  kind: ClusterRole #this must be Role or ClusterRole
+  name: lambda-cluster-access # this must match the name of the Role or ClusterRole you wish to bind to
+  apiGroup: rbac.authorization.k8s.io
+

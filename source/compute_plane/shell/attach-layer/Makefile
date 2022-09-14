@@ -17,7 +17,7 @@ lambda-init: build-lambda-init push-lambda-init
 
 
 build-lambda-init: Dockerfile
-	docker build $(CONTEXT_DIR) -t $(DOCKER_REGISTRY)/$(LAMBDA_INIT_IMAGE_NAME):$(TAG) -f ./Dockerfile
+	docker build  --platform linux/amd64 $(CONTEXT_DIR) -t $(DOCKER_REGISTRY)/$(LAMBDA_INIT_IMAGE_NAME):$(TAG) -f ./Dockerfile
 
 push-lambda-init: build-lambda-init
 	docker push $(DOCKER_REGISTRY)/$(LAMBDA_INIT_IMAGE_NAME):$(TAG)

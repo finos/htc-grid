@@ -31,7 +31,8 @@ export class ImagesStack extends cdk.Stack {
       const repo = new ecr.Repository(this, `${repoName}Repo`, {
 
         repositoryName: repoName,
-        //removalPolicy: cdk.RemovalPolicy.DESTROY
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+
 
       });
     });

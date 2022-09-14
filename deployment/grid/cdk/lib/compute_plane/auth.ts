@@ -23,6 +23,7 @@ export class CognitoAuthStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: CognitoAuthStackProps) {
     super(scope, id, props);
 
+    const domainName = `${this.project_name}-${this.node.addr.substring(0, 5)}`
     this.clusterManager = props.clusterManager;
     this.project_name = props.projectName ;
     this.cognito_userpool = new cognito.UserPool(this, "htc_pool", {
@@ -30,15 +31,15 @@ export class CognitoAuthStack extends cdk.Stack {
       selfSignUpEnabled: true,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
-    this.cognito_userpool_client = this.createClients();
+    this.cognito_userpool_client = this.createClients(domainName);
     this.cognito_userpool.addDomain("htc_userpool_domain", {
       cognitoDomain: {
-        domainPrefix: `${this.project_name}-${this.node.addr.substring(0, 5)}`,
+        domainPrefix: domainName,
       },
     });
   }
 
-  private createClients(): cognito.IUserPoolClient {
+  private createClients(domainName: string): cognito.IUserPoolClient {
     const grafanaAddress = new eks.KubernetesObjectValue(
       this,
       "GrafanaIngressAddress",
@@ -85,7 +86,7 @@ export class CognitoAuthStack extends cdk.Stack {
     });
 
     this.clusterManager.customKubectl(this, {
-      kubectlCreateCmd: `-n grafana annotate ingress grafana-ingress --overwrite alb.ingress.kubernetes.io/auth-idp-cognito="{\\"UserPoolArn\\": \\"${this.cognito_userpool.userPoolArn}\\",\\"UserPoolClientId\\":\\"${userPoolClient.userPoolClientId}\\",\\"UserPoolDomain\\":\\"${this.project_name}\\"}" alb.ingress.kubernetes.io/auth-on-unauthenticated-reques=authenticate alb.ingress.kubernetes.io/auth-scope=openid alb.ingress.kubernetes.io/auth-session-cookie=AWSELBAuthSessionCookie alb.ingress.kubernetes.io/auth-session-timeout="3600" alb.ingress.kubernetes.io/auth-type=cognito`,
+      kubectlCreateCmd: `-n grafana annotate ingress grafana-ingress --overwrite alb.ingress.kubernetes.io/auth-idp-cognito="{\\"UserPoolArn\\": \\"${this.cognito_userpool.userPoolArn}\\",\\"UserPoolClientId\\":\\"${userPoolClient.userPoolClientId}\\",\\"UserPoolDomain\\":\\"${domainName}\\"}" alb.ingress.kubernetes.io/auth-on-unauthenticated-reques=authenticate alb.ingress.kubernetes.io/auth-scope=openid alb.ingress.kubernetes.io/auth-session-cookie=AWSELBAuthSessionCookie alb.ingress.kubernetes.io/auth-session-timeout="3600" alb.ingress.kubernetes.io/auth-type=cognito`,
     });
     return userPoolDataClient;
   }

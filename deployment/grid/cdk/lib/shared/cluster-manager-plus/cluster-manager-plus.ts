@@ -36,7 +36,7 @@ export interface ApplyProps {
    * @default false
    */
   readonly overwrite?: boolean;
-  readonly assetManifest: assets.Asset;
+  readonly assetManifest?: assets.Asset;
 }
 
 interface IS3Asset {
@@ -242,7 +242,7 @@ export class ClusterManagerPlus extends Construct {
       serviceToken: this.provider.serviceToken,
       resourceType: ResourceType.Apply,
       properties: {
-        ManifestAsset: this.getAsset(props.assetManifest),
+        //ManifestAsset: this.getAsset(props.assetManifest),
         Manifest: manifestJson,
         Overwrite: props.overwrite,
         SkipValidation: props.skipValidation,

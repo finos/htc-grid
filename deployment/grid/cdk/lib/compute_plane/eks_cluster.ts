@@ -85,34 +85,10 @@ export class EksClusterStack extends cdk.Stack {
     const lambdaDrainerRole = new iam.Role(this, "drainerLambdaRole", {
       roleName: `roleLambdaDrainer-${props.projectName}`,
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
-      inlinePolicies: {
-        AssumeRole: new iam.PolicyDocument({
-          statements: [
-            new iam.PolicyStatement({
-              actions: ["sts:AssumeRole"],
-              effect: iam.Effect.ALLOW,
-              resources: ["*"],
-            }),
-          ],
-        }),
-      },
     });
-
-    lambdaDrainerRole.addToPolicy(
-      new iam.PolicyStatement({
-        actions: [
-          "ec2:CreateNetworkInterface",
-          "ec2:DeleteNetworkInterface",
-          "ec2:DescribeNetworkInterfaces",
-        ],
-        resources: ["*"],
-      })
-    );
     lambdaDrainerRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName(
-        "service-role/AWSLambdaBasicExecutionRole"
-      )
-    );
+      iam.ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaVPCAccessExecutionRole")
+    )
     new iam.Policy(this, "lambda_drainer_policy", {
       document: new iam.PolicyDocument({
         statements: [

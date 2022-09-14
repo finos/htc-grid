@@ -59,7 +59,7 @@ Conditions:
 
 Resources:
 
-################## PERMISSIONS AND ROLES #################
+  ################## PERMISSIONS AND ROLES #################
   C9Role:
     Type: AWS::IAM::Role
     Condition: NotEventEngine
@@ -70,15 +70,15 @@ Resources:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - ec2.amazonaws.com
-            - ssm.amazonaws.com
-          Action:
-          - sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+                - ssm.amazonaws.com
+            Action:
+              - sts:AssumeRole
       ManagedPolicyArns:
-      - arn:aws:iam::aws:policy/AdministratorAccess
+        - arn:aws:iam::aws:policy/AdministratorAccess
       Path: "/"
   C9LambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -86,61 +86,61 @@ Resources:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - lambda.amazonaws.com
-          Action:
-          - sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
       Path: "/"
       Policies:
-      - PolicyName:
-          Fn::Join:
-          - ''
-          - - C9LambdaPolicy-
-            - Ref: AWS::Region
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action:
-            - logs:CreateLogGroup
-            - logs:CreateLogStream
-            - logs:PutLogEvents
-            Resource: arn:aws:logs:*:*:*
-          - Effect: Allow
-            Action:
-            - cloudformation:DescribeStacks
-            - cloudformation:DescribeStackEvents
-            - cloudformation:DescribeStackResource
-            - cloudformation:DescribeStackResources
-            - ec2:DescribeInstances
-            - ec2:DescribeVolumes
-            - ec2:AssociateIamInstanceProfile
-            - ec2:ModifyInstanceAttribute
-            - ec2:ModifyVolume
-            - ec2:ReplaceIamInstanceProfileAssociation
-            - iam:ListInstanceProfiles
-            - iam:PassRole
-            Resource: "*"
+        - PolicyName:
+            Fn::Join:
+              - ''
+              - - C9LambdaPolicy-
+                - Ref: AWS::Region
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStacks
+                  - cloudformation:DescribeStackEvents
+                  - cloudformation:DescribeStackResource
+                  - cloudformation:DescribeStackResources
+                  - ec2:DescribeInstances
+                  - ec2:DescribeVolumes
+                  - ec2:AssociateIamInstanceProfile
+                  - ec2:ModifyInstanceAttribute
+                  - ec2:ModifyVolume
+                  - ec2:ReplaceIamInstanceProfileAssociation
+                  - iam:ListInstanceProfiles
+                  - iam:PassRole
+                Resource: "*"
 
-################## LAMBDA BOOTSTRAP FUNCTION ################
+  ################## LAMBDA BOOTSTRAP FUNCTION ################
 
   C9BootstrapInstanceLambda:
     Description: Bootstrap Cloud9 instance
     Type: Custom::C9BootstrapInstanceLambda
     DependsOn:
-    - C9BootstrapInstanceLambdaFunction
-    - C9Instance
-    - C9LambdaExecutionRole
+      - C9BootstrapInstanceLambdaFunction
+      - C9Instance
+      - C9LambdaExecutionRole
     Properties:
       Tags:
         - Key: Environment
           Value: AWS Example
       ServiceToken:
         Fn::GetAtt:
-        - C9BootstrapInstanceLambdaFunction
-        - Arn
+          - C9BootstrapInstanceLambdaFunction
+          - Arn
       REGION:
         Ref: AWS::Region
       StackName:
@@ -158,8 +158,8 @@ Resources:
       Handler: index.lambda_handler
       Role:
         Fn::GetAtt:
-        - C9LambdaExecutionRole
-        - Arn
+          - C9LambdaExecutionRole
+          - Arn
       Runtime: python3.7
       MemorySize: 256
       Timeout: '600'
@@ -226,7 +226,7 @@ Resources:
                       responseData = {'Error': traceback.format_exc(e)}
                       cfnresponse.send(event, context, cfnresponse.FAILED, responseData, 'CustomResourcePhysicalID')
 
-################## SSM BOOTSRAP HANDLER ###############
+  ################## SSM BOOTSRAP HANDLER ###############
   C9OutputBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Delete
@@ -243,68 +243,68 @@ Resources:
         schemaVersion: '2.2'
         description: Bootstrap Cloud9 Instance
         mainSteps:
-        - action: aws:runShellScript
-          name: C9bootstrap
-          inputs:
-            runCommand:
-            - "#!/bin/bash"
-            - date
-            - . /home/ec2-user/.bashrc
-            - whoami
-            - !Sub 'echo "export KUBECTL_VERSION=${C9KubectlVersion}"'
-            - sudo -H -u ec2-user aws sts get-caller-identity
-            - echo '=== INSTALL kubectl ==='
-            - !Sub 'export KUBECTL_VERSION=${C9KubectlVersion}'
-            - sudo curl --silent --location -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-            - sudo chmod +x /usr/local/bin/kubectl
-            - echo '=== Install JQ and envsubst ==='
-            - sudo yum -y install jq gettext unzip
-            - echo '=== Update to the latest AWS CLI ==='
-            - sudo -H -u ec2-user aws --version
-            - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            - unzip awscliv2.zip
-            - sudo ./aws/install
-            - . /home/ec2-user/.bash_profile
-            - sudo -H -u ec2-user aws --version
-            - echo '=== setup AWS configs ==='
-            - rm -vf /home/ec2-user/.aws/credentials
-            - export ACCOUNT_ID=$(aws sts get-caller-identity --output text --query Account)
-            - export AWS_REGION=$(curl -s 169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')
-            - echo "export ACCOUNT_ID=${ACCOUNT_ID}" >> /home/ec2-user/.bash_profile
-            - echo "export AWS_REGION=${AWS_REGION}" >> /home/ec2-user/.bash_profile
-            - sudo -H -u ec2-user aws configure set default.region ${AWS_REGION}
-            - sudo -H -u ec2-user aws configure get default.region
-            - sudo -H -u ec2-user aws sts get-caller-identity
-            - echo '=== Install EKSCTL ==='
-            - !Sub 'export EKSCTL_VERSION=${C9EKSctlVersion}'
-            - curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/${EKSCTL_VERSION}/eksctl_Linux_amd64.tar.gz" | tar xz -C /tmp
-            - sudo mv -v /tmp/eksctl /usr/local/bin
-            - echo '=== Install Terraform ==='
-            - !Sub 'export TERRAFORM_VERSION=${C9TerraformVersion}'
-            - curl --silent --location -o /tmp/terraform.zip "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_386.zip"
-            - unzip /tmp/terraform.zip -d /tmp/terraform
-            - sudo chmod +x /tmp/terraform/terraform
-            - sudo mv -v /tmp/terraform/terraform /usr/local/bin/terraform
-            - echo '=== Install HELM ==='
-            - !Sub 'export HELM_VERSION=${C9HelmVersion}'
-            - mkdir -p /tmp/helm
-            - curl --silent --location -o /tmp/helm.tar.gz "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz"
-            - tar -zxf /tmp/helm.tar.gz -C /tmp/helm/
-            - sudo chmod +x /tmp/helm/linux-amd64/helm
-            - sudo cp /tmp/helm/linux-amd64/helm /usr/local/bin/
-            - echo '=== Increasing Volume Capacity ==='
-            - sudo growpart /dev/xvda 1
-            - sudo resize2fs $(df -h |awk '/^\/dev/{print $1}')
-            - echo "=== Downloading HTC-Grid project ==="
-            - curl --silent --location -o /home/ec2-user/environment/aws-htc-grid.tar.gz "https://github.com/awslabs/aws-htc-grid/archive/refs/tags/v0.3.4.tar.gz"
-            - cd /home/ec2-user/environment; tar xzvf aws-htc-grid.tar.gz
-            - mv aws-htc-grid-0.3.4/ aws-htc-grid
-            - sudo chown -R 501:501 /home/ec2-user/environment/
+          - action: aws:runShellScript
+            name: C9bootstrap
+            inputs:
+              runCommand:
+                - "#!/bin/bash"
+                - date
+                - . /home/ec2-user/.bashrc
+                - whoami
+                - !Sub 'echo "export KUBECTL_VERSION=${C9KubectlVersion}"'
+                - sudo -H -u ec2-user aws sts get-caller-identity
+                - echo '=== INSTALL kubectl ==='
+                - !Sub 'export KUBECTL_VERSION=${C9KubectlVersion}'
+                - sudo curl --silent --location -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+                - sudo chmod +x /usr/local/bin/kubectl
+                - echo '=== Install JQ and envsubst ==='
+                - sudo yum -y install jq gettext unzip
+                - echo '=== Update to the latest AWS CLI ==='
+                - sudo -H -u ec2-user aws --version
+                - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                - unzip awscliv2.zip
+                - sudo ./aws/install
+                - . /home/ec2-user/.bash_profile
+                - sudo -H -u ec2-user aws --version
+                - echo '=== setup AWS configs ==='
+                - rm -vf /home/ec2-user/.aws/credentials
+                - export ACCOUNT_ID=$(aws sts get-caller-identity --output text --query Account)
+                - export AWS_REGION=$(curl -s 169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')
+                - echo "export ACCOUNT_ID=${ACCOUNT_ID}" >> /home/ec2-user/.bash_profile
+                - echo "export AWS_REGION=${AWS_REGION}" >> /home/ec2-user/.bash_profile
+                - sudo -H -u ec2-user aws configure set default.region ${AWS_REGION}
+                - sudo -H -u ec2-user aws configure get default.region
+                - sudo -H -u ec2-user aws sts get-caller-identity
+                - echo '=== Install EKSCTL ==='
+                - !Sub 'export EKSCTL_VERSION=${C9EKSctlVersion}'
+                - curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/${EKSCTL_VERSION}/eksctl_Linux_amd64.tar.gz" | tar xz -C /tmp
+                - sudo mv -v /tmp/eksctl /usr/local/bin
+                - echo '=== Install Terraform ==='
+                - !Sub 'export TERRAFORM_VERSION=${C9TerraformVersion}'
+                - curl --silent --location -o /tmp/terraform.zip "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_386.zip"
+                - unzip /tmp/terraform.zip -d /tmp/terraform
+                - sudo chmod +x /tmp/terraform/terraform
+                - sudo mv -v /tmp/terraform/terraform /usr/local/bin/terraform
+                - echo '=== Install HELM ==='
+                - !Sub 'export HELM_VERSION=${C9HelmVersion}'
+                - mkdir -p /tmp/helm
+                - curl --silent --location -o /tmp/helm.tar.gz "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz"
+                - tar -zxf /tmp/helm.tar.gz -C /tmp/helm/
+                - sudo chmod +x /tmp/helm/linux-amd64/helm
+                - sudo cp /tmp/helm/linux-amd64/helm /usr/local/bin/
+                - echo '=== Increasing Volume Capacity ==='
+                - sudo growpart /dev/xvda 1
+                - sudo resize2fs $(df -h |awk '/^\/dev/{print $1}')
+                - echo "=== Downloading HTC-Grid project ==="
+                - curl --silent --location -o /home/ec2-user/environment/aws-htc-grid.tar.gz "https://github.com/awslabs/aws-htc-grid/archive/refs/tags/v0.3.4.tar.gz"
+                - cd /home/ec2-user/environment; tar xzvf aws-htc-grid.tar.gz
+                - mv aws-htc-grid-0.3.4/ aws-htc-grid
+                - sudo chown -R 501:501 /home/ec2-user/environment/
 
   C9BootstrapAssociation:
     Type: AWS::SSM::Association
     DependsOn:
-    - C9OutputBucket
+      - C9OutputBucket
     Properties:
       Name: !Ref C9SSMDocument
       OutputLocation:
@@ -314,16 +314,16 @@ Resources:
       Targets:
         - Key: tag:SSMBootstrap
           Values:
-          - Active
+            - Active
 
-################## INSTANCE #####################
+  ################## INSTANCE #####################
   C9InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Condition: NotEventEngine
     Properties:
       Path: "/"
       Roles:
-      - Ref: C9Role
+        - Ref: C9Role
   C9Instance:
     Description: "-"
     DependsOn: C9BootstrapAssociation
@@ -349,10 +349,10 @@ Outputs:
   Cloud9IDE:
     Value:
       Fn::Join:
-      - ''
-      - - https://
-        - Ref: AWS::Region
-        - ".console.aws.amazon.com/cloud9/ide/"
-        - Ref: C9Instance
-        - "?region="
-        - Ref: AWS::Region
+        - ''
+        - - https://
+          - Ref: AWS::Region
+          - ".console.aws.amazon.com/cloud9/ide/"
+          - Ref: C9Instance
+          - "?region="
+          - Ref: AWS::Region
