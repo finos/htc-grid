@@ -246,7 +246,7 @@ export class HtcAgentStack extends cdk.Stack {
         // Lambda Section
         imageLambdaServer: {
           repository: props.agentDeploymentConfig.lambda_container.image,
-          version: props.agentDeploymentConfig.lambda_container.runtime,
+          runtime: props.agentDeploymentConfig.lambda_container.runtime,
           pullPolicy: props.agentDeploymentConfig.lambda_container.pullPolicy,
         },
         resourcesLambdaServer: {

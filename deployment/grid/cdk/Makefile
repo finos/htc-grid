@@ -50,7 +50,7 @@ get-client-id:
 	@aws cloudformation describe-stacks --stack-name $(TAG)-AuthStack --query 'Stacks[0].Outputs[]| [?contains(to_string(@.OutputKey),`Refhtcdataclient`) == `true` ]|[0].OutputValue' --region $(REGION) --output text
 
 get-grafana-password:
-	@@aws cloudformation describe-stacks --stack-name $(TAG)-ClusterNamespaces --query 'Stacks[0].Outputs[]| [?contains(to_string(@.OutputKey),`GrafanaPasswordOutput`) == `true` ]|[0].OutputValue' --region $(REGION) --output text
+	@aws secretsmanager get-secret-value --query 'SecretString' --region $(REGION) --output text --secret-id $(shell aws cloudformation describe-stacks --stack-name $(TAG)-ClusterNamespaces --query 'Stacks[0].Outputs[]| [?contains(to_string(@.ExportName),`grafanaAdminPasswordSecretArn`) == `true` ]|[0].OutputValue' --region $(REGION) --output text)
 
 clean:
 	rm -rf $(BUILD_DIR)/tag.* && rm -rf node_modules && rm -rf ./cdk.out

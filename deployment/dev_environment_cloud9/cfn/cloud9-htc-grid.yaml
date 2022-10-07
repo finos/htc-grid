@@ -293,8 +293,8 @@ Resources:
                 - sudo chmod +x /tmp/helm/linux-amd64/helm
                 - sudo cp /tmp/helm/linux-amd64/helm /usr/local/bin/
                 - echo '=== Increasing Volume Capacity ==='
-                - sudo growpart /dev/xvda 1
-                - sudo resize2fs $(df -h |awk '/^\/dev/{print $1}')
+                - sudo growpart /dev/nvme0n1 1
+                - sudo xfs_growfs -d /
                 - echo "=== Downloading HTC-Grid project ==="
                 - curl --silent --location -o /home/ec2-user/environment/aws-htc-grid.tar.gz "https://github.com/awslabs/aws-htc-grid/archive/refs/tags/v0.3.4.tar.gz"
                 - cd /home/ec2-user/environment; tar xzvf aws-htc-grid.tar.gz

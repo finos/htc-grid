@@ -129,6 +129,7 @@ export class SchedulerStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: SchedulerProps) {
     super(scope, id, props);
 
+    this.projectName = props.projectName
     this.vpc = props.vpc;
     this.vpcDefaultSg = props.vpc_default_sg;
     this.cognitoUserpool = props.cognito_userpool;
@@ -710,7 +711,6 @@ export class SchedulerStack extends cdk.Stack {
       deploy: true,
       deployOptions: {
         metricsEnabled: true,
-        loggingLevel: apigw.MethodLoggingLevel.INFO,
         stageName: this.apiGatewayVersion,
       }
     });
@@ -795,7 +795,6 @@ export class SchedulerStack extends cdk.Stack {
       deploy: true,
       deployOptions: {
         metricsEnabled: true,
-        loggingLevel: apigw.MethodLoggingLevel.INFO,
         stageName: this.apiGatewayVersion,
       }
     });

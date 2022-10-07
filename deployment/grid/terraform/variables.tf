@@ -401,15 +401,15 @@ variable "prometheus_configuration" {
 }
 
 variable "vpc_cidr_block_public" {
-  description = "list of CIDR block associated with the public subnet"
-  type = list(string)
-  default = []
+  description = "netmask for the cidr for each public subnet"
+  type = string
+  default = 24
 }
 
 variable "vpc_cidr_block_private" {
-  description = "list of CIDR block associated with the private subnet"
-  type = list(string)
-  default = []
+  description = "netmask for the cidr for each private subnet"
+  type = string
+  default = 24
 }
 
 variable "project_name" {
