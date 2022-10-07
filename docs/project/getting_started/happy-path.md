@@ -21,7 +21,6 @@ For first time users or Windows users, we do recommend the use of Cloud9 as the 
    `<Your region>` region can be (the list is not exhaustive)
     - `eu-west-1`
     - `eu-west-2`
-    - `eu-west-3`
     - `eu-central-1`
     - `us-east-1`
     - `us-west-2`
@@ -33,7 +32,7 @@ For first time users or Windows users, we do recommend the use of Cloud9 as the 
    ```bash
    export IAS=<tool>
    ```
-   `tool` can take two values:
+   `<tool>` can take two values:
    - `cdk`
    - `terraform`
 
@@ -127,7 +126,7 @@ The deployment time is about 30 min.
    ```
 2. All the dependencies have been created and are now ready. We are now ready to deploy the HTC-Grid project. There is one last thing to note. HTC-Grid deploys a Grafana version behind [Amazon Cognito](https://aws.amazon.com/cognito/). While you can modify and select which passwords to use in Cognito, the Grafana internal deployment still requires an admin password. Select a memorable password change the value in the placeholder `<my_grafana_admin_password>` below (make this password follows [Cognito default policy](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html)):
    ```bash
-   make apply-custom-runtime  TAG=$TAG REGION=$HTCGRID_REGION GRAFANA_ADMIN_PASSWORD=<my_grafana_admin_password>
+   make apply-custom-runtime  TAG=$TAG REGION=$HTCGRID_REGION GRAFANA_ADMIN_PASSWORD=
    ```
 
 For terraform based deployment, if `make apply-custom-runtime` is successful then in the `deployment/grid/terraform` folder two files are  created:
@@ -230,11 +229,15 @@ The HTC-Grid project captures metrics into InfluxDB and exposes those metrics th
    Grafana URL  -> https://k8s-grafana-grafanai-XXXXXXXXXXXX-YYYYYYYYYYY.eu-west-2.elb.amazonaws.com
    ```
 2. Then take the ADDRESS part and point at that on a browser. **Note**:It will generate a warning as we are using self-signed certificates. Just accept the self-signed certificate and you will be redirected to a Cognito sign in page. 
-4. Please enter the username and password created in the previous section.
-5. Once you are sign up  with Cognito you will be redirected to the Grafana sign in page. 
-6. Please use the user `admin` and the password you selected at creation time to log in into Grafana.
+3. Please enter the username and password created in the previous section.
+4. Once you are sign up  with Cognito you will be redirected to the Grafana sign in page. 
+5. Retrieve the grafana password for the `admin` user 
 
-## Uninstalling-Installing and destroying HTC grid
+    ```bash
+    make get-grafana-password TAG=$TAG REGION=$HTCGRID_REGION
+    ```
+
+## Uninstalling and destroying HTC grid
 The destruction time is about 15 min.
 
 1. To remove the grid resources run the following command:
