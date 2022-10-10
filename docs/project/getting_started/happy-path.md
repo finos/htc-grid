@@ -268,12 +268,16 @@ The destruction time is about 15 min.
       amazon/aws-node-termination-handler
       alertmanager
       cluster-autoscaler
-      aws-xray-daemon"
+      aws-xray-daemon
+      awshpc-lambda
+      lambda-init
+      submitter
+      "
       ```
 
       2. And then
       ```bash
-      echo $image_list  |  xargs -L1  aws ecr delete-repository --no-cli-pager --region eu-west-3 --force --repository-name 
+      echo $image_list | tr ' ' '\n'  |  xargs -L1  aws ecr delete-repository  --region $HTCGRID_REGION --force --repository-name 
       ```
 
    2. For all deployments
