@@ -41,6 +41,7 @@ $(GENERATED)/python/private_api/setup.py: $(PRIVATE_SRCS) $(GENERATED)/python/pr
 $(GENERATED)/python/public_api/setup.py: $(PUBLIC_SRCS) $(GENERATED)/python/public_api
 	docker run --user "$(DOCKER_USER_ID):$(DOCKER_GROUP_ID)" --rm  --mount "type=bind,src=$(GENERATED)/python/public_api,dst=/tmp/http_api" -v "$(shell pwd)/$(PUBLIC_SRCS):/api.yaml" openapitools/openapi-generator-cli:v6.0.1 generate   -i /api.yaml -g python -o /tmp/http_api  --additional-properties=packageName=$(PYTHON_PUBLIC_PACKAGE_NAME)
 
+
 ###########################################
 ####### generate python packages ##########
 ###########################################
