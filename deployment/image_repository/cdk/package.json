@@ -17,12 +17,14 @@
     "ts-jest": "^26.2.0",
     "aws-cdk": "2.45.0",
     "ts-node": "^9.0.0",
-    "typescript": "~3.9.7"
+    "typescript": "~3.9.7",
+    "got": ">=11.8.5"
   },
   "dependencies": {
     "aws-cdk-lib": "2.45.0",
     "constructs": "^10.0.0",
     "cdk-ecr-deployment": "2.5.1",
-    "source-map-support": "^0.5.16"
+    "source-map-support": "^0.5.16",
+    "got": ">=11.8.5"
   }
 }
