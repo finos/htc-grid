@@ -18,7 +18,7 @@ lambda: build-lambda push-lambda
 local: build-local push-local
 
 build-lambda: Dockerfile.Lambda
-	docker build $(CONTEXT_DIR) -t $(DOCKER_REGISTRY)/$(LAMBDA_AGENT_IMAGE_NAME):$(TAG) -f ./Dockerfile.Lambda
+	docker build  --platform linux/amd64 $(CONTEXT_DIR) -t $(DOCKER_REGISTRY)/$(LAMBDA_AGENT_IMAGE_NAME):$(TAG) -f ./Dockerfile.Lambda
 
 push-lambda: build-lambda
 	docker push $(DOCKER_REGISTRY)/$(LAMBDA_AGENT_IMAGE_NAME):$(TAG)

@@ -1,3 +1,5 @@
+wheel
+backports.zoneinfo
 boto3
 redis
 influxdb
