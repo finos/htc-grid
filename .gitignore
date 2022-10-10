@@ -20,3 +20,6 @@ __init__.py/
 lambda.zip
 generated
 .build
+node_modules*
+cdk.out*
+cdk.context.json

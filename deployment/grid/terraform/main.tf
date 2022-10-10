@@ -12,9 +12,9 @@ resource "random_string" "random_resources" {
 }
 
 resource "random_password" "password" {
-  length           = 16
-  special          = true
-  override_special = "_%@"
+    length           = 16
+    special          = true
+    override_special = "_%@"
 }
 
 locals {
@@ -84,8 +84,10 @@ module "vpc" {
     source = "./vpc"
     region = var.region
     cluster_name = local.cluster_name
+    vpc_range = 16
     private_subnets = var.vpc_cidr_block_private
     public_subnets = var.vpc_cidr_block_public
+
     enable_private_subnet = var.enable_private_subnet
 
 }

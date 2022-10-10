@@ -2,7 +2,7 @@ FROM python:3.7.7-slim-buster
 
 RUN mkdir -p /app/py_connector
 RUN mkdir -p /dist/python
-
+RUN apt-get update ; apt-get install -y gcc
 COPY ./dist/python/* /dist/python/
 COPY ./examples/client/python/requirements.txt /app/py_connector/
 

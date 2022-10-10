@@ -13,7 +13,7 @@ GENERATED?=generated
 all: push generated
 
 build: Dockerfile.Submitter
-	docker build ../../.. -t $(DOCKER_REGISTRY)/$(SUBMITTER_IMAGE_NAME):$(TAG) -f ./Dockerfile.Submitter
+	docker build  --platform linux/amd64 ../../.. -t $(DOCKER_REGISTRY)/$(SUBMITTER_IMAGE_NAME):$(TAG) -f ./Dockerfile.Submitter
 
 push: build
 	docker push $(DOCKER_REGISTRY)/$(SUBMITTER_IMAGE_NAME):$(TAG)

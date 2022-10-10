@@ -2,7 +2,23 @@
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
-data "aws_availability_zones" "available" {}
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+locals {
+  private_subnet_range = var.vpc_range - (32 - var.private_subnets)
+  public_subnet_range= var.vpc_range - (32 - var.public_subnets)
+  private_subnet_ranges = [for cidr_block in data.aws_availability_zones.available.names : local.private_subnet_range]
+  public_subnet_ranges = [for cidr_block in data.aws_availability_zones.available.names : local.public_subnet_range]
+  //public_subnets_size = ceil(log(length(data.aws_availability_zones.available) * pow(2, local.public_subnet_range),2))
+  //private_subnets_size = ceil(log(3 * pow(2,local.private_subnet_range),2))
+  //subnets = cidrsubnets("10.0.0.0/16",local.private_subnets_size,local.public_subnets_size)
+  subnets = cidrsubnets("10.0.0.0/16",concat(local.public_subnet_ranges,local.private_subnet_ranges)...)
+  public_subnets = slice(local.subnets,0,length(data.aws_availability_zones.available.names))
+  private_subnets = slice(local.subnets,length(data.aws_availability_zones.available.names),2*length(data.aws_availability_zones.available.names))
+}
+
 
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
@@ -10,10 +26,8 @@ module "vpc" {
   name = "${var.cluster_name}-vpc"
   cidr = "10.0.0.0/16"
   azs = data.aws_availability_zones.available.names
-  #private_subnets      = ["10.0.0.0/20","10.0.32.0/20", "10.0.64.0/20"]
-  #public_subnets       = ["10.0.130.0/24", "10.0.131.0/24", "10.0.132.0/24"]
-  private_subnets = var.private_subnets
-  public_subnets = var.public_subnets
+  private_subnets = local.private_subnets
+  public_subnets = local.public_subnets
   enable_nat_gateway = !var.enable_private_subnet
   single_nat_gateway = !var.enable_private_subnet
   # required for private endpoint

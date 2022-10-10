@@ -21,7 +21,6 @@ For first time users or Windows users, we do recommend the use of Cloud9 as the 
    `<Your region>` region can be (the list is not exhaustive)
     - `eu-west-1`
     - `eu-west-2`
-    - `eu-west-3`
     - `eu-central-1`
     - `us-east-1`
     - `us-west-2`
@@ -29,10 +28,18 @@ For first time users or Windows users, we do recommend the use of Cloud9 as the 
     - `ap-southeast-1`
 
 
+3. Define the infrastructure as code tool used for deployment
+   ```bash
+   export IAS=<tool>
+   ```
+   `<tool>` can take two values:
+   - `cdk`
+   - `terraform`
+
 ## Create the infrastructure for storing the state of the HTC Grid
 
 The following step creates 3 S3 buckets that will be needed during the installation:
-* 2 buckets will store the state of the different Terraform deployments
+* 2 buckets will store the state of the different Terraform deployments (if `terraform` based deployment)
 * 1 bucket will store the HTC artifacts (the lambda to be executed by the agent)
 
 ```
@@ -50,20 +57,20 @@ That will list the 3 S3 Buckets that we just created.
 
 The HTC-Grid project has external software dependencies that are deployed as container images. Instead of downloading each time from the public DockerHub repository, this step will pull those dependencies and upload into the your [Amazon Elastic Container Registry (ECR)](https://aws.amazon.com/ecr/).
 
-**Important Note** HTC-Grid uses a few open source project with container images stored at [DockerHub](https://hub.docker.com/). DockerHub has a [download rate limit policy](https://docs.docker.com/docker-hub/download-rate-limit/). This may impact you when running this step as an anonymous user as you can get errors when running the Terraform command below. To overcome those errors, you can re-run the Terraform command and wait until the throttling limit is lifted, or optionally you can create an account in [hub.docker.com](https://hub.docker.com/) and then use the credentials of the account using `docker login` locally to avoid anonymous throttling limitations.
+**Important Note** HTC-Grid uses a few open source project with container images stored at [DockerHub](https://hub.docker.com/). DockerHub has a [download rate limit policy](https://docs.docker.com/docker-hub/download-rate-limit/). This may impact you when running this step as an anonymous user as you can get errors when running the commands below. To overcome those errors, you can re-run the `make transfer-images  TAG=$TAG REGION=$HTCGRID_REGION` command and wait until the throttling limit is lifted, or optionally you can create an account in [hub.docker.com](https://hub.docker.com/) and then use the credentials of the account using `docker login` locally to avoid anonymous throttling limitations.
 
 
 1. As you'll be uploading images to ECR, to avoid timeouts, refresh your ECR authentication token:
     ```
-    make ecr-login
+    make ecr-login REGION=$HTCGRID_REGION
     ```
 
-2. The following command will go to the `~/environment/aws-htc-grid/deployment/image_repository/terraform` and initialize the Terraform project using the bucket `$S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME` as the bucket that will hold the Terraform state:
+2. The following command will go to the `~/environment/aws-htc-grid/deployment/image_repository/{cdk or terraform}` and initialize the  project:
     ```
     make init-images  TAG=$TAG REGION=$HTCGRID_REGION
     ```
 
-3. If successful, you can now run *terraform apply* to create the HTC-Grid infrastructure. This can take between 10 and 15 minutes depending on the Internet connection.
+3. If successful, you can now start the transfer of the images. This can take between 10 and 15 minutes depending on the Internet connection.
 
     ```bash
     make transfer-images  TAG=$TAG REGION=$HTCGRID_REGION
@@ -74,7 +81,7 @@ The following command will list the repositories You can check which repositorie
    aws ecr describe-repositories --query "repositories[*].repositoryUri"
    ```
 
-NB: This operation fetches images from external repositories and creates a copy into your ECR account, sometimes the fetch to external repositories may have temporary failures due to the state of the external repositories, If the `terraform apply` fails with errors such as the ones below, re-run the command until `terraform apply` successfully completes.
+NB: This operation fetches images from external repositories and creates a copy into your ECR account, sometimes the fetch to external repositories may have temporary failures due to the state of the external repositories, If the `make transfer-images  TAG=$TAG REGION=$HTCGRID_REGION` fails with errors such as the ones below, re-run the command until `make transfer-images  TAG=$TAG REGION=$HTCGRID_REGION` successfully completes.
 
 ```bash
 name unknown: The repository with name 'xxxxxxxxx' does not exist in the registry with id
@@ -113,27 +120,29 @@ Some important parameters are:
 
 The deployment time is about 30 min.
 
-1. Initialize terraform state for the grid
+1. Initialize state for the grid
    ```bash
    make init-grid-deployment  TAG=$TAG REGION=$HTCGRID_REGION
    ```
 2. All the dependencies have been created and are now ready. We are now ready to deploy the HTC-Grid project. There is one last thing to note. HTC-Grid deploys a Grafana version behind [Amazon Cognito](https://aws.amazon.com/cognito/). While you can modify and select which passwords to use in Cognito, the Grafana internal deployment still requires an admin password. Select a memorable password change the value in the placeholder `<my_grafana_admin_password>` below (make this password follows [Cognito default policy](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html)):
    ```bash
-   make apply-custom-runtime  TAG=$TAG REGION=$HTCGRID_REGION GRAFANA_ADMIN_PASSWORD=<my_grafana_admin_password>
+   make apply-custom-runtime  TAG=$TAG REGION=$HTCGRID_REGION GRAFANA_ADMIN_PASSWORD=
    ```
 
+For terraform based deployment, if `make apply-custom-runtime` is successful then in the `deployment/grid/terraform` folder two files are  created:
 
+    * `kubeconfig_htc_$TAG`: this file give access to the EKS cluster through kubectl (example: kubeconfig_htc_aws_my_project)
+    * `Agent_config.json`: this file contains all the parameters, so the agent can run in the infrastructure
+
+For CDK based deployment, if `make apply-custom-runtime` is successful then please run
+```bash
+$(make get-eks-connection  TAG=$TAG REGION=$HTCGRID_REGION)
+```
 
 ## Testing the deployment
 
 
-1. If `make apply-custom-runtime` is successful then in the `deployment/grid/terraform` folder two files are  created:
-
-    * `kubeconfig_htc_$TAG`: this file give access to the EKS cluster through kubectl (example: kubeconfig_htc_aws_my_project)
-    * `Agent_config.json`: this file contains all the parameters, so the agent can run in the infrastructure
-    
-
-2. Testing the Deployment
+1. Testing the Deployment
     1. Get the number of nodes in the cluster using the command below. Note: You should have one or more nodes. If not please the review the configuration files and particularly the variable `eks_worker`
        ```bash
        kubectl get nodes
@@ -220,11 +229,15 @@ The HTC-Grid project captures metrics into InfluxDB and exposes those metrics th
    Grafana URL  -> https://k8s-grafana-grafanai-XXXXXXXXXXXX-YYYYYYYYYYY.eu-west-2.elb.amazonaws.com
    ```
 2. Then take the ADDRESS part and point at that on a browser. **Note**:It will generate a warning as we are using self-signed certificates. Just accept the self-signed certificate and you will be redirected to a Cognito sign in page. 
-4. Please enter the username and password created in the previous section.
-5. Once you are sign up  with Cognito you will be redirected to the Grafana sign in page. 
-6. Please use the user `admin` and the password you selected at creation time to log in into Grafana.
+3. Please enter the username and password created in the previous section.
+4. Once you are sign up  with Cognito you will be redirected to the Grafana sign in page. 
+5. Retrieve the grafana password for the `admin` user 
 
-## Uninstalling-Installing and destroying HTC grid
+    ```bash
+    make get-grafana-password TAG=$TAG REGION=$HTCGRID_REGION
+    ```
+
+## Uninstalling and destroying HTC grid
 The destruction time is about 15 min.
 
 1. To remove the grid resources run the following command:
@@ -232,10 +245,45 @@ The destruction time is about 15 min.
    make destroy-custom-runtime TAG=$TAG REGION=$HTCGRID_REGION
    ```
 
-2. To remove the images from the ECR repository execute
-   ```bash
-   make destroy-images TAG=$TAG REGION=$HTCGRID_REGION
-   ```
+   1. To remove the images from the ECR repository execute
+      1. For cdk based deployment please run the following command:
+      ```bash
+      image_list="
+      node-exporter
+      amazonlinux
+      k8s-cloudwatch-adapter
+      amazon/cloudwatch-agent
+      prometheus
+      aws-for-fluent-bit
+      lambda-build
+      kube-state-metrics
+      influxdb
+      grafana
+      k8s-sidecar
+      lambda
+      configmap-reload
+      busybox
+      curl
+      pushgateway
+      amazon/aws-node-termination-handler
+      alertmanager
+      cluster-autoscaler
+      aws-xray-daemon
+      awshpc-lambda
+      lambda-init
+      submitter
+      "
+      ```
+
+      2. And then
+      ```bash
+      echo $image_list | tr ' ' '\n'  |  xargs -L1  aws ecr delete-repository  --region $HTCGRID_REGION --force --repository-name 
+      ```
+
+   2. For all deployments
+         ```bash
+         make destroy-images TAG=$TAG REGION=$HTCGRID_REGION
+         ```
 3. Finally, this will leave the 3 only resources that you can clean manually, the S3 buckets. You can remove the folders using the following command
    ```bash
    make delete-grid-state TAG=$TAG REGION=$HTCGRID_REGION
