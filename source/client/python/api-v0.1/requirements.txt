@@ -1,13 +1,6 @@
 requests
-urllib3_mock
-pytest
-moto[all]
 sure
 redis
-fakeredis
-flake8
-boto3
-pytest-cov
 warrant_lite
 apscheduler
 ./../../../../dist/python/privateapi-1.0.0-py3-none-any.whl

@@ -1,0 +1,8 @@
+requests
+sure
+redis
+warrant_lite
+apscheduler
+./../../../../dist/python/privateapi-1.0.0-py3-none-any.whl
+./../../../../dist/python/publicapi-1.0.0-py3-none-any.whl
+./../../../../dist/python/api-0.1-py3-none-any.whl

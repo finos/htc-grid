@@ -12,7 +12,13 @@ While the deployment of Grafana uses self-signed certifictes for encryption, our
 
 
 ## Create a cognito user (CLI)
-All the services behind a public URL are protected wih an authentication mecanism based on Cognito. So in order to acccess the grafana dashboard you will need to create a cognito user.
+
+
+{{% notice warning %}}
+Replace the  `<my_cognito_user>` and `<my_grafana_admin_password>` with your own user and passowrd.
+{{% /notice %}}
+
+All the services behind a public URL are protected wih an authentication mecanism based on Cognito. So in order to access the grafana dashboard you will need to create a cognito user.
 Please from the root of the project :
 Choose a cognito username:
 ```bash

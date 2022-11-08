@@ -21,16 +21,10 @@ resource "null_resource" "authenticate_to_ecr_repository"{
   }
 }
 
-# authenticate to ECR repository
-resource "null_resource" "authenticate_to_ecr_public_repository"{
-  triggers = {
-    always_run = timestamp()
-  }
-  provisioner "local-exec" {
-    command = " aws ecr-public get-login-password --region us-east-1  | docker login --username AWS --password-stdin public.ecr.aws"
-  }
+resource "aws_ecr_pull_through_cache_rule" "ecr-public" {
+  ecr_repository_prefix = "ecr-public"
+  upstream_registry_url = "public.ecr.aws"
 }
-
 
 resource null_resource "pull_python_env" {
   triggers = {
@@ -72,7 +66,6 @@ resource "null_resource" "copy_image" {
   }
   depends_on = [
     aws_ecr_repository.third_party,
-    null_resource.authenticate_to_ecr_repository,
-    null_resource.authenticate_to_ecr_public_repository,
+    null_resource.authenticate_to_ecr_repository
   ]
 }

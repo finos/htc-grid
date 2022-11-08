@@ -1,4 +1,6 @@
-FROM public.ecr.aws/lambda/provided:al2
+ARG HTCGRID_ACCOUNT 
+ARG HTCGRID_REGION
+FROM ${HTCGRID_ACCOUNT}.dkr.ecr.${HTCGRID_REGION}.amazonaws.com/ecr-public/lambda/provided:al2
 RUN yum install -d1 -y  make gcc-c++ zip
 RUN mkdir -p /app
 WORKDIR /app

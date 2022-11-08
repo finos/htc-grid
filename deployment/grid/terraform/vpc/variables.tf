@@ -15,15 +15,18 @@ variable "cluster_name" {
 
 
 variable "public_subnets" {
-  description = "list of CIDR blocks for public subnet"
-  type = list(string)
-  default = []
+  description = "IP range for public subnet"
+  type = number
 }
 
 variable "private_subnets" {
-  description = "list of CIDR blocks for private subnet"
-  type = list(string)
-  default = []
+  description = "IP range for private subnet"
+  type = number
+}
+
+variable "vpc_range" {
+  description = "IP range for private subnet"
+  type = number
 }
 
 

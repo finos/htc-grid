@@ -6,7 +6,7 @@
 
 resource "helm_release" "eks-charts" {
   name       = "aws-node-termination-handler"
-  chart      = "./compute_plane/charts/aws-node-termination-handler/${var.aws_node_termination_handler_version}"
+  chart      = "../charts/aws-node-termination-handler/${var.aws_node_termination_handler_version}"
   namespace  = "kube-system"
   depends_on = [
     module.eks
