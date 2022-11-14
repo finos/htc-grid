@@ -84,7 +84,7 @@ EOF
 
 module "submit_task" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "v2.11.0"
+  version = "4.6.1"
   source_path = [
     "../../../source/control_plane/python/lambda/submit_tasks",
     {
@@ -110,6 +110,9 @@ module "submit_task" {
   function_name = var.lambda_name_submit_tasks
   build_in_docker = true
   docker_image = "${var.aws_htc_ecr}/lambda-build:build-${var.lambda_runtime}"
+  docker_additional_options = [
+    "--platform", "linux/amd64",
+  ]
   handler = "submit_tasks.lambda_handler"
   memory_size = 1024
   timeout = 300
@@ -148,7 +151,7 @@ module "submit_task" {
 
 module  "get_results" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "v2.11.0"
+  version = "4.6.1"
   source_path = [
     "../../../source/control_plane/python/lambda/get_results",
     {
@@ -174,6 +177,9 @@ module  "get_results" {
   function_name = var.lambda_name_get_results
   build_in_docker = true
   docker_image = "${var.aws_htc_ecr}/lambda-build:build-${var.lambda_runtime}"
+  docker_additional_options = [
+    "--platform", "linux/amd64",
+  ]
   handler = "get_results.lambda_handler"
   memory_size = 1024
   timeout = 300
@@ -208,7 +214,7 @@ module  "get_results" {
 
 module "cancel_tasks" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "v2.11.0"
+  version = "4.6.1"
   source_path = [
     "../../../source/control_plane/python/lambda/cancel_tasks",
     {
@@ -234,6 +240,9 @@ module "cancel_tasks" {
   function_name = var.lambda_name_cancel_tasks
   build_in_docker = true
   docker_image = "${var.aws_htc_ecr}/lambda-build:build-${var.lambda_runtime}"
+  docker_additional_options = [
+    "--platform", "linux/amd64",
+  ]
   handler = "cancel_tasks.lambda_handler"
   memory_size = 1024
   timeout = 300
@@ -274,7 +283,7 @@ module "cancel_tasks" {
 
 module "ttl_checker" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "v2.11.0"
+  version = "4.6.1"
   source_path = [
     "../../../source/control_plane/python/lambda/ttl_checker",
     {
@@ -300,6 +309,9 @@ module "ttl_checker" {
   function_name = var.lambda_name_ttl_checker
   build_in_docker = true
   docker_image = "${var.aws_htc_ecr}/lambda-build:build-${var.lambda_runtime}"
+  docker_additional_options = [
+    "--platform", "linux/amd64",
+  ]
   handler = "ttl_checker.lambda_handler"
   memory_size = 1024
   timeout = 55

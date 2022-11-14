@@ -8,7 +8,7 @@
 # Create zip-archive of a single directory where "pip install" will also be executed (default for python runtime)
 module "lambda_drainer" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "v2.11.0"
+  version = "4.6.1"
   source_path = "../../../source/compute_plane/python/lambda/drainer"
   function_name =  "lambda_drainer-${local.suffix}"
   handler = "handler.lambda_handler"
@@ -29,6 +29,9 @@ module "lambda_drainer" {
   runtime     = var.lambda_runtime
   build_in_docker = true
   docker_image = "${var.aws_htc_ecr}/lambda-build:build-${var.lambda_runtime}"
+  docker_additional_options = [
+    "--platform", "linux/amd64",
+  ]
 
 }
 

@@ -26,7 +26,7 @@ EOF
 module "scaling_metrics" {
 
   source  = "terraform-aws-modules/lambda/aws"
-  version = "v2.11.0"
+  version = "4.6.1"
   source_path = [
     "../../../source/compute_plane/python/lambda/scaling_metrics/",
     {
@@ -62,6 +62,9 @@ module "scaling_metrics" {
   vpc_security_group_ids = [var.vpc_default_security_group_id]
   build_in_docker = true
   docker_image =  "${var.aws_htc_ecr}/lambda-build:build-${var.lambda_runtime}"
+  docker_additional_options = [
+    "--platform", "linux/amd64",
+  ]
   use_existing_cloudwatch_log_group = true
   environment_variables = {
     STATE_TABLE_CONFIG=var.ddb_state_table,
