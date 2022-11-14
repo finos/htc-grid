@@ -13,19 +13,19 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.55.0"
+      version = "~> 4.38.0"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "~> 2.4.1"
+      version = "~> 2.15.0"
     }
     helm = {
       source  = "hashicorp/helm"
-      version = "~> 2.2.0"
+      version = "~> 2.7.1"
     }
     tls = {
       source  = "hashicorp/tls"
-      version = "~> 3.1.0"
+      version = "~> 4.0.4"
     }
     archive = {
       source = "hashicorp/archive"
@@ -35,11 +35,7 @@ terraform {
 }
 
 
-provider "template" {
-}
-
 provider "tls" {
-
 }
 
 provider "aws" {
@@ -53,6 +49,19 @@ provider "kubernetes" {
   host                   = module.compute_plane.cluster_endpoint
   cluster_ca_certificate = base64decode(module.compute_plane.certificate_authority.0.data)
   token                  = module.compute_plane.token
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    # This requires the awscli to be installed locally where Terraform is executed
+    args        = [
+      "--region",
+      var.region,
+      "eks",
+      "get-token",
+      "--cluster-name",
+      var.cluster_name,
+    ]
+  }
 }
 
 # package manager for kubernetes

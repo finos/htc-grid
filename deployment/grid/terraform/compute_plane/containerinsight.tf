@@ -260,19 +260,8 @@ resource "kubernetes_daemonset" "cloudwatch_agent" {
             mount_path = "/dev/disk"
           }
 
-          volume_mount {
-            name = kubernetes_service_account.cloudwatch_agent.default_secret_name
-            read_only = true
-            mount_path = "/var/run/secrets/kubernetes.io/serviceaccount"
-          }
         }
-
-        volume {
-          name = kubernetes_service_account.cloudwatch_agent.default_secret_name
-          secret {
-            secret_name = kubernetes_service_account.cloudwatch_agent.default_secret_name
-          }
-        }
+        automount_service_account_token = true
 
         termination_grace_period_seconds = 60
         service_account_name             = "cloudwatch-agent"
@@ -597,22 +586,11 @@ resource "kubernetes_daemonset" "fluent_bit" {
             mount_path = "/var/log/dmesg"
           }
 
-          volume_mount {
-            name = kubernetes_service_account.fluent_bit.default_secret_name
-            read_only = true
-            mount_path = "/var/run/secrets/kubernetes.io/serviceaccount"
-          }
 
           image_pull_policy = "Always"
         }
 
-        volume {
-          name = kubernetes_service_account.fluent_bit.default_secret_name
-          secret {
-            secret_name = kubernetes_service_account.fluent_bit.default_secret_name
-          }
-        }
-
+        automount_service_account_token = true
         termination_grace_period_seconds = 10
         service_account_name             = "fluent-bit"
 
