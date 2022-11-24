@@ -46,14 +46,45 @@ if __name__ == "__main__":
     ## <3.> Define two sample tasks to submit to the grid
     ############################################################################
 
-    task_1_definition = {
-        "worker_arguments": ["60000", "1", "1"]   # <--- This is task's payload that will 
-                                                  # be serialized and submitted to the Data Plane
-    }
 
-    task_2_definition = {
-        "worker_arguments": ["120000", "1", "1"]
-    }
+    task_1_definition = {"portfolio": [   # <--- This is task's payload that will  be serialized and submitted to the Data Plane
+            {
+                "tradeType": "option",
+                "exercise": "European",
+                "engineName": "AnalyticEuropeanEngine",
+                "engineParameters": {},
+                "tradeParameters": {
+                    "evaluationDate": "15 5 1998",
+                    "exerciseDate": "17 5 1999",
+                    "payoff": 8.0,
+                    "underlying": 7.0,
+                    "dividendYield": 0.05,
+                    "volatility": 0.10,
+                    "riskFreeRate": 0.05
+                }
+            }
+        ]}
+
+    task_2_definition = {"portfolio": [
+            "tradeType": "option",
+            "exercise": "American",
+            "engineName": "BinomialVanillaEngine",
+            "engineParameters": {
+                "timeSteps" : 801,
+                "tree" : "Trigeorgis"
+            },
+            "tradeParameters": {
+                "evaluationDate": "15 5 1998",
+                "exerciseDate": "17 5 1999",
+                "payoff": 40.0,
+                "underlying": 36.0,
+                "dividendYield": 0.00,
+                "volatility": 0.20,
+                "riskFreeRate": 0.06
+            }
+        ]}
+
+        
 
     ############################################################################
     ## <4.> Submit all tasks in a single vector

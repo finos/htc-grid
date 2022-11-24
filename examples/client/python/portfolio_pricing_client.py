@@ -163,7 +163,7 @@ def merge_results(sample_portfolio, grid_results):
 
     """
 
-    assert (len(sample_portfolio["portfolio"]) == grid_results["metadata"]["tasks_in_response"])
+    # assert (len(sample_portfolio["portfolio"]) == grid_results["metadata"]["tasks_in_response"])
 
     logging.info(grid_results)
 

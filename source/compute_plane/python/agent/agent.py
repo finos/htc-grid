@@ -509,7 +509,7 @@ async def do_ttl_updates_thread(task, sqs_msg):
     global execution_is_completed_flag
     logging.info("START TTL-1")
     while not bool(execution_is_completed_flag):
-        logging.info("Check TTL")
+        #logging.info("Check TTL")
 
         ddb_res = update_ttl_if_required(task, sqs_msg)
 

@@ -283,17 +283,17 @@ variable "work_proc_status_pull_interval_sec" {
 
 variable "task_ttl_expiration_offset_sec" {
   description = "agent TTL for task to time out in second"
-  default = 30
+  default = 60
 }
 
 variable "task_ttl_refresh_interval_sec" {
   description = "reset interval for agent TTL"
-  default = 5.0
+  default = 30.0
 }
 
 variable "dynamodb_results_pull_interval_sec" {
   description = "agent pulling interval for pending task in DDB"
-  default = 0.5
+  default = 5
 }
 
 variable "agent_task_visibility_timeout_sec" {
