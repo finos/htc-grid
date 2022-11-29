@@ -19,6 +19,7 @@ resource "helm_release" "prometheus" {
   chart      = "prometheus"
   repository = "https://prometheus-community.github.io/helm-charts" 
   namespace  = "prometheus"
+  version    = "15.18.0"
   set {
     name  = "nodeExporter.image.repository"
     value = "${var.aws_htc_ecr}/node-exporter"
