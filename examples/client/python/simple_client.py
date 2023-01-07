@@ -1,4 +1,4 @@
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
@@ -19,8 +19,16 @@ with open(client_config_file, 'r') as file:
 
 if __name__ == "__main__":
 
+    ############################################################################
+    ## <1.> Create Grid Connector Library object
+    ############################################################################
+    
     logging.info("Simple Client")
-    gridConnector = AWSConnector()
+    gridConnector = AWSConnector()    
+    
+    ############################################################################
+    ## <2.> Authenticate with Amazon Cognito
+    ############################################################################
     
     try:
         username = os.environ['USERNAME']
@@ -33,18 +41,32 @@ if __name__ == "__main__":
 
     gridConnector.init(client_config_file, username=username, password=password)    
     gridConnector.authenticate()
+    
+    ############################################################################
+    ## <3.> Define two sample tasks to submit to the grid
+    ############################################################################
 
     task_1_definition = {
-        "worker_arguments": ["1000", "1", "1"]
+        "worker_arguments": ["60000", "1", "1"]   # <--- This is task's payload that will 
+                                                  # be serialized and submitted to the Data Plane
     }
 
     task_2_definition = {
-        "worker_arguments": ["2000", "1", "1"]
+        "worker_arguments": ["120000", "1", "1"]
     }
 
+    ############################################################################
+    ## <4.> Submit all tasks in a single vector
+    ##      - Recevie back session ID to track  exectuion
+    ############################################################################
     submission_resp = gridConnector.send([task_1_definition, task_2_definition])
     logging.info(submission_resp)
 
-
-    results = gridConnector.get_results(submission_resp, timeout_sec=100)
+    
+    ############################################################################
+    ## <5.> Use Session ID to wait until all tasks are completed
+    ############################################################################
+    results = gridConnector.get_results(submission_resp, timeout_sec=300)
+    
+    
     logging.info(results)
