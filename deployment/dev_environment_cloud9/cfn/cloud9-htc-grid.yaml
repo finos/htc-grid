@@ -3,7 +3,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: AWS CloudFormation template to create a Cloud9 environment and prepare the HTC-Grid setup
 Metadata:
   Author:
-    Description: Carlos Rueda <ruecarlo@amazon.com>
+    Description: Pierre-Louis Gounod <gpilouis@amazon.com>
   License:
     Description: 'Copyright 2021 Amazon.com, Inc. and its affiliates. All Rights Reserved.
 
@@ -147,8 +147,7 @@ Resources:
         Ref: AWS::StackName
       EnvironmentId:
         Ref: C9Instance
-      LabIdeInstanceProfileArn: !If [ NotEventEngine, 'not_event_engine', !Sub 'arn:aws:iam::${AWS::AccountId}:instance-profile/TeamRoleInstanceProfile' ]
-
+      LabIdeInstanceProfileArn: !If [ NotEventEngine, !GetAtt C9InstanceProfile.Arn, !Sub 'arn:aws:iam::${AWS::AccountId}:instance-profile/TeamRoleInstanceProfile' ]
   C9BootstrapInstanceLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -206,18 +205,21 @@ Resources:
                       }
                       print(f'iam_instance_profile: {iam_instance_profile}')
 
+                      print(f'Will wait for Instance to become ready before adding Role')
+
                       # Wait for Instance to become ready before adding Role
                       instance_state = instance['State']['Name']
                       while instance_state != 'running':
                           time.sleep(5)
                           instance_state = ec2.describe_instances(InstanceIds=[instance['InstanceId']])
-                          print(f'waiting for the instance state to be "running", current instance_state: {instance_state}')
+                          print(f'Waiting for the instance state to be "running", current instance_state: {instance_state}')
+
+                      print(f'Instance is ready, attaching IAM instance profile: {iam_instance_profile}')
 
                       # attach instance profile
-                      if iam_instance_profile['Arn'] != "not_event_engine":
-                          print(f'Instance is running , about to associate iam_instance_profile: {iam_instance_profile}')
-                          response = ec2.associate_iam_instance_profile(IamInstanceProfile=iam_instance_profile, InstanceId=instance['InstanceId'])
-                          print(f'response - associate_iam_instance_profile: {response}')
+                      print(f'Instance is running , about to associate iam_instance_profile: {iam_instance_profile}')
+                      response = ec2.associate_iam_instance_profile(IamInstanceProfile=iam_instance_profile, InstanceId=instance['InstanceId'])
+                      print(f'response - associate_iam_instance_profile: {response}')
 
                       responseData = {'Success': 'Started bootstrapping for instance: '+instance['InstanceId']}
                       cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, 'CustomResourcePhysicalID')
@@ -299,8 +301,7 @@ Resources:
                 - curl --silent --location -o /home/ec2-user/environment/aws-htc-grid.tar.gz "https://github.com/awslabs/aws-htc-grid/archive/refs/tags/v0.3.4.tar.gz"
                 - cd /home/ec2-user/environment; tar xzvf aws-htc-grid.tar.gz
                 - mv aws-htc-grid-0.3.4/ aws-htc-grid
-                - sudo chown -R 501:501 /home/ec2-user/environment/
-
+                - sudo chown -R ec2-user:ec2-user /home/ec2-user/environment/
   C9BootstrapAssociation:
     Type: AWS::SSM::Association
     DependsOn:
@@ -336,7 +337,6 @@ Resources:
         Ref: C9InstanceType
       Name:
         Ref: AWS::StackName
-      # OwnerArn: !Sub 'arn:aws:sts::${AWS::AccountId}:assumed-role/TeamRole/MasterKey'
       OwnerArn: !If [NotEventEngine , !Ref AWS::NoValue , !Sub 'arn:aws:sts::${AWS::AccountId}:assumed-role/TeamRole/MasterKey']
       Tags:
         -
