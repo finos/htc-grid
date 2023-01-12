@@ -469,14 +469,16 @@ class StateTableDDB:
                 Key={
                     'task_id': task_id
                 },
-                UpdateExpression="SET #var_task_status = :val1",
+                UpdateExpression="SET #var_task_status = :val1, #var_task_completion_timestamp = :val2",
                 ExpressionAttributeValues={
-                    ':val1': self.__make_task_state_from_session_id(TASK_STATE_FINISHED, session_id)
+                    ':val1': self.__make_task_state_from_session_id(TASK_STATE_FINISHED, session_id),
+                    ':val2': int(round(time.time() * 1000))
                 },
                 ExpressionAttributeNames={
-                    "#var_task_status": "task_status"
+                    "#var_task_status": "task_status",
+                    "#var_task_completion_timestamp": "task_completion_timestamp"
                 },
-                                ConditionExpression=Key('task_status').eq(
+                ConditionExpression=Key('task_status').eq(
                     self.__make_task_state_from_session_id(TASK_STATE_PROCESSING, session_id)
                 ) & Key('task_owner').eq(agent_id)
             )
