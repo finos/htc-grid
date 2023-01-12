@@ -8,23 +8,21 @@
   "dynamodb_default_write_capacity" : 10,
   "eks_worker_groups" : [
       {
-        "name"                    : "worker-small-spot",
-        "override_instance_types" : ["m5.xlarge","m5d.xlarge","m5a.xlarge"],
-        "spot_instance_pools"     : 0,
-        "asg_min_size"            : 0,
-        "asg_max_size"            : 3,
-        "asg_desired_capacity"    : 1,
-        "on_demand_base_capacity" : 0
+        "node_group_name"         : "worker-small-spot",
+        "instance_types" : ["m5.xlarge","m5d.xlarge","m5a.xlarge"],
+        "capacity_type"       : "spot",
+        "min_size"            : 0,
+        "max_size"            : 3,
+        "desired_size"    : 1
+
       },
       {
-        "name"                    : "worker-medium-spot",
-        "override_instance_types" : ["m5.2xlarge","m5d.2xlarge", "m5a.2xlarge"],
-        "spot_instance_pools"     : 0,
-        "asg_min_size"            : 0,
-        "asg_max_size"            : 3,
-        "asg_desired_capacity"    : 0,
-        "on_demand_base_capacity" : 0
-
+        "node_group_name"         : "worker-medium-spot",
+        "instance_types" : ["m5.2xlarge","m5d.2xlarge", "m5a.2xlarge"],
+        "capacity_type"       : "spot",
+        "min_size"            : 0,
+        "max_size"            : 3,
+        "desired_size"    : 0
       }
   ],
   "agent_configuration": {

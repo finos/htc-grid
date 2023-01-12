@@ -1,0 +1,97 @@
+# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 512Mi
+  requests:
+    cpu: 200m
+    memory: 512Mi
+
+grafana.ini:
+  auth:
+    disable_login_form: true
+  auth.anonymous:
+    enabled: true
+
+persistence:
+  type: pvc
+  enabled: true
+  storageClassName: gp2
+  accessModes:
+    - ReadWriteOnce
+  size: 50Gi
+
+service:
+  type: "NodePort"
+
+
+
+nodeSelector:
+  grid/type: "Operator"
+
+tolerations:
+  - key: "grid/type"
+    operator: "Equal"
+    value: "Operator"
+    effect: "NoSchedule"
+
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus-server.prometheus.svc.cluster.local
+      access: proxy
+      isDefault: true
+      jsonData:
+        httpMethod: 'POST'
+    - name: InfluxDB
+      type: influxdb
+      url: influxdb.influxdb.svc.cluster.local:8086
+      access: proxy
+      isDefault: false
+      database: measurementsdb
+      jsonData:
+        httpMode: POST
+
+
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards/default
+
+
+initChownData:
+  image:
+    pullPolicy: Always
+    repository: "${aws_htc_ecr}/busybox"
+    tag: "${grafana_configuration_initChownData_tag}"
+
+image:
+  repository: "${aws_htc_ecr}/grafana"
+  tag: "${grafana_configuration_grafana_tag}"
+
+downloadDashboardsImage:
+  repository: "${aws_htc_ecr}/curl"
+  tag: "${grafana_configuration_downloadDashboardsImage_tag}"
+
+sidecar:
+  dashboards:
+    enabled : true
+  image:
+    repository: "${aws_htc_ecr}/k8s-sidecar"
+    tag: "${grafana_configuration_sidecar_tag}"

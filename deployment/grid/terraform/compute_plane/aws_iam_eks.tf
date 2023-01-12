@@ -1,38 +1,11 @@
 # Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
- 
-# Policy to Fluentd add to Worker Role
-data "aws_iam_policy_document" "fluentd_document" {
-  statement {
-    effect = "Allow"
 
-    actions = [
-      "logs:DescribeLogGroups",
-      "logs:DescribeLogStreams",
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents"
-    ]
-
-    resources = ["*"]
-  }
-}
-
-resource "aws_iam_policy" "fluentd_policy" {
-  name_prefix = "fluentd-${module.eks.cluster_id}"
-  description = "fluentd policy for cluster ${module.eks.cluster_id}"
-  policy      = data.aws_iam_policy_document.fluentd_document.json
-}
-
-resource "aws_iam_role_policy_attachment" "fluentd_policy_attach" {
-  policy_arn = aws_iam_policy.fluentd_policy.arn
-  role       = module.eks.worker_iam_role_name
-}
 
 
 #Agent permissions
-data "aws_iam_policy_document" "worker_assume_role_agent_permitions_document" {
+data "aws_iam_policy_document" "agent_permissions" {
   statement {
     sid    = ""
     effect = "Allow"
@@ -55,78 +28,31 @@ data "aws_iam_policy_document" "worker_assume_role_agent_permitions_document" {
   }
 }
 
-resource "aws_iam_policy" "worker_assume_role_agent_permitions_policy" {
-  name_prefix = "eks-worker-assume-agent-${module.eks.cluster_id}"
-  description = "EKS worker node policy for agent in  cluster ${module.eks.cluster_id}"
-  policy      = data.aws_iam_policy_document.worker_assume_role_agent_permitions_document.json
-}
-
-resource "aws_iam_role_policy_attachment" "worker_assume_role_agent_permitions_document" {
-  policy_arn = aws_iam_policy.worker_assume_role_agent_permitions_policy.arn
-  role       = module.eks.worker_iam_role_name
-}
-
-#Workers Auto Scaling policy
-data "aws_iam_policy_document" "worker_autoscaling_document" {
+#Agent permissions
+data "aws_iam_policy_document" "eks_pull_through_cache_permission" {
   statement {
-    sid    = "eksWorkerAutoscalingAll"
+    sid    = "PullThroughCacheFromReadOnlyRole"
     effect = "Allow"
 
     actions = [
-      "autoscaling:DescribeAutoScalingGroups",
-      "autoscaling:DescribeAutoScalingInstances",
-      "autoscaling:DescribeLaunchConfigurations",
-      "autoscaling:DescribeTags",
-      "ec2:DescribeLaunchTemplateVersions",
+      "ecr:CreateRepository",
+      "ecr:BatchImportUpstreamImage"
     ]
 
-    resources = ["*"]
-  }
-
-  statement {
-    sid    = "eksWorkerAutoscalingOwn"
-    effect = "Allow"
-
-    actions = [
-      "autoscaling:SetDesiredCapacity",
-      "autoscaling:TerminateInstanceInAutoScalingGroup",
-      "autoscaling:UpdateAutoScalingGroup",
+    resources = [
+      "arn:aws:ecr:${var.region}:${data.aws_caller_identity.current.account_id}:repository/ecr-public/*",
+      "arn:aws:ecr:${var.region}:${data.aws_caller_identity.current.account_id}:repository/quay/*"
     ]
-
-    resources = ["*"]
   }
 }
 
-resource "aws_iam_policy" "worker_autoscaling_policy" {
-  name_prefix = "eks-worker-autoscaling-${module.eks.cluster_id}"
-  description = "EKS worker node autoscaling policy for cluster ${module.eks.cluster_id}"
-  policy      = data.aws_iam_policy_document.worker_autoscaling_document.json
+
+resource  aws_iam_policy "agent_permissions" {
+  description = "The permission required by the HTC agent"
+  policy = data.aws_iam_policy_document.agent_permissions.json
 }
 
-resource "aws_iam_role_policy_attachment" "workers_autoscaling_attach" {
-  policy_arn = aws_iam_policy.worker_autoscaling_policy.arn
-  role       = module.eks.worker_iam_role_name
-}
-
-resource "aws_iam_role_policy_attachment" "workers_xray_attach" {
-  policy_arn = "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
-  role       = module.eks.worker_iam_role_name
-}
-
-
-
-resource "aws_iam_role_policy_attachment" "ssm_agent" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-  role       = module.eks.worker_iam_role_name
-}
-
-resource "aws_iam_policy" "alb_policy" {
-   # ... other configuration ...
-
-   policy = file("compute_plane/iam-policy-alb.json")
- }
-
-resource "aws_iam_role_policy_attachment" "alb_policy_attach" {
-  policy_arn = aws_iam_policy.alb_policy.arn
-  role       = module.eks.worker_iam_role_name
+resource  aws_iam_policy "eks_pull_through_cache_permission" {
+  description = "The permissions for the kubelet to use ECR pull through cache"
+  policy = data.aws_iam_policy_document.eks_pull_through_cache_permission.json
 }

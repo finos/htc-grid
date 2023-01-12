@@ -9,38 +9,38 @@ locals {
   eks_worker_group = concat([
     for index in range(0,length(var.eks_worker_groups)):
       merge(var.eks_worker_groups[index], {
-        "spot_allocation_strategy" = "capacity-optimized"
-        "tags" = [
-          {
-            key                = "k8s.io/cluster-autoscaler/enabled"
-            propagate_at_launch = "false"
-            value              = "true"
-          },
-          {
-            key                 = "k8s.io/cluster-autoscaler/${var.cluster_name}"
-            propagate_at_launch = "false"
-            value               = "true"
-          }
+        additional_iam_policies = [
+          "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+          aws_iam_policy.eks_pull_through_cache_permission.arn
         ]
-      })
-  ],[
+        launch_template_os   = "amazonlinux2eks"
+        additional_tags = {
+          "k8s.io/cluster-autoscaler/enabled"    = "true"
+          "k8s.io/cluster-autoscaler/${var.cluster_name}"= "true"
+        }})
+        ],[
     {
-      name = "operational-worker-ondemand",
-      override_instance_types = ["m5.xlarge","m4.xlarge","m5d.xlarge"],
-      spot_instance_pools    = 0,
-      asg_min_size            = 2,
-      asg_max_size           = 5,
-      asg_desired_capacity    = 2,
-      on_demand_base_capacity = 2,
-      on_demand_percentage_above_base_capacity = 100,
-      spot_allocation_strategy = "capacity-optimized",
-      kubelet_extra_args      = "--node-labels=grid/type=Operator --register-with-taints=grid/type=Operator:NoSchedule"
+      node_group_name = "ops-worker-ondemand",
+      capacity_type          = "ON_DEMAND",
+      additional_iam_policies = [
+        "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+        aws_iam_policy.eks_pull_through_cache_permission.arn,
+        aws_iam_policy.agent_permissions.arn
+      ]
+      launch_template_os   = "amazonlinux2eks"
+      instance_types = ["m5.xlarge","m4.xlarge","m5d.xlarge"],
+      min_size            = 2,
+      max_size           = 5,
+      desired_size = 2,
+      kubelet_extra_args = "--node-labels=grid/type=Operator --register-with-taints=grid/type=Operator:NoSchedule"
     }
   ])
-  args_ca = [
-    for index in range(0,length(var.eks_worker_groups)):
-    "--nodes=${var.eks_worker_groups[index].asg_min_size}:${var.eks_worker_groups[index].asg_max_size}:${module.eks.workers_asg_names[index]}"
+  eks_worker_group_name = [
+    for index in range(0,length(local.eks_worker_group)):
+          local.eks_worker_group[index].node_group_name
   ]
+
+  eks_worker_group_map = zipmap(local.eks_worker_group_name,local.eks_worker_group )
 }
 
 resource "random_string" "random_resources" {
@@ -49,3 +49,5 @@ resource "random_string" "random_resources" {
   upper = false
   # number = false
 }
+
+data aws_caller_identity current {}

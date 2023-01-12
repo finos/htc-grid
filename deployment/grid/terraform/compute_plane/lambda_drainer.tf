@@ -60,8 +60,8 @@ EOF
 resource "aws_autoscaling_lifecycle_hook" "drainer_hook" {
   count = length( var.eks_worker_groups)
   #name  = var.user_names[count.index]
-  name                   = var.eks_worker_groups[count.index].name
-  autoscaling_group_name = module.eks.workers_asg_names[count.index]
+  name                   = var.eks_worker_groups[count.index].node_group_name
+  autoscaling_group_name = module.eks.self_managed_node_group_autoscaling_groups[count.index]
   default_result         = "ABANDON"
   heartbeat_timeout      = var.graceful_termination_delay
   lifecycle_transition   = "autoscaling:EC2_INSTANCE_TERMINATING"
@@ -83,7 +83,7 @@ resource "aws_cloudwatch_event_rule" "lifecycle_hook_event_rule" {
   ],
   "detail": {
     "AutoScalingGroupName": [
-      "${module.eks.workers_asg_names[count.index]}"
+      "${module.eks.self_managed_node_group_autoscaling_groups[count.index]}"
     ]
   }
 }
