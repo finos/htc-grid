@@ -47,6 +47,11 @@ Parameters:
     Type: String
     Default: v3.5.3
     ConstraintDescription: Must be a valid helm version
+  HTCgridVersion:
+    Description: HTC Grid Version to install on Cloud9
+    Type: String
+    Default: 0.3.5
+    ConstraintDescription: Must be a valid HTC Grid version
   #Used only by Event Engine, if you are self-deploying the stack leave the default value to NONE
   EETeamRoleArn:
     Description: "ARN of the Team Role"
@@ -117,6 +122,7 @@ Resources:
                   - ec2:DescribeInstances
                   - ec2:DescribeVolumes
                   - ec2:AssociateIamInstanceProfile
+                  - ec2:DescribeIamInstanceProfileAssociations
                   - ec2:ModifyInstanceAttribute
                   - ec2:ModifyVolume
                   - ec2:ReplaceIamInstanceProfileAssociation
@@ -173,60 +179,93 @@ Resources:
           import cfnresponse
 
           def lambda_handler(event, context):
-              print(f'event: {event}')
-              print(f'context: {context}')
-              responseData = {}
+            print(f'event: {event}')
+            print(f'context: {context}')
+            responseData = {}
 
-              if event['RequestType'] == 'Delete':
+            if event['RequestType'] == 'Delete':
+              try:
+                responseData = {'Success': 'Finished cleanup'}
+                cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, 'CustomResourcePhysicalID')
+              except Exception as e:
+                responseData = {'Error': traceback.format_exc(e)}
+                cfnresponse.send(event, context, cfnresponse.FAILED, responseData, 'CustomResourcePhysicalID')
+            if event['RequestType'] == 'Create':
+              try:
+                # Open AWS clients
+                ec2 = boto3.client('ec2')
+
+                # Get the InstanceId from Cloud9 IDE
+                print('tag:aws:cloud9:environment : {}'.format(event['ResourceProperties']['EnvironmentId']))
+                instance = ec2.describe_instances(Filters=[{'Name': 'tag:aws:cloud9:environment','Values': [event['ResourceProperties']['EnvironmentId']]}])['Reservations'][0]['Instances'][0]
+                print(f'instance: {instance}')
+
+                volume_id = instance['BlockDeviceMappings'][0]['Ebs']['VolumeId']
+                print(f'Volume Id {volume_id}')
+                ec2.modify_volume(VolumeId=volume_id, Size=100)
+                print('Changed Volume to 100GB')
+
+                # Create the IamInstanceProfile request object
+                iam_instance_profile = {
+                    'Arn': event['ResourceProperties']['LabIdeInstanceProfileArn']
+                }
+                print(f'iam_instance_profile: {iam_instance_profile}')
+
+                print(f'Will wait for Instance to become ready before adding Role')
+
+                # Wait for Instance to become ready before adding Role
+                instance_state = instance['State']['Name']
+                while instance_state != 'running':
+                    time.sleep(5)
+                    instance_state = ec2.describe_instances(InstanceIds=[instance['InstanceId']])
+                    print(f'Waiting for the instance state to be "running", current instance_state: {instance_state}')
+
+                print(f'Instance is ready, attaching IAM instance profile: {iam_instance_profile}')
+
+                # attach instance profile
+                print(f'Instance is running , about to associate iam_instance_profile: {iam_instance_profile}')
+            
+                print(f'Check if there is already an Associated instance profile')
+                associationID = ec2.describe_iam_instance_profile_associations(
+                  Filters=[
+                      {
+                         'Name': 'instance-id',
+                         'Values': [
+                             instance['InstanceId'],
+                           ]
+                      },
+                  ],
+                  )['IamInstanceProfileAssociations'][0]['AssociationId']
+                if associationID:
                   try:
-                      responseData = {'Success': 'Finished cleanup'}
-                      cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, 'CustomResourcePhysicalID')
+                      print(f'Association found, AssociationID is: {associationID}')
+                      print(f'Replacing association')
+                      response = ec2.replace_iam_instance_profile_association(
+                      IamInstanceProfile=iam_instance_profile,
+                      AssociationId=associationID
+                      )
+
+                      print(f'response - associate_iam_instance_profile: {response}')
                   except Exception as e:
-                      responseData = {'Error': traceback.format_exc(e)}
-                      cfnresponse.send(event, context, cfnresponse.FAILED, responseData, 'CustomResourcePhysicalID')
-              if event['RequestType'] == 'Create':
+                      print(e)
+
+                else:
                   try:
-                      # Open AWS clients
-                      ec2 = boto3.client('ec2')
-
-                      # Get the InstanceId from Cloud9 IDE
-                      print('tag:aws:cloud9:environment : {}'.format(event['ResourceProperties']['EnvironmentId']))
-                      instance = ec2.describe_instances(Filters=[{'Name': 'tag:aws:cloud9:environment','Values': [event['ResourceProperties']['EnvironmentId']]}])['Reservations'][0]['Instances'][0]
-                      print(f'instance: {instance}')
-
-                      volume_id = instance['BlockDeviceMappings'][0]['Ebs']['VolumeId']
-                      print(f'Volume Id {volume_id}')
-                      ec2.modify_volume(VolumeId=volume_id, Size=100)
-                      print('Changed Volume to 100GB')
-
-                      # Create the IamInstanceProfile request object
-                      iam_instance_profile = {
-                          'Arn': event['ResourceProperties']['LabIdeInstanceProfileArn']
-                      }
-                      print(f'iam_instance_profile: {iam_instance_profile}')
-
-                      print(f'Will wait for Instance to become ready before adding Role')
-
-                      # Wait for Instance to become ready before adding Role
-                      instance_state = instance['State']['Name']
-                      while instance_state != 'running':
-                          time.sleep(5)
-                          instance_state = ec2.describe_instances(InstanceIds=[instance['InstanceId']])
-                          print(f'Waiting for the instance state to be "running", current instance_state: {instance_state}')
-
-                      print(f'Instance is ready, attaching IAM instance profile: {iam_instance_profile}')
-
-                      # attach instance profile
-                      print(f'Instance is running , about to associate iam_instance_profile: {iam_instance_profile}')
+                      print(f'No existing association. Associating C9 instance profile...')
                       response = ec2.associate_iam_instance_profile(IamInstanceProfile=iam_instance_profile, InstanceId=instance['InstanceId'])
                       print(f'response - associate_iam_instance_profile: {response}')
-
-                      responseData = {'Success': 'Started bootstrapping for instance: '+instance['InstanceId']}
-                      cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, 'CustomResourcePhysicalID')
-
                   except Exception as e:
-                      responseData = {'Error': traceback.format_exc(e)}
-                      cfnresponse.send(event, context, cfnresponse.FAILED, responseData, 'CustomResourcePhysicalID')
+                      print(e)
+
+
+                responseData = {'Success': 'Started bootstrapping for instance: '+instance['InstanceId']}
+                cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, 'CustomResourcePhysicalID')
+
+              except Exception as e:
+                print(type(e))
+                print(e)
+                responseData = {'Error': traceback.format_exc(e)}
+                cfnresponse.send(event, context, cfnresponse.FAILED, responseData, 'CustomResourcePhysicalID')
 
   ################## SSM BOOTSRAP HANDLER ###############
   C9OutputBucket:
@@ -298,7 +337,8 @@ Resources:
                 - sudo growpart /dev/nvme0n1 1
                 - sudo xfs_growfs -d /
                 - echo "=== Downloading HTC-Grid project ==="
-                - curl --silent --location -o /home/ec2-user/environment/aws-htc-grid.tar.gz "https://github.com/awslabs/aws-htc-grid/archive/refs/tags/v0.3.4.tar.gz"
+                - !Sub 'export HTCGRID_VERSION=${HTCgridVersion}'
+                - curl --silent --location -o /home/ec2-user/environment/aws-htc-grid.tar.gz "https://github.com/awslabs/aws-htc-grid/archive/refs/tags/v${HTCgrid_VERSION}.tar.gz"
                 - cd /home/ec2-user/environment; tar xzvf aws-htc-grid.tar.gz
                 - mv aws-htc-grid-0.3.4/ aws-htc-grid
                 - sudo chown -R ec2-user:ec2-user /home/ec2-user/environment/
