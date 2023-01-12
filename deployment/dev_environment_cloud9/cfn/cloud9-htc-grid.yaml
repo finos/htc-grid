@@ -340,7 +340,7 @@ Resources:
                 - !Sub 'export HTCGRID_VERSION=${HTCgridVersion}'
                 - curl --silent --location -o /home/ec2-user/environment/aws-htc-grid.tar.gz "https://github.com/awslabs/aws-htc-grid/archive/refs/tags/v${HTCgrid_VERSION}.tar.gz"
                 - cd /home/ec2-user/environment; tar xzvf aws-htc-grid.tar.gz
-                - mv aws-htc-grid-0.3.4/ aws-htc-grid
+                - mv aws-htc-grid-${HTCgridVersion}/ aws-htc-grid
                 - sudo chown -R ec2-user:ec2-user /home/ec2-user/environment/
   C9BootstrapAssociation:
     Type: AWS::SSM::Association
