@@ -52,6 +52,8 @@ spec:
             value: xray-service.kube-system:2000
           - name: INTRA_VPC
             value: "1"
+          - name: AWS_STS_REGIONAL_ENDPOINTS
+            value: regional
           volumeMounts:
           - name: {{ .Chart.Name }}-agent-config
             mountPath: /etc/agent

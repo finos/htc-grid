@@ -1,0 +1,81 @@
+server:
+  retention: 1h
+
+  global:
+    evaluation_interval: 30s
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  image:
+    repository: ${account_id}.dkr.ecr.${region}.amazonaws.com/quay/prometheus/prometheus
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+  persistentVolume:
+    accessModes:
+      - ReadWriteOnce
+    enabled: true
+    mountPath: /data
+    size: 20Gi
+    storageClass: gp2
+  tolerations:
+    - key: "grid/type"
+      operator: "Equal"
+      value: "Operator"
+      effect: "NoSchedule"
+  nodeSelector:
+    grid/type: "Operator"
+
+alertmanager:
+  enabled: false
+
+kube-state-metrics:
+  enabled: true
+  image:
+    repository: ${account_id}.dkr.ecr.${region}.amazonaws.com/kube-state-metrics
+    tag: ${kube_state_metrics_tag}
+  resources:
+    limits:
+      cpu: 200m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+  tolerations:
+    - key: "grid/type"
+      operator: "Equal"
+      value: "Operator"
+      effect: "NoSchedule"
+  nodeSelector:
+    grid/type: "Operator"
+
+pushgateway:
+  enabled: false
+
+nodeExporter:
+  image:
+    repository: ${account_id}.dkr.ecr.${region}.amazonaws.com/quay/prometheus/node-exporter
+  resources:
+    limits:
+      cpu: 200m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+  tolerations:
+    - key: "grid/type"
+      operator: "Equal"
+      value: "Operator"
+      effect: "NoSchedule"
+  nodeSelector:
+    grid/type: "Operator"
+
+
+configmapReload:
+  prometheus:
+    image:
+      repository: ${account_id}.dkr.ecr.${region}.amazonaws.com/configmap-reload
+      tag: ${configmap_reload_tag}
+

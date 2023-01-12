@@ -1,0 +1,23 @@
+image:
+  repository: ${account_id}.dkr.ecr.${region}.amazonaws.com/ecr-public/aws-observability/aws-for-fluent-bit
+
+env:
+  - name : AWS_STS_REGIONAL_ENDPOINTS
+    value: regional
+
+cloudWatch:
+  enabled: true
+  region: ${region}
+
+
+firehose:
+  enabled: false
+
+kinesis:
+  enabled: false
+
+elasticsearch:
+  enabled: false
+
+
+

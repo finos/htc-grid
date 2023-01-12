@@ -1,10 +1,6 @@
 # Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
-output "kubeconfig" {
-  description = "file name for the EKS kubeconfig file"
-  value       = abspath(module.compute_plane.kubectl_config_filename)
-}
 
 output "agent_config" {
   description = "file name for the agent configuration"

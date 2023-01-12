@@ -1,0 +1,33 @@
+awsRegion: ${region}
+
+autoDiscovery:
+  clusterName: ${eks_cluster_id}
+extraArgs:
+  logtostderr: true
+  stderrthreshold: info
+  v: 4
+  aws-use-static-instance-list: true
+
+extraEnv:
+  AWS_STS_REGIONAL_ENDPOINTS: "regional"
+
+resources:
+  limits:
+    cpu: 3000m
+    memory: 3000Mi
+  requests:
+    cpu: 1000m
+    memory: 1000Mi
+
+image:
+  repository: ${aws_htc_ecr}/cluster-autoscaler
+  tag: ${k8s_ca_version}
+
+nodeSelector:
+  grid/type: "Operator"
+
+tolerations:
+  - key: "grid/type"
+    operator: "Equal"
+    value: "Operator"
+    effect: "NoSchedule"

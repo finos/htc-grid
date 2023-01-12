@@ -54,6 +54,12 @@ module "vpc_endpoints" {
   security_group_ids = [module.vpc.default_security_group_id]
   create = true
   endpoints = {
+    sts = {
+      service = "sts"
+      private_dns_enabled = var.enable_private_subnet
+      subnet_ids = var.enable_private_subnet == true ? module.vpc.private_subnets : []
+      security_group_ids = var.enable_private_subnet == true ? [module.vpc.default_security_group_id] : []
+    }
     sqs = {
       service = "sqs"
       private_dns_enabled = var.enable_private_subnet
