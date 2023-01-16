@@ -15,7 +15,15 @@ variable "lambda_runtime" {
 }
 
 variable "ddb_state_table" {
-  description = "HTC DynamoDB table name"
+  description = "HTC DynamoDB state table name"
+}
+
+variable "dynamodb_autoscaling_enabled" {
+  description = "Switches autoscaling for the dynamodb table"
+}
+
+variable "dynamodb_billing_mode" {
+  description = "Sets billing mode [PROVISIONED] or [PAY_PER_REQUEST]"
 }
 
 variable "sqs_queue" {

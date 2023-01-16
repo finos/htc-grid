@@ -337,6 +337,7 @@ class AWSConnector:
                 logging.warning(raw_response)
             except ApiException as e:
                 logging.error("Exception when calling DefaultApi->ca_post: %s\n" % e)
+                raise(e)
 
         logging.info("Finish submit")
         return raw_response

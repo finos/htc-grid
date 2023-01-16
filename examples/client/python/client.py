@@ -24,6 +24,9 @@ from multiprocessing import Process
 # TODO: check this, only for debug ?? add to PYTHONPATH dependencies of another modules
 # perf_tracker = PerformanceTrackerInitializer(os.environ["METRICS_ARE_ENABLED"], os.environ["metrics_submit_tasks_lambda_connection_string"])
 
+# If sending failed for any reason we will try to resubmit.
+MAX_JOB_SEND_ATTEMPTS = 1000
+MAX_WAITING_ON_SESSION_RESULTS_SEC = 3600
 
 def submit_tasks_batch(
         n_jobs_per_thread,
@@ -81,7 +84,7 @@ def submit_tasks_batch(
                     submission_resp = adapter.send(job)
                 except Exception as e:
                     retries += 1
-                    if retries > 1:
+                    if retries > MAX_JOB_SEND_ATTEMPTS:
                         logging.error("TERMINAL ERROR IN SENDING EXITING (retries {}) \n{} {}".format(retries, e,
                                                                                                       traceback.format_exc()))
                         exit(1)
@@ -106,7 +109,7 @@ def submit_tasks_batch(
             ), end='', flush=True)
 
             submission_results = adapter.get_results(
-                sub_respo, timeout_sec=60000)
+                sub_respo, timeout_sec=MAX_WAITING_ON_SESSION_RESULTS_SEC*1000)
 
             results_ok = True
             msg = ""

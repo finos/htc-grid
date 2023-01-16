@@ -69,7 +69,18 @@ variable "fluentbit_version" {
 
 variable "ddb_state_table" {
   default  = "htc_tasks_state_table"
-  description = "htc DinamoDB table name"
+  description = "htc DinamoDB state table name"
+}
+
+variable "dynamodb_autoscaling_enabled" {
+  description = "Switches autoscaling for the dynamodb table"
+  type = bool
+  default = false
+}
+
+variable "dynamodb_billing_mode" {
+  description = "Sets billing mode [PROVISIONED] or [PAY_PER_REQUEST]"
+  default = "PROVISIONED"
 }
 
 variable "task_queue_service" {
