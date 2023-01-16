@@ -2,102 +2,137 @@
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
-resource "aws_dynamodb_table" "htc_tasks_state_table" {
-  name           = var.ddb_state_table
-  read_capacity  = var.dynamodb_table_read_capacity
-  write_capacity = var.dynamodb_table_write_capacity
+module "dynamodb_table" {
+  source = "terraform-aws-modules/dynamodb-table/aws"
+  name   = var.ddb_state_table
 
-  hash_key       = "task_id"
+  read_capacity  = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_read_capacity : null
+  write_capacity = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_write_capacity : null
+
+  autoscaling_enabled = var.dynamodb_autoscaling_enabled
+
+  billing_mode = var.dynamodb_billing_mode
+
+  hash_key = "task_id"
+
+  attributes = [
+    {
+      name = "session_id"
+      type = "S"
+    },
+
+    {
+      name = "task_id"
+      type = "S"
+    },
+
+    #  {
+    #   name = "submission_timestamp"
+    #   type = "N"
+    # }
+
+    #  {
+    #   name = "task_completion_timestamp"
+    #   type = "N"
+    # }
+
+    {
+      name = "task_status"
+      type = "S"
+    },
 
 
-  attribute {
-    name = "session_id"
-    type = "S"
+
+    #  {
+    #   name = "task_owner"
+    #   type = "S"
+    # }
+    # default value "None"
+
+    #  {
+    #   name = "retries"
+    #   type = "N"
+    # }
+
+    #  {
+    #   name = "task_definition"
+    #   type = "S"
+    # }
+
+    #  {
+    #   name = "sqs_handler_id"
+    #   type = "S"
+    # }
+
+    {
+      name = "heartbeat_expiration_timestamp"
+      type = "N"
+    }
+
+    # attribute {
+    #   name = "parent_session_id"
+    #   type = "S"
+    # }
+
+  ]
+
+
+
+  global_secondary_indexes = [
+    {
+      name               = "gsi_ttl_index"
+      hash_key           = "task_status"
+      range_key          = "heartbeat_expiration_timestamp"
+      read_capacity      = var.dynamodb_gsi_ttl_table_read_capacity
+      write_capacity     = var.dynamodb_gsi_ttl_table_write_capacity
+      projection_type    = "INCLUDE"
+      non_key_attributes = ["task_id", "task_owner", "task_priority"]
+    },
+    {
+      name               = "gsi_session_index"
+      hash_key           = "session_id"
+      range_key          = "task_status"
+      read_capacity      = var.dynamodb_gsi_index_table_read_capacity
+      write_capacity     = var.dynamodb_gsi_index_table_write_capacity
+      projection_type    = "INCLUDE"
+      non_key_attributes = ["task_id"]
+    }
+
+  ]
+
+
+  autoscaling_read = {
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 30
+    target_value       = 70
+    min_capacity       = 10
+    max_capacity       = 50
   }
 
-  attribute {
-    name = "task_id"
-    type = "S"
+  autoscaling_write = {
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 30
+    target_value       = 70
+    min_capacity       = 10
+    max_capacity       = 50
   }
 
-  # attribute {
-  #   name = "submission_timestamp"
-  #   type = "N"
-  # }
-
-  # attribute {
-  #   name = "task_completion_timestamp"
-  #   type = "N"
-  # }
-
-  attribute {
-    name = "task_status"
-    type = "S"
+  autoscaling_indexes = {
+    gsi_ttl_index = {
+      read_max_capacity  = 50
+      read_min_capacity  = 10
+      write_max_capacity = 50
+      write_min_capacity = 10
+    },
+    gsi_session_index = {
+      read_max_capacity  = 50
+      read_min_capacity  = 10
+      write_max_capacity = 50
+      write_min_capacity = 10
+    }
   }
-
-  # attribute {
-  #   name = "task_owner"
-  #   type = "S"
-  # }
-  # default value "None"
-
-  # attribute {
-  #   name = "retries"
-  #   type = "N"
-  # }
-
-  # attribute {
-  #   name = "task_definition"
-  #   type = "S"
-  # }
-
-  # attribute {
-  #   name = "sqs_handler_id"
-  #   type = "S"
-  # }
-
-  attribute {
-    name = "heartbeat_expiration_timestamp"
-    type = "N"
-  }
-
-  # attribute {
-  #   name = "parent_session_id"
-  #   type = "S"
-  # }
-
-  global_secondary_index {
-    name               = "gsi_ttl_index"
-    hash_key           = "task_status"
-    range_key          = "heartbeat_expiration_timestamp"
-    read_capacity      = var.dynamodb_gsi_ttl_table_read_capacity
-    write_capacity     = var.dynamodb_gsi_ttl_table_write_capacity
-    projection_type    = "INCLUDE"
-    non_key_attributes = ["task_id", "task_owner", "task_priority"]
-  }
-
-  global_secondary_index {
-    name               = "gsi_session_index"
-    hash_key           = "session_id"
-    range_key          = "task_status"
-    read_capacity      = var.dynamodb_gsi_index_table_read_capacity
-    write_capacity     = var.dynamodb_gsi_index_table_write_capacity
-    projection_type    = "INCLUDE"
-    non_key_attributes = ["task_id"]
-  }
-
-  # global_secondary_index {
-  #   name               = "gsi_parent_session_index"
-  #   hash_key           = "parent_session_id"
-  #   range_key          = "session_id"
-  #   read_capacity      = var.dynamodb_gsi_parent_table_read_capacity
-  #   write_capacity     = var.dynamodb_gsi_parent_table_write_capacity
-  #   projection_type    = "INCLUDE"
-  #   non_key_attributes = ["task_id", "task_status"]
-  # }
-
 
   tags = {
-    service     = "htc-aws"
+    service = "htc-aws"
   }
 }

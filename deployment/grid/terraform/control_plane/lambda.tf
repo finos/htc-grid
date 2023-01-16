@@ -124,7 +124,7 @@ module "submit_task" {
   vpc_security_group_ids = [var.vpc_default_security_group_id]
 
   environment_variables  = {
-    STATE_TABLE_NAME=aws_dynamodb_table.htc_tasks_state_table.name,
+    STATE_TABLE_NAME=var.ddb_state_table,
     STATE_TABLE_SERVICE=var.state_table_service,
     STATE_TABLE_CONFIG=var.state_table_config,
     TASKS_QUEUE_NAME=aws_sqs_queue.htc_task_queue["__0"].name,
@@ -189,7 +189,7 @@ module  "get_results" {
   vpc_subnet_ids = var.vpc_private_subnet_ids
   vpc_security_group_ids = [var.vpc_default_security_group_id]
   environment_variables = {
-    STATE_TABLE_NAME=aws_dynamodb_table.htc_tasks_state_table.name,
+    STATE_TABLE_NAME=var.ddb_state_table,
     STATE_TABLE_SERVICE=var.state_table_service,
     STATE_TABLE_CONFIG=var.state_table_config,
     TASKS_QUEUE_NAME=aws_sqs_queue.htc_task_queue["__0"].name,
@@ -254,7 +254,7 @@ module "cancel_tasks" {
   vpc_security_group_ids = [var.vpc_default_security_group_id]
 
   environment_variables  = {
-    STATE_TABLE_NAME=aws_dynamodb_table.htc_tasks_state_table.name,
+    STATE_TABLE_NAME=var.ddb_state_table,
     STATE_TABLE_SERVICE=var.state_table_service,
     STATE_TABLE_CONFIG=var.state_table_config,
     TASKS_QUEUE_NAME=aws_sqs_queue.htc_task_queue["__0"].name,
@@ -324,7 +324,7 @@ module "ttl_checker" {
 
   use_existing_cloudwatch_log_group = true
   environment_variables = {
-    STATE_TABLE_NAME=aws_dynamodb_table.htc_tasks_state_table.name,
+    STATE_TABLE_NAME=var.ddb_state_table,
     STATE_TABLE_SERVICE=var.state_table_service,
     STATE_TABLE_CONFIG=var.state_table_config,
     TASKS_QUEUE_NAME=aws_sqs_queue.htc_task_queue["__0"].name,
@@ -406,6 +406,26 @@ resource "aws_iam_policy" "lambda_logging_policy" {
 EOF
 }
 
+resource "aws_iam_policy" "lambda_cloudwatch_policy" {
+  name        = "lambda_cloudwatch_policy-${local.suffix}"
+  path        = "/"
+  description = "IAM policy to access cloud watch metrics by TTL Lambda"
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "cloudwatch:GetMetricStatistics"
+      ],
+      "Resource": "*",
+      "Effect": "Allow"
+    }
+  ]
+}
+EOF
+}
+
 resource "aws_iam_policy" "lambda_data_policy" {
   name        = "lambda_data_policy-${local.suffix}"
   path        = "/"
@@ -422,7 +442,7 @@ resource "aws_iam_policy" "lambda_data_policy" {
         "s3:*",
         "ec2:CreateNetworkInterface",
         "ec2:DeleteNetworkInterface",
-        "ec2:DescribeNetworkInterfaces"
+        "ec2:DescribeNetworkInterfaces",
       ],
       "Resource": "*",
       "Effect": "Allow"
@@ -475,3 +495,9 @@ resource "aws_iam_role_policy_attachment" "ttl_checker_lambda_data_attachment" {
   role       = aws_iam_role.role_lambda_ttl_checker.name
   policy_arn = aws_iam_policy.lambda_data_policy.arn
 }
+
+resource "aws_iam_role_policy_attachment" "ttl_checker_lambda_cludwatch_attachment" {
+  role       = aws_iam_role.role_lambda_ttl_checker.name
+  policy_arn = aws_iam_policy.lambda_cloudwatch_policy.arn
+}
+

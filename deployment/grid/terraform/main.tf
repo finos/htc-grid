@@ -194,6 +194,8 @@ module "control_plane" {
     error_logging_stream = local.error_logging_stream
     dynamodb_table_read_capacity = var.dynamodb_default_read_capacity
     dynamodb_table_write_capacity = var.dynamodb_default_write_capacity
+    dynamodb_billing_mode = var.dynamodb_billing_mode
+    dynamodb_autoscaling_enabled = var.dynamodb_autoscaling_enabled
     dynamodb_gsi_index_table_write_capacity = var.dynamodb_default_write_capacity
     dynamodb_gsi_index_table_read_capacity = var.dynamodb_default_read_capacity
     dynamodb_gsi_ttl_table_write_capacity = var.dynamodb_default_write_capacity
