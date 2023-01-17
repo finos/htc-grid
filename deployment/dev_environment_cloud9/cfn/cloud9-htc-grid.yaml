@@ -226,16 +226,21 @@ Resources:
                 print(f'Instance is running , about to associate iam_instance_profile: {iam_instance_profile}')
             
                 print(f'Check if there is already an Associated instance profile')
-                associationID = ec2.describe_iam_instance_profile_associations(
-                  Filters=[
-                      {
-                         'Name': 'instance-id',
-                         'Values': [
-                             instance['InstanceId'],
-                           ]
-                      },
-                  ],
-                  )['IamInstanceProfileAssociations'][0]['AssociationId']
+                try:
+                  associationID = ec2.describe_iam_instance_profile_associations(
+                    Filters=[
+                        {
+                          'Name': 'instance-id',
+                          'Values': [
+                               instance['InstanceId'],
+                             ]
+                        },
+                    ],
+                    )['IamInstanceProfileAssociations'][0]['AssociationId']
+                except Exception as e:
+                    print(e)
+                    associationID= None
+
                 if associationID:
                   try:
                       print(f'Association found, AssociationID is: {associationID}')
