@@ -8,10 +8,6 @@ TASK_STATE_PENDING = "pending"
 TASK_STATE_FAILED = "failed"
 TASK_STATE_FINISHED = "finished"
 TASK_STATE_PROCESSING = "processing"
-TASK_STATE_RETRYING = "retrying"
-TASK_STATE_INCONSISTENT = "inconsistent"
-
-TTL_LAMBDA_ID = 'TTL_LAMBDA'
 
 
 class StateTableException(Exception):
