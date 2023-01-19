@@ -16,7 +16,7 @@ import traceback
 
 
 from utils.state_table_common import TASK_STATE_CANCELLED, TASK_STATE_PENDING, TASK_STATE_FAILED,\
-    TASK_STATE_PROCESSING, TASK_STATE_RETRYING, TASK_STATE_INCONSISTENT, TASK_STATE_FINISHED, TTL_LAMBDA_ID
+    TASK_STATE_PROCESSING, TASK_STATE_FINISHED
 from utils.state_table_common import StateTableException
 
 
@@ -135,9 +135,6 @@ class StateTableDDB:
 
     def update_task_status_to_failed(self, task_id):
         self.__finalize_tasks_state(task_id, TASK_STATE_FAILED)
-
-    def update_task_status_to_inconsistent(self, task_id):
-        self.__finalize_tasks_state(task_id, TASK_STATE_INCONSISTENT)
 
     def update_task_status_to_cancelled(self, task_id):
         self.__finalize_tasks_state(task_id, TASK_STATE_CANCELLED)
@@ -599,7 +596,7 @@ class StateTableDDB:
             StateTableException on throttling
             Exception for all other errors
         """
-        if new_task_state not in [TASK_STATE_FAILED, TASK_STATE_INCONSISTENT, TASK_STATE_CANCELLED]:
+        if new_task_state not in [TASK_STATE_FAILED, TASK_STATE_CANCELLED]:
             logging.error("__finalize_tasks_state called with incorrect input: {}".format(
                 new_task_state
             ))

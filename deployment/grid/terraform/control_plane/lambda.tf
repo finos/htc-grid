@@ -442,7 +442,7 @@ resource "aws_iam_policy" "lambda_data_policy" {
         "s3:*",
         "ec2:CreateNetworkInterface",
         "ec2:DeleteNetworkInterface",
-        "ec2:DescribeNetworkInterfaces",
+        "ec2:DescribeNetworkInterfaces"
       ],
       "Resource": "*",
       "Effect": "Allow"

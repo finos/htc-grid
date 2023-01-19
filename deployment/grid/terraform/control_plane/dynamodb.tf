@@ -4,6 +4,7 @@
 
 module "dynamodb_table" {
   source = "terraform-aws-modules/dynamodb-table/aws"
+  version = "3.1.2"
   name   = var.ddb_state_table
 
   read_capacity  = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_read_capacity : null

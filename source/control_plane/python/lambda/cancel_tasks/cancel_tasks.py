@@ -11,7 +11,7 @@ import traceback
 
 import utils.grid_error_logger as errlog
 
-from utils.state_table_common import TASK_STATE_PENDING, TASK_STATE_PROCESSING, TASK_STATE_RETRYING, StateTableException
+from utils.state_table_common import TASK_STATE_PENDING, TASK_STATE_PROCESSING, StateTableException
 
 client = boto3.client('dynamodb')
 dynamodb = boto3.resource('dynamodb')
@@ -22,7 +22,7 @@ state_table = state_table_manager(
     os.environ['STATE_TABLE_CONFIG'],
     os.environ['STATE_TABLE_NAME'])
 
-task_states_to_cancel = [TASK_STATE_RETRYING, TASK_STATE_PENDING, TASK_STATE_PROCESSING]
+task_states_to_cancel = [TASK_STATE_PENDING, TASK_STATE_PROCESSING]
 
 
 def cancel_tasks_by_status(session_id, task_state):
