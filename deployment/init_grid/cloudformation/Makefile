@@ -49,4 +49,5 @@ delete: clean-$(IAC_TOOL)
 	aws cloudformation wait stack-delete-complete --stack-name $(shell aws cloudformation describe-stacks --region $(REGION) --stack-name $(TAG) --query 'Stacks[0].StackId' --output text) --region $(REGION)
 
 clean:
-	rm -rf $(BUILD_DIR)/tag.*
+	rm -rf $(BUILD_DIR)/grid_init/tag.*
+	rm -rf $(BUILD_DIR)/grid_init/init-grid-*
