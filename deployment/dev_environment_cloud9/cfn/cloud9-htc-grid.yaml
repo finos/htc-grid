@@ -195,6 +195,7 @@ Resources:
                 # Open AWS clients
                 ec2 = boto3.client('ec2')
 
+
                 # Get the InstanceId from Cloud9 IDE
                 print('tag:aws:cloud9:environment : {}'.format(event['ResourceProperties']['EnvironmentId']))
                 instance = ec2.describe_instances(Filters=[{'Name': 'tag:aws:cloud9:environment','Values': [event['ResourceProperties']['EnvironmentId']]}])['Reservations'][0]['Instances'][0]
