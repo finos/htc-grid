@@ -138,7 +138,7 @@ class StateTableDDB:
 
     def update_task_status_to_cancelled(self, task_id):
         self.__finalize_tasks_state(task_id, TASK_STATE_CANCELLED)
-        
+
     def query_expired_tasks(self):
         """
         Generator.
