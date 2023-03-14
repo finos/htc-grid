@@ -83,7 +83,7 @@ resource "aws_cloudwatch_event_rule" "lifecycle_hook_event_rule" {
   ],
   "detail": {
     "AutoScalingGroupName": [
-      "${module.eks.self_managed_node_group_autoscaling_groups[count.index]}"
+      "${module.eks.self_managed_node_group_autoscaling_groups[count.index+1]}"
     ]
   }
 }

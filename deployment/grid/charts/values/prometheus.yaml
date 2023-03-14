@@ -14,12 +14,7 @@ server:
       memory: 1Gi
 
   persistentVolume:
-    accessModes:
-      - ReadWriteOnce
-    enabled: true
-    mountPath: /data
-    size: 20Gi
-    storageClass: gp2
+    enabled: false
   tolerations:
     - key: "grid/type"
       operator: "Equal"

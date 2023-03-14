@@ -44,109 +44,11 @@ resource "aws_iam_server_certificate" "alb_certificate" {
 }
 
 
-#resource "kubernetes_namespace" "grafana" {
-#  metadata {
-#    annotations = {
-#      name = "grafana"
-#    }
-#    name = "grafana"
-#  }
-#  depends_on = [
-#    module.eks,
-#  ]
-#  provisioner "local-exec" {
-#    when    = destroy
-#    command = "sleep 60"
-#  }
-#}
-
-#resource "helm_release" "grafana" {
-#  name       = "grafana"
-#  chart      = "grafana"
-#  namespace  = "grafana"
-#  repository = "https://grafana.github.io/helm-charts/"
-#
-#  set {
-#    name  = "persistence.enabled"
-#    value = "false"
-#  }
-#  set {
-#    name  = "adminPassword"
-#    value = var.grafana_configuration.admin_password
-#  }
-#
-#  set {
-#    type = "string"
-#    name = "ingress.annotations.alb\\.ingress\\.kubernetes\\.io/subnets"
-#    //value = "subnet-07df633bdcac0c135\\,subnet-07df633bdcac0c136\\,subnet-07df633bdcac0c137"
-#    value = join("\\,",var.vpc_private_subnet_ids)
-#  }
-#
-#  set {
-#    type = "string"
-#    name = "alb\\.ingress\\.kubernetes\\.io/load-balancer-attributes"
-#    value = "access_logs\\.s3\\.enabled=true\\,access_logs\\.s3\\.bucket=htc-grid-2020\\,access_logs\\.s3\\.prefix=my-app"
-#  }
-#
-#   set {
-#     name  = "service.type"
-#     value = "NodePort"
-#   }
-#  set {
-#    name = "initChownData.image.repository"
-#    value = "${var.aws_htc_ecr}/busybox"
-#  }
-#  set {
-#    name = "initChownData.image.tag"
-#    value = var.grafana_configuration.initChownData_tag
-#  }
-#  set {
-#    name = "image.repository"
-#    value = "${var.aws_htc_ecr}/grafana"
-#  }
-#  set {
-#    name = "image.tag"
-#    value = var.grafana_configuration.grafana_tag
-#  }
-#  set {
-#    name = "downloadDashboardsImage.repository"
-#    value = "${var.aws_htc_ecr}/curl"
-#  }
-#  set {
-#    name = "downloadDashboardsImage.tag"
-#    value = var.grafana_configuration.downloadDashboardsImage_tag
-#  }
-#  set {
-#    name = "sidecar.image.repository"
-#    value = "${var.aws_htc_ecr}/k8s-sidecar"
-#  }
-#  set {
-#    name = "sidecar.image.tag"
-#    value = var.grafana_configuration.sidecar_tag
-#  }
-#  set {
-#    name = "sidecar.dashboards.enabled"
-#    value = "true"
-#  }
-#  set {
-#    name = "persistence.enabled"
-#    value = "false"
-#  }
-#
-#  values = [
-#    file("compute_plane/grafana_placement_conf.yaml"),
-#    file("compute_plane/grafana_dashboard_k8s.yaml")
-#  ]
-#
-#  depends_on = [
-#    kubernetes_namespace.grafana
-#  ]
-#
-#}
 
 
 
-resource "kubernetes_ingress" "grafana_ingress" {
+
+resource "kubernetes_ingress_v1" "grafana_ingress" {
   wait_for_load_balancer = true
   metadata {
     name = "grafana-ingress"
@@ -169,8 +71,12 @@ resource "kubernetes_ingress" "grafana_ingress" {
       http {
         path {
           backend {
-            service_name = "ssl-redirect"
-            service_port = "use-annotation"
+            service {
+              name = "ssl-redirect"
+              port  {
+                name = "use-annotation"
+              }
+            }
           }
 
           path = "/*"
@@ -182,8 +88,12 @@ resource "kubernetes_ingress" "grafana_ingress" {
           // }
 
           backend {
-            service_name = "grafana"
-            service_port = 80
+            service {
+              name = "grafana"
+              port {
+                number = 80
+              }
+            }
           }
 
           path = "/*"

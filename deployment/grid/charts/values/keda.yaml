@@ -1,0 +1,100 @@
+# Default values for keda.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+env:
+  - name : AWS_STS_REGIONAL_ENDPOINTS
+    value: regional
+
+image:
+  keda:
+    repository: ${aws_htc_ecr}/kedacore/keda
+    # Allows people to override tag if they don't want to use the app version
+    tag: ${k8s_keda_version}
+  metricsApiServer:
+    repository: ${aws_htc_ecr}/kedacore/keda-metrics-apiserver
+    # Allows people to override tag if they don't want to use the app version
+    tag: ${k8s_keda_version}
+  webhooks:
+    repository: ${aws_htc_ecr}/kedacore/keda-admission-webhooks
+    # Allows people to override tag if they don't want to use the app version
+    tag: ${k8s_keda_version}
+  pullPolicy: Always
+
+
+nodeSelector:
+  grid/type: "Operator"
+
+tolerations:
+  - key: "grid/type"
+    operator: "Equal"
+    value: "Operator"
+    effect: "NoSchedule"
+
+
+
+
+logging:
+  operator:
+    ## Logging level for KEDA Operator
+    # allowed values: 'debug', 'info', 'error', or an integer value greater than 0, specified as string
+    # default value: info
+    level: debug
+    # allowed values: 'json' or 'console'
+    # default value: console
+    format: console
+    ## Logging time encoding for KEDA Operator
+    # allowed values are 'epoch', 'millis', 'nano', 'iso8601', 'rfc3339' or 'rfc3339nano'
+    # default value: rfc3339
+    timeEncoding: rfc3339
+  metricServer:
+    ## Logging level for Metrics Server
+    # allowed values: '0' for info, '4' for debug, or an integer value greater than 0, specified as string
+    # default value: 0
+    level: 4
+
+  webhooks:
+    ## Logging level for KEDA Operator
+    # allowed values: 'debug', 'info', 'error', or an integer value greater than 0, specified as string
+    # default value: info
+    level: debug
+    # allowed values: 'json' or 'console'
+    # default value: console
+    format: console
+    ## Logging time encoding for KEDA Operator
+    # allowed values are 'epoch', 'millis', 'nano', 'iso8601', 'rfc3339' or 'rfc3339nano'
+    # default value: rfc3339
+    timeEncoding: rfc3339
+
+
+
+
+
+#serviceAccount:
+#  # Specifies whether a service account should be created
+#  create: false
+#  # The name of the service account to use.
+#  # If not set and create is true, a name is generated using the fullname template
+#  name: keda-operator
+#  # Specifies whether a service account should automount API-Credentials
+#  #automountServiceAccountToken: true
+#  # Annotations to add to the service account
+#  #annotations: {}
+
+#podIdentity:
+#  aws:
+#    irsa:
+#      # Set to true to enable AWS IAM Roles for Service Accounts (IRSA).
+#      enabled: false
+#      # Sets the token audience for IRSA.
+#      # This will be set as an annotation on the KEDA service account.
+#      audience: "sts.amazonaws.com"
+#      # Set to the value of the ARN of an IAM role with a web identity provider.
+#      # This will be set as an annotation on the KEDA service account.
+#      roleArn: ""
+#      # Sets the use of an STS regional endpoint instead of global.
+#      # Recommended to use regional endpoint in almost all cases.
+#      # This will be set as an annotation on the KEDA service account.
+#      stsRegionalEndpoints: "true"
+#      # Set to the value of the service account token expiration duration.
+#      # This will be set as an annotation on the KEDA service account.
+#      tokenExpiration: 86400

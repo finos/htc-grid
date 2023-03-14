@@ -149,6 +149,48 @@ resource "helm_release" "htc_agent" {
     value = var.get_layer_pull_policy
   }
 
+  set {
+    name  = "hpa.metric.namespace"
+    value = var.namespace_metrics
+  }
+
+  set {
+    name  = "hpa.metric.dimensionName"
+    value = var.dimension_name_metrics
+  }
+
+  set {
+    name  = "hpa.metric.dimensionValue"
+    value = var.dimension_value_metrics
+  }
+
+  set {
+    name  = "hpa.metric.name"
+    value = var.metric_name
+  }
+
+  set {
+    name  = "hpa.metric.targetValue"
+    value = var.htc_agent_target_value
+  }
+
+  set {
+    name  = "hpa.metric.region"
+    value = var.lambda_configuration_region
+  }
+
+  set {
+    name  = "hpa.maxAgent"
+    value = var.max_htc_agents
+  }
+
+  set {
+    name  = "hpa.minAgent"
+    value = var.min_htc_agents
+  }
+
+
+
 
 }
 

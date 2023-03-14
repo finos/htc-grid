@@ -13,6 +13,8 @@ tolerations:
     value: "Operator"
     effect: "NoSchedule"
 
+rbac:
+  pspEnabled: false
 
 
 

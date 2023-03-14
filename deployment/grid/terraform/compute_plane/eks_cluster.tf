@@ -4,41 +4,125 @@
 
 
 
-#resource "helm_release" "eks-charts" {
-#  name       = "aws-node-termination-handler"
-#  chart      = "../charts/aws-node-termination-handler/${var.aws_node_termination_handler_version}"
-#  namespace  = "kube-system"
-#
-#
-#  set {
-#    name  = "image.repository" #Values.image.repository
-#    value = "${var.aws_htc_ecr}/amazon/aws-node-termination-handler"
-#  }
-#
-#  set {
-#    name  = "image.tag" #Values.image.repository
-#    value = var.aws_node_termination_handler_version
-#  }
-#}
-
-
-
 
 module "eks" {
   source  = "github.com/aws-ia/terraform-aws-eks-blueprints"
-
   cluster_name    = var.cluster_name
   cluster_version = var.kubernetes_version
   private_subnet_ids = var.vpc_private_subnet_ids
+  map_roles = [
+    {
+      rolearn  = aws_iam_role.role_lambda_drainer.arn
+      username = "lambda"
+      groups   = ["system:masters"]
+    }
+  ]
+  # create_node_security_group    = false
 
+  node_security_group_additional_rules = {
+    # Extend node-to-node security group rules. Recommended and required for the Add-ons
+    ingress_dns_tcp = {
+      description = "Node to node DNS(TCP)"
+      protocol    = "tcp"
+      from_port   = 53
+      to_port     = 53
+      type        = "ingress"
+      cidr_blocks = [var.vpc_cidr]
+      #self        = true
+    }
+
+    ingress_influxdb_tcp = {
+      description = "Node to node influxdb"
+      protocol    = "tcp"
+      from_port   = 8086
+      to_port     = 8088
+      type        = "ingress"
+      cidr_blocks = [var.vpc_cidr]
+      #self        = true
+    }
+    ingress_dns_udp = {
+      description = "Node to node DNS(UDP)"
+      protocol    = "udp"
+      from_port   = 53
+      to_port     = 53
+      type        = "ingress"
+      cidr_blocks = [var.vpc_cidr]
+      #self        = true
+    }
+
+    egress_dns_tcp = {
+      description = "Node to node DNS(TCP)"
+      protocol    = "tcp"
+      from_port   = 53
+      to_port     = 53
+      type        = "egress"
+      cidr_blocks = [var.vpc_cidr]
+      #self        = true
+    }
+    egress_dns_udp = {
+      description = "Node to node DNS(UDP)"
+      protocol    = "udp"
+      from_port   = 53
+      to_port     = 53
+      type        = "egress"
+      cidr_blocks = [var.vpc_cidr]
+      #self        = true
+    }
+
+    # Recommended outbound traffic for Node groups
+    egress_all = {
+      description      = "Node all egress"
+      protocol         = "-1"
+      from_port        = 0
+      to_port          = 0
+      type             = "egress"
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = ["::/0"]
+    }
+    # Allows Control Plane Nodes to talk to Worker nodes on all ports. Added this to simplify the example and further avoid issues with Add-ons communication with Control plane.
+    # This can be restricted further to specific port based on the requirement for each Add-on e.g., metrics-server 4443, spark-operator 8080, karpenter 8443 etc.
+    # Change this according to your security requirements if needed
+    ingress_cluster_to_node_all_traffic = {
+      description                   = "Cluster API to Nodegroup all traffic"
+      protocol                      = "-1"
+      from_port                     = 0
+      to_port                       = 0
+      type                          = "ingress"
+      source_cluster_security_group = true
+    }
+  }
 
 
   cluster_endpoint_private_access = var.enable_private_subnet
   cluster_enabled_log_types = ["api","audit","authenticator","controllerManager","scheduler"]
 
   self_managed_node_groups = local.eks_worker_group_map
+#  managed_node_groups = {
+#    operator = {
+#      node_group_name = "ops-worker-ondemand",
+#      capacity_type          = "ON_DEMAND",
+#      additional_iam_policies = [
+#        "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+#        aws_iam_policy.eks_pull_through_cache_permission.arn,
+#        aws_iam_policy.agent_permissions.arn
+#      ]
+#      launch_template_os   = "amazonlinux2eks"
+#      instance_types = ["m5.xlarge","m4.xlarge","m5d.xlarge"],
+#      min_size            = 2,
+#      max_size           = 5,
+#      desired_size = 2,
+#      kubelet_extra_args = "--node-labels=grid/type=Operator --register-with-taints=grid/type=Operator:NoSchedule"
+#      k8s_taints = [{key= "grid/type", value="Operator", effect="NO_SCHEDULE"}]
+#
+#      # Node Labels can be applied through EKS API or through Bootstrap script using kubelet_extra_args
+#      k8s_labels = {
+#        "grid/type" = "Operator"
+#      }
+#    }
+#  }
   create_iam_role = true
   vpc_id = var.vpc_id
+
 
 }
 
@@ -50,7 +134,6 @@ data "aws_eks_cluster_auth" "cluster" {
   name = module.eks.eks_cluster_id
 }
 
-
 module "eks_blueprints_kubernetes_addons" {
   source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons"
 
@@ -61,13 +144,14 @@ module "eks_blueprints_kubernetes_addons" {
 
   auto_scaling_group_names = module.eks.self_managed_node_group_autoscaling_groups
   # EKS Managed Addons
-  enable_amazon_eks_aws_ebs_csi_driver = true
+  # enable_amazon_eks_aws_ebs_csi_driver = true
 
   enable_aws_for_fluentbit                 = true
   aws_for_fluentbit_create_cw_log_group    = true
   aws_for_fluentbit_cw_log_group_retention = 30
   aws_for_fluentbit_helm_config = {
     create_namespace = true
+    version = "0.1.23"
     values = [templatefile("${path.module}/../../charts/values/aws-for-fluentbit.yaml", {
       region = var.region
       account_id       = data.aws_caller_identity.current.account_id
@@ -126,6 +210,19 @@ module "eks_blueprints_kubernetes_addons" {
     })]
   }
 
+  enable_keda = true
+  keda_helm_config = {
+    chart      = "keda"                                               # (Required) Chart name to be installed.
+    version    = var.k8s_keda_version                                              # (Optional) Specify the exact chart version to install. If this is not specified, it defaults to the version set within default_helm_config: https://github.com/aws-ia/terraform-aws-eks-blueprints/blob/main/modules/kubernetes-addons/keda/locals.tf
+    namespace  = "keda"                                               # (Optional) The namespace to install the release into.
+    values = [templatefile("${path.module}/../../charts/values/keda.yaml", {
+      aws_htc_ecr = var.aws_htc_ecr
+      #eks_cluster_id =  module.eks.eks_cluster_id
+      #region = var.region
+      k8s_keda_version = var.k8s_keda_version
+    })]
+  }
+
 #  enable_aws_cloudwatch_metrics = true
 #  aws_cloudwatch_metrics_helm_config = {
 #    values = [
@@ -174,6 +271,7 @@ resource "null_resource" "update_kubeconfig" {
     when = destroy
     command = "kubectl config delete-context ${self.triggers.cluster_arn}"
   }
+  depends_on = [module.eks]
 
 }
 
@@ -181,6 +279,19 @@ resource "null_resource" "patch_coredns" {
     provisioner "local-exec" {
     command = "kubectl -n kube-system patch deployment coredns --patch \"${data.local_file.patch_core_dns.content}\""
   }
-  depends_on = [module.eks]
+  depends_on = [
+    module.eks,
+    null_resource.update_kubeconfig
+  ]
 }
+
+
+
+
+
+
+
+
+
+
 

@@ -65,7 +65,7 @@ module "scaling_metrics" {
   docker_additional_options = [
     "--platform", "linux/amd64",
   ]
-  use_existing_cloudwatch_log_group = true
+  use_existing_cloudwatch_log_group = false
   environment_variables = {
     STATE_TABLE_CONFIG=var.ddb_state_table,
     NAMESPACE=var.namespace_metrics,
@@ -84,13 +84,9 @@ module "scaling_metrics" {
    tags = {
     service     = "htc-grid"
   }
-  depends_on = [aws_cloudwatch_log_group.lambda_scaling]
 }
 
-resource "aws_cloudwatch_log_group" "lambda_scaling" {
-  name = "/aws/lambda/${var.lambda_name_scaling_metrics}"
-  retention_in_days = 5
-}
+
 
 
 resource "aws_cloudwatch_event_rule" "scaling_metrics_event_rule" {

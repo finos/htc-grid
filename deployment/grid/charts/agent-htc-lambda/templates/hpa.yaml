@@ -1,0 +1,34 @@
+#---
+#apiVersion: keda.sh/v1alpha1
+#kind: TriggerAuthentication
+#metadata:
+#  name: htc-agent-scaler-auth
+#spec:
+#  podIdentity:
+#    provider: aws-eks # or aws-eks when using IRSA
+#---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "agent-htc-lambda.fullname" . }}-scaling-metrics
+spec:
+  scaleTargetRef:
+    name: {{ include "agent-htc-lambda.fullname" . }}
+  minReplicaCount: {{ .Values.hpa.minAgent }}
+  maxReplicaCount: {{ .Values.hpa.maxAgent }}
+  triggers:
+    - type: aws-cloudwatch
+      metadata:
+        identityOwner: operator
+        namespace: {{ .Values.hpa.metric.namespace }}
+        dimensionName: {{ .Values.hpa.metric.dimensionName }}
+        dimensionValue: {{ .Values.hpa.metric.dimensionValue }}
+        metricName: {{ .Values.hpa.metric.name }}
+        metricUnit: "Count"
+        metricStatPeriod: "30"
+        targetMetricValue: {{ .Values.hpa.metric.targetValue | quote}}
+        minMetricValue: "0"
+        awsRegion: {{ .Values.hpa.metric.region }}
+        awsEndpoint:
+#      authenticationRef:
+#        name: keda-trigger-auth-aws-credentials

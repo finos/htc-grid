@@ -33,13 +33,18 @@ variable "lambda_runtime" {
 }
 
 variable "kubernetes_version" {
-  default = "1.21"
+  default = "1.25"
   description = "Name of EKS cluster in AWS"
 }
 
 variable "k8s_ca_version" {
   default  = "v1.21.0"
   description = "Cluster autoscaler version"
+}
+
+variable "k8s_keda_version" {
+  default  = "2.10.0"
+  description = "Keda version"
 }
 
 variable "aws_htc_ecr" {
@@ -405,7 +410,7 @@ variable "prometheus_configuration" {
     node_exporter_tag = "v1.1.2"
     server_tag = "v2.26.0"
     alertmanager_tag = "v0.22.0"
-    kube_state_metrics_tag = "v2.0.0"
+    kube_state_metrics_tag = "v2.5.0"
     pushgateway_tag = "v1.3.1"
     configmap_reload_tag = "v0.5.0"
   }
