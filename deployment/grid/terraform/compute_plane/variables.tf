@@ -58,6 +58,10 @@ variable "k8s_ca_version" {
   description = "Cluster autoscaler version"
 }
 
+variable "k8s_keda_version" {
+  description = "Keda version"
+}
+
 variable "ddb_state_table" {
   description = "HTC DynamoDB table name"
 }
@@ -69,9 +73,6 @@ variable "sqs_queue" {
 variable "tasks_queue_name" {
   description = "HTC queue name"
 }
-variable "namespace_metrics" {
-  description = "NameSpace for metrics"
-}
 
 variable "task_queue_service" {
   description = "Configuration string for the type of queuing service to use"
@@ -81,14 +82,6 @@ variable "task_queue_config" {
   description = "Dictionary configuration of the tasks queue"
 }
 
-variable "dimension_name_metrics" {
-  description = "Dimensions name/value for the CloudWatch metrics"
-}
-
-
-variable "htc_path_logs" {
-  description = "Path to fluentD to search de logs application"
-}
 
 # variable "dimension_value_metrics" {
 #   default  = "[{DimensionName=cluster_name,DimensionValue=htc-aws}, {DimensionName=env,DimensionValue=dev}]"
@@ -100,9 +93,13 @@ variable "lambda_name_scaling_metrics" {
   description = "Lambda function name for metrics"
 }
 
-variable "average_period" {
-  default = 30
-  description = "Average period in second used by the HPA to compute the current load on the system"
+
+variable "namespace_metrics" {
+  description = "NameSpace for metrics"
+}
+
+variable "dimension_name_metrics" {
+  description = "Dimensions name/value for the CloudWatch metrics"
 }
 
 
@@ -126,13 +123,8 @@ variable "metrics_event_rule_time" {
   description = "Fires event rule to put metrics"
 }
 
-variable "htc_agent_name" {
-  description = "name of the htc agent to scale out/in"
-}
 
-variable "htc_agent_namespace" {
-  description = "kubernetes namespace for the deployment of the agent"
-}
+
 
 variable "suffix" {
   default = ""
@@ -141,18 +133,6 @@ variable "suffix" {
 
 variable "eks_worker_groups" {
   type        = any
-}
-
-variable "max_htc_agents" {
-  description = "maximum number of agents that can run on EKS"
-}
-
-variable "min_htc_agents" {
-  description = "minimum number of agents that can run on EKS"
-}
-
-variable "htc_agent_target_value" {
-  description = "target value for the load on the system"
 }
 
 variable "vpc_private_subnet_ids" {

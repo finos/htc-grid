@@ -172,6 +172,7 @@ variable "lambda_configuration_function_name" {
 }
 
 
+
 variable "lambda_handler_file_name" {
   type = string
   description = "The file name  of the lambda handler"
@@ -181,3 +182,40 @@ variable "lambda_handler_function_name" {
   type = string
   description = "The function name of the lambda handler"
 }
+
+variable "namespace_metrics" {
+  description = "NameSpace for metrics"
+}
+
+variable "dimension_name_metrics" {
+  description = "Dimensions name for the CloudWatch metrics"
+}
+
+variable "dimension_value_metrics" {
+  description = "Dimensions name for the CloudWatch metrics"
+}
+
+
+variable "average_period" {
+  default = 30
+  description = "Average period in second used by the HPA to compute the current load on the system"
+}
+
+
+variable "metric_name" {
+  description = "Metrics name"
+}
+
+
+variable "max_htc_agents" {
+  description = "maximum number of agents that can run on EKS"
+}
+
+variable "min_htc_agents" {
+  description = "minimum number of agents that can run on EKS"
+}
+
+variable "htc_agent_target_value" {
+  description = "target value for the load on the system"
+}
+

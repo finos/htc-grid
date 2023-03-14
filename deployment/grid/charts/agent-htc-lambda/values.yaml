@@ -16,7 +16,7 @@ imageAgent:
 
 imageLambdaServer:
   runtime: provided
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 imageGetLayer:
   pullPolicy: IfNotPresent
@@ -104,5 +104,14 @@ testTolerations:
     value: Operator
 
 testAffinity: {}
+
+hpa:
+  metric:
+    namespace: ""
+    dimensionName: ""
+    dimensionValue: ""
+    name: ""
+    targetValue: 0
+    region: ""
 
 

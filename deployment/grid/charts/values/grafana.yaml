@@ -17,12 +17,7 @@ grafana.ini:
     enabled: true
 
 persistence:
-  type: pvc
-  enabled: true
-  storageClassName: gp2
-  accessModes:
-    - ReadWriteOnce
-  size: 50Gi
+  enabled: false
 
 service:
   type: "NodePort"

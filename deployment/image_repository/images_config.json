@@ -1,9 +1,7 @@
 {
     "image_to_copy": {
-        #"quay.io/prometheus/alertmanager:v0.22.0":"alertmanager",
         "amazonlinux:latest": "amazonlinux",
         "amazon/aws-node-termination-handler:v1.10.0":"amazon/aws-node-termination-handler",
-        "amazon/cloudwatch-agent:1.247347.5b250583":"amazon/cloudwatch-agent",
         "busybox:latest" :"busybox",
         "k8s.gcr.io/autoscaling/cluster-autoscaler:v1.21.0":"cluster-autoscaler",
         "jimmidyson/configmap-reload:v0.5.0":"configmap-reload",
@@ -12,24 +10,18 @@
         "chankh/k8s-cloudwatch-adapter:v0.8.0":"k8s-cloudwatch-adapter",
         "kiwigrid/k8s-sidecar:1.10.7":"k8s-sidecar",
         "k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.5.0":"kube-state-metrics",
-        #"quay.io/prometheus/node-exporter:v1.3.1":"node-exporter",
-        #"quay.io/prometheus/prometheus:v2.39.1":"prometheus",
-        #"prom/pushgateway:v1.3.1":"pushgateway",
         "influxdb:1.8.6-alpine":"influxdb",
-        "amazon/aws-xray-daemon:latest":"aws-xray-daemon",
         "public.ecr.aws/sam/build-python3.7:1":"lambda-build:build-python3.7",
-        "amazon/aws-for-fluent-bit:2.10.0": "aws-for-fluent-bit"
+        "ghcr.io/kedacore/keda:2.10.0": "kedacore/keda:2.10.0",
+        "ghcr.io/kedacore/keda-metrics-apiserver:2.10.0": "kedacore/keda-metrics-apiserver:2.10.0",
+        "ghcr.io/kedacore/keda-admission-webhooks:2.10.0": "kedacore/keda-admission-webhooks:2.10.0"
     },
     "repository" : [
-        "alertmanager",
         "amazon/aws-node-termination-handler",
         "amazonlinux",
-        "amazon/cloudwatch-agent",
-        "aws-alb-ingress-controller",
         "awshpc",
         "awshpc-lambda",
         "awshpc-local",
-        "aws-for-fluent-bit",
         "busybox",
         "cluster-autoscaler",
         "configmap-reload",
@@ -40,11 +32,11 @@
         "kube-state-metrics",
         "lambda",
         "lambda-init",
-        "node-exporter",
-        "prometheus",
         "submitter",
         "influxdb",
-        "aws-xray-daemon",
-        "lambda-build"
+        "lambda-build",
+        "kedacore/keda-metrics-apiserver",
+        "kedacore/keda",
+        "kedacore/keda-admission-webhooks"
     ]
 }

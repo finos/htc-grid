@@ -25,7 +25,7 @@ apply: $(TF_SRCS) $(GRID_CONFIG)
 	terraform apply -var-file $(GRID_CONFIG) -var="grafana_admin_password=$(GRAFANA_ADMIN_PASSWORD)"
 
 destroy:
-	terraform destroy -var-file $(GRID_CONFIG)
+	terraform destroy  -var-file $(GRID_CONFIG)
 #########################################
 
 # execute terraform without confirmation

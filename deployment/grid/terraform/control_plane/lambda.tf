@@ -322,7 +322,6 @@ module "ttl_checker" {
   vpc_subnet_ids = var.vpc_private_subnet_ids
   vpc_security_group_ids = [var.vpc_default_security_group_id]
 
-  use_existing_cloudwatch_log_group = true
   environment_variables = {
     STATE_TABLE_NAME=var.ddb_state_table,
     STATE_TABLE_SERVICE=var.state_table_service,
@@ -342,16 +341,8 @@ module "ttl_checker" {
    tags = {
     service     = "htc-grid"
   }
-  depends_on = [
-    aws_cloudwatch_log_group.ttl_log
-  ]
-
 }
 
-resource "aws_cloudwatch_log_group" "ttl_log" {
-  name = "/aws/lambda/${var.lambda_name_ttl_checker}"
-  retention_in_days = 5
-}
 
 resource "aws_cloudwatch_event_rule" "ttl_checker_event_rule" {
   name                = "ttl_checker_event_rule-${local.suffix}"

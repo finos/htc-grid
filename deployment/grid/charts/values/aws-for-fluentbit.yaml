@@ -9,6 +9,8 @@ cloudWatch:
   enabled: true
   region: ${region}
 
+rbac:
+  pspEnabled: false
 
 firehose:
   enabled: false

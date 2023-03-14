@@ -31,7 +31,7 @@ resource null_resource "pull_python_env" {
     always_run = timestamp()
   }
   provisioner "local-exec" {
-    command = "docker pull ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda-build:build-${var.lambda_runtime}"
+    command = "docker pull  --platform linux/amd64 ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda-build:build-${var.lambda_runtime}"
   }
   depends_on = [
     null_resource.authenticate_to_ecr_repository,
@@ -43,11 +43,12 @@ resource null_resource "pull_python_env" {
 resource "null_resource" "copy_image" {
   for_each = var.image_to_copy
   triggers = {
-    state = "${each.key}-${each.value}"
+    state = "${each.key}-${each.value}",
+    always_run = timestamp()
   }
   provisioner "local-exec" {
     command = <<-EOT
-    if ! docker pull ${each.key}
+    if ! docker pull  --platform linux/amd64 ${each.key}
     then
       echo "cannot download image ${each.key}"
       exit 1

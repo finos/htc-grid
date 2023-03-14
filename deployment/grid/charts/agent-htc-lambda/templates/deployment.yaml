@@ -86,9 +86,12 @@ spec:
           {{- else }}
           args: ["-l", {{ .Values.lambda.layerName | quote }} ,"-v", {{ .Values.lambda.layerVersion | quote }}, "-r", {{ .Values.lambda.region | quote }},"-d", {{ .Values.lambda.mountPoint | quote }} ,"--storage","Layer"]
           {{- end }}
+#        - command: ["sleep","3600"]
           env:
           - name: LAYER_ROOT
             value: /var/task
+          - name: AWS_STS_REGIONAL_ENDPOINTS
+            value: regional
           image: "{{ .Values.imageGetLayer.repository }}:{{ .Values.imageGetLayer.version  }}"
           imagePullPolicy: {{ .Values.imageGetLayer.pullPolicy }}
           name: get-layer

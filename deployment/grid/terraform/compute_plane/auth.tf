@@ -23,7 +23,7 @@ resource "aws_cognito_user_pool_client" "client" {
   allowed_oauth_flows_user_pool_client = true
   generate_secret     = true
   allowed_oauth_flows = ["code"]
-  callback_urls  = ["https://${kubernetes_ingress.grafana_ingress.status.0.load_balancer.0.ingress.0.hostname}/oauth2/idpresponse"]
+  callback_urls  = ["https://${kubernetes_ingress_v1.grafana_ingress.status.0.load_balancer.0.ingress.0.hostname}/oauth2/idpresponse"]
   //callback_urls = ["https://example.com"]
   allowed_oauth_scopes = [
     "email", "openid"
@@ -58,7 +58,7 @@ resource "null_resource" "modify_ingress" {
   }
   depends_on = [
     module.eks_blueprints_kubernetes_addons,
-    kubernetes_ingress.grafana_ingress
+    kubernetes_ingress_v1.grafana_ingress
   ]
 }
 
