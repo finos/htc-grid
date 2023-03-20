@@ -41,4 +41,7 @@ jobs:
         run: |-
           pwd
           ls -l -a
+          cat new.out
+          cat main.out
+          echo "Differences"
           diff new.out main.out
