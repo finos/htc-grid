@@ -48,7 +48,7 @@ jobs:
           
       - name: Line Count Check
         run: |-
-          echo "FOO1=$(wc -l new.out)"
+          echo "FOO1=$(echo $GITHUB_SHA | cut -c 1-6)" >> $GITHUB_ENV
           echo "FOO2=$(wc -l main.out)"
         
       - name: Line Count Check2
