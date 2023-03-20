@@ -12,7 +12,7 @@ jobs:
       - name: Install Flake8
         run: |-
           pip3 install flake8
-      - run: ls
+      - run: ls -l -a
       - run: pwd
       - name: run flake8
         run: flake8 --config ./github/workflows/flake8.config
