@@ -7,9 +7,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:      
 
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
+
+
+      - name: Checkout tools repo
+        uses: actions/checkout@v3
         with:
-          ref: main
+          repository: awslabs/aws-htc-grid
+          path: main-branch
       
       - name: Install Flake8
         run: |-
