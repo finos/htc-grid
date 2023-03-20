@@ -25,12 +25,17 @@ jobs:
       - run: ls -l -a
       - run: pwd
       
+#       - name: run flake8 on the new branch
+#         run: flake8 --config ./new_branch/.github/workflows/flake8.config --exit-zero ./new_branch --output-file new.out
+
+#       - name: run flake8 on the new main
+#         run: flake8 --config ./new_branch/.github/workflows/flake8.config --exit-zero ./main-branch --output-file main.out
+        
       - name: run flake8 on the new branch
-        run: flake8 --config ./new_branch/.github/workflows/flake8.config --exit-zero ./new_branch --output-file new.out
+        run: cd ./new_branch/ && flake8 --config ./.github/workflows/flake8.config --exit-zero ./new_branch --output-file ./../new.out
 
       - name: run flake8 on the new main
-        run: flake8 --config ./new_branch/.github/workflows/flake8.config --exit-zero ./main-branch --output-file main.out
-        
+        run: cd ./main-branch/ && flake8 --config ./new_branch/.github/workflows/flake8.config --exit-zero ./main-branch --output-file ./../main.out
         
       - name: check
         run: |-
