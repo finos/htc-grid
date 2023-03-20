@@ -1,0 +1,16 @@
+name: Flake8
+on:  [push]
+
+jobs:
+  flake:    
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+      - uses: actions/checkout@v3
+      
+      - name: Install Flake8
+        run: |-
+          pip3 install flake8
+      - name: run flake8
+        run: flake8 --ignore  E501,W503,E131 --statistic
