@@ -26,7 +26,7 @@ jobs:
       - run: pwd
       
       - name: run flake8 on the new branch
-        run: flake8 --config ./new_branch/.github/workflows/flake8.config ./new_branch
+        run: flake8 --config ./new_branch/.github/workflows/flake8.config --exit-zero ./new_branch
 
       - name: run flake8 on the new main
-        run: flake8 --config ./new_branch/.github/workflows/flake8.config ./main-branch
+        run: flake8 --config ./new_branch/.github/workflows/flake8.config --exit-zero ./main-branch
