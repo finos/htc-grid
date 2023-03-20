@@ -13,4 +13,4 @@ jobs:
         run: |-
           pip3 install flake8
       - name: run flake8
-        run: flake8 --config ./aws-htc-grid/.github/workflows/flake8.config
+        run: flake8 --config ./github/workflows/flake8.config
