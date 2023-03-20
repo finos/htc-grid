@@ -8,9 +8,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        
-      - name: Checkout Destination
-        run: git checkout HEAD^ 
+      
+      - name: Checkout HEAD
+      - uses: actions/checkout@v3
+        with:
+          ref: main
       
       - name: Install Flake8
         run: |-
