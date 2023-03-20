@@ -45,7 +45,7 @@ jobs:
           cat new.out
           cat main.out
           echo "Differences"
-          diff new.out main.out || return 0
+          diff new.out main.out || true
           
       - name: Line Count Check
         run: |-
