@@ -35,7 +35,7 @@ jobs:
         run: cd ./new_branch/ && flake8 --config ./.github/workflows/flake8.config --exit-zero ./ --output-file ./../new.out && cd ./../
 
       - name: run flake8 on the new main
-        run: cd ./main-branch/ && flake8 --config ./new_branch/.github/workflows/flake8.config --exit-zero ./ --output-file ./../main.out && cd ./../
+        run: cd ./main-branch/ && flake8 --config ./../new_branch/.github/workflows/flake8.config --exit-zero ./ --output-file ./../main.out && cd ./../
         
       - name: check
         run: |-
