@@ -47,5 +47,12 @@ jobs:
           diff new.out main.out
           
       - name: Line Count Check
-        run:  $(wc -l new.out)" == "$(wc -l main.out)
+        run: |-
+          echo "FOO1=$(wc -l new.out)"
+          echo "FOO2=$(wc -l main.out)"
+        
+      - name: Line Count Check2
+        run: |-
+          echo $FOO1
+          echo $FOO2
         
