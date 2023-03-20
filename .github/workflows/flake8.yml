@@ -30,3 +30,10 @@ jobs:
 
       - name: run flake8 on the new main
         run: flake8 --config ./new_branch/.github/workflows/flake8.config --exit-zero ./main-branch --output-file main.out
+        
+        
+      - name: check
+        run: |-
+          pwd
+          ls -l -a
+          diff new.out main.out
