@@ -45,3 +45,7 @@ jobs:
           cat main.out
           echo "Differences"
           diff new.out main.out
+          
+      - name: Line Count Check
+        run: if [ "$(wc -l new.out)" == "$(wc -l main.out)" ]; then echo "Warning: No Match!"; fi
+        
