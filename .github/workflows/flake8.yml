@@ -48,7 +48,7 @@ jobs:
           
       - name: Line Count Check
         run: |-
-          echo 'if [ "$(wc -l new.out)" == "$(wc -l main.out)" ]; then echo "Warning No Match! exit 1"; fi exit 0' >> script.sh
+          echo 'if [ "$(wc -l new.out)" == "$(wc -l main.out)" ]; then echo "Warning No Match!"; exit 1; fi; exit 0' >> script.sh
         
         
       - name: Line Count Check2
