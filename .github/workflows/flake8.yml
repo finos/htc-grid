@@ -48,11 +48,11 @@ jobs:
           
       - name: Line Count Check
         run: |-
-          echo "FOO1=$(echo $GITHUB_SHA | cut -c 1-6)" >> $GITHUB_ENV
-          FOO2="$(wc -l main.out)"
+          echo 'if [ "$(wc -l new.out)" == "$(wc -l main.out)" ]; then echo "Warning No Match!"; fi' >> script.sh
+        
         
       - name: Line Count Check2
         run: |-
-          echo $FOO1
-          echo $FOO2
+          cat script.sh
+          bash ./script.sh
         
