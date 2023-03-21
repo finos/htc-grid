@@ -7,7 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NEW_BRANCH: new_branch
-      MAIN_BRANCH: main-branch
+      MAIN_BRANCH: main_branch
+      NEW_BRANCH_REPORT_FILE: new_branch_report_file
+      MAIN_BRANCH_REPORT_FILE: main_branch_report_file
     steps:      
 
       - name: Checkout
@@ -31,10 +33,10 @@ jobs:
       
      
       - name: run flake8 on the new branch
-        run: cd ./${{ env.NEW_BRANCH }}/ && flake8 --config ./.github/workflows/flake8.config --exit-zero ./ --output-file ./../new.out && cd ./../
+        run: cd ./${{ env.NEW_BRANCH }}/ && flake8 --config ./.github/workflows/flake8.config --exit-zero ./ --output-file ./../${{ env.NEW_BRANCH_REPORT_FILE }} && cd ./../
 
       - name: run flake8 on the new main
-        run: cd ./${{ env.MAIN_BRANCH }}/ && flake8 --config ./../new_branch/.github/workflows/flake8.config --exit-zero ./ --output-file ./../main.out && cd ./../
+        run: cd ./${{ env.MAIN_BRANCH }}/ && flake8 --config ./../${{ env.MAIN_BRANCH }}/.github/workflows/flake8.config --exit-zero ./ --output-file ./../${{ env.MAIN_BRANCH_REPORT_FILE }} && cd ./../
         
       - name: check
         run: |-
@@ -47,13 +49,13 @@ jobs:
           
       - name: Line Count Check
         run: |-
-          echo 'if [ "$(wc -l < new.out )" -lt "$(wc -l < main.out )" ]; then echo "Warning No Match!"; exit 1; fi; exit 0' >> script.sh
+          echo 'if [ "$(wc -l < $1 )" -lt "$(wc -l < $2 )" ]; then echo "Warning No Match!"; exit 1; fi; exit 0' >> script.sh
         
         
       - name: Line Count Check2
         run: |-
-          wc -l new.out
-          wc -l main.out
+          wc -l ${{ env.NEW_BRANCH_REPORT_FILE }}
+          wc -l ${{ env.MAIN_BRANCH_REPORT_FILE }}
           cat script.sh
-          bash ./script.sh
+          bash ./script.sh ${{ env.NEW_BRANCH_REPORT_FILE }}. ${{ env.MAIN_BRANCH_REPORT_FILE }}
         
