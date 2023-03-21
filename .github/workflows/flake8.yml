@@ -5,20 +5,23 @@ jobs:
   flake:    
 
     runs-on: ubuntu-latest
+    env:
+      NEW_BRANCH: new_branch
+      MAIN_BRANCH: main-branch
     steps:      
 
       - name: Checkout
         uses: actions/checkout@v3
         with: 
-          path: new_branch
+          path: "$NEW_BRANCH"
 
 
       - name: Checkout tools repo
         uses: actions/checkout@v3
         with:
           repository: awslabs/aws-htc-grid
-          path: main-branch
-          ref: gh-pages
+          path: "$MAIN_BRANCH"
+#           ref: gh-pages
       
       - name: Install Flake8
         run: |-
