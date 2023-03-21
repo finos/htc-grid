@@ -13,14 +13,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with: 
-          path: "$NEW_BRANCH"
+          path: $NEW_BRANCH
 
 
       - name: Checkout tools repo
         uses: actions/checkout@v3
         with:
           repository: awslabs/aws-htc-grid
-          path: "$MAIN_BRANCH"
+          path: $MAIN_BRANCH
 #           ref: gh-pages
       
       - name: Install Flake8
