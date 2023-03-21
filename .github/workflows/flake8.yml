@@ -36,7 +36,7 @@ jobs:
         run: cd ./${{ env.NEW_BRANCH }}/ && flake8 --config ./.github/workflows/flake8.config --exit-zero ./ --output-file ./../${{ env.NEW_BRANCH_REPORT_FILE }} && cd ./../
 
       - name: run flake8 on the new main
-        run: cd ./${{ env.MAIN_BRANCH }}/ && flake8 --config ./../${{ env.MAIN_BRANCH }}/.github/workflows/flake8.config --exit-zero ./ --output-file ./../${{ env.MAIN_BRANCH_REPORT_FILE }} && cd ./../
+        run: cd ./${{ env.MAIN_BRANCH }}/ && flake8 --config ./../${{ env.NEW_BRANCH }}/.github/workflows/flake8.config --exit-zero ./ --output-file ./../${{ env.MAIN_BRANCH_REPORT_FILE }} && cd ./../
         
       - name: check
         run: |-
@@ -45,7 +45,7 @@ jobs:
           cat new.out
           cat main.out
           echo "Differences"
-          diff new.out main.out || true
+          diff ${{ env.NEW_BRANCH_REPORT_FILE }} ${{ env.MAIN_BRANCH_REPORT_FILE }} || true
           
       - name: Line Count Check
         run: |-
