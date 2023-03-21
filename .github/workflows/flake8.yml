@@ -42,8 +42,8 @@ jobs:
         run: |-
           pwd
           ls -l -a
-          cat new.out
-          cat main.out
+          cat ${{ env.NEW_BRANCH_REPORT_FILE }}
+          cat ${{ env.MAIN_BRANCH_REPORT_FILE }}
           echo "Differences"
           diff ${{ env.NEW_BRANCH_REPORT_FILE }} ${{ env.MAIN_BRANCH_REPORT_FILE }} || true
           
