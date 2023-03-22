@@ -69,4 +69,4 @@ jobs:
           echo 'if [ "$(wc -l < $1 )" -gt "$(wc -l < $2 )" ]; then echo "Warning New branch has more errors!"; exit 1; fi; exit 0' >> script.sh
           ls -l -a
           bash ./script.sh ${{ env.NEW_BRANCH_REPORT_FILE }} ${{ env.MAIN_BRANCH_REPORT_FILE }}
-              
+
