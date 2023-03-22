@@ -31,8 +31,8 @@ jobs:
       
       - name: Install flake8
         run: |-
-          sudo pip3 install awscli --upgrade --quiet
-          sudo pip3 install cfn-lint --quiet              
+          pip3 install awscli 
+          pip3 install cfn-lint             
           sudo apt-get install jq git -y -q
           gem install cfn-nag
           ls -l -a
