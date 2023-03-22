@@ -64,7 +64,7 @@ jobs:
           name: ${{ env.DIFF_REPORTS_FILE }}
           path: ${{ env.DIFF_REPORTS_FILE }}
           
-      - name: Verify that the number of errors in the new branch does not exceeding the number of existing errors in the main branch.
+      - name: Verify that the number of errors in the new branch does not exceed the number of existing errors in the main branch.
         run: |-          
           echo 'if [ "$(wc -l < $1 )" -gt "$(wc -l < $2 )" ]; then echo "Warning New branch has more errors!"; exit 1; fi; exit 0' >> script.sh
           ls -l -a
