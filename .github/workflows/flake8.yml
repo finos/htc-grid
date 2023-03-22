@@ -1,4 +1,8 @@
-name: Flake8
+# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
+name: Tests-Flake8
 on: [push, pull_request]
 
 jobs:
@@ -12,36 +16,47 @@ jobs:
       MAIN_BRANCH_REPORT_FILE: main_branch_report_file
     steps:      
 
-      - name: Checkout
+      - name: Checkout the modified branch
         uses: actions/checkout@v3
         with: 
           path: ${{ env.NEW_BRANCH }}
 
-
-      - name: Checkout tools repo
+      - name: Checkout the main branch
         uses: actions/checkout@v3
         with:
           repository: awslabs/aws-htc-grid
           path: ${{ env.MAIN_BRANCH }}
 #           ref: gh-pages
       
-      - name: Install Flake8
+      - name: Install flake8
         run: |-
           pip3 install flake8
-      - run: ls -l -a
-      - run: pwd
+          ls -l -a
+          pwd
       
      
-      - name: run flake8 on the new branch
+      - name: Run flake8 on the new branch
         run: cd ./${{ env.NEW_BRANCH }}/ && flake8 --config ./.github/workflows/flake8.config --exit-zero ./ --output-file ./../${{ env.NEW_BRANCH_REPORT_FILE }} && cd ./../
 
-      - name: run flake8 on the new main
+      - name: Run flake8 on the main branch
         run: cd ./${{ env.MAIN_BRANCH }}/ && flake8 --config ./../${{ env.NEW_BRANCH }}/.github/workflows/flake8.config --exit-zero ./ --output-file ./../${{ env.MAIN_BRANCH_REPORT_FILE }} && cd ./../
         
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.NEW_BRANCH_REPORT_FILE }}
+          path: ${{ env.NEW_BRANCH_REPORT_FILE }}
+          
+
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.MAIN_BRANCH_REPORT_FILE }}
+          path: ${{ env.MAIN_BRANCH_REPORT_FILE }}
+          
+          
       - name: check
         run: |-
-          pwd
-          ls -l -a
           cat ${{ env.NEW_BRANCH_REPORT_FILE }}
           cat ${{ env.MAIN_BRANCH_REPORT_FILE }}
           echo "Differences"
