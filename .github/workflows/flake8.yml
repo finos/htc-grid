@@ -56,13 +56,13 @@ jobs:
           
       - name: check
         run: |-
-          diff ${{ env.NEW_BRANCH_REPORT_FILE }} ${{ env.MAIN_BRANCH_REPORT_FILE }} >> ${{ env.DIFF_REPORTS }} || true
+          diff ${{ env.NEW_BRANCH_REPORT_FILE }} ${{ env.MAIN_BRANCH_REPORT_FILE }} >> ${{ env.DIFF_REPORTS_FILE }} || true
           
       - name: Save diff reports
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.DIFF_REPORTS }}
-          path: ${{ env.DIFF_REPORTS }}
+          name: ${{ env.DIFF_REPORTS_FILE }}
+          path: ${{ env.DIFF_REPORTS_FILE }}
           
       - name: Verify that the number of errors in the new branch does not exceeding the number of existing errors in the main branch.
         run: |-
