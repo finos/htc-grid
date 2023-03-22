@@ -27,7 +27,7 @@ jobs:
         with:
           repository: awslabs/aws-htc-grid
           path: ${{ env.MAIN_BRANCH }}
-          ref: gh-pages
+#           ref: gh-pages
       
       - name: Install flake8
         run: |-
