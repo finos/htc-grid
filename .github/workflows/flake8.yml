@@ -27,7 +27,7 @@ jobs:
         with:
           repository: awslabs/aws-htc-grid
           path: ${{ env.MAIN_BRANCH }}
-#           ref: gh-pages
+          ref: gh-pages
       
       - name: Install flake8
         run: |-
@@ -66,6 +66,6 @@ jobs:
           
       - name: Verify that the number of errors in the new branch does not exceeding the number of existing errors in the main branch.
         run: |-
-          echo 'if [ "$(wc -l < $1 )" -lt "$(wc -l < $2 )" ]; then echo "Warning No Match!"; exit 1; fi; exit 0' >> script.sh
+          echo 'if [ "$(wc -l < $1 )" -lt "$(wc -l < $2 )" ]; then echo "Warning New branch has more errors!"; exit 1; fi; exit 0' >> script.sh
           bash ./script.sh ${{ env.NEW_BRANCH_REPORT_FILE }}. ${{ env.MAIN_BRANCH_REPORT_FILE }}
               
