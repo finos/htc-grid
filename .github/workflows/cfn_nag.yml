@@ -34,7 +34,7 @@ jobs:
           pip3 install awscli 
           pip3 install cfn-lint             
           sudo apt-get install jq git -y -q
-          gem install cfn-nag
+          sudo gem install cfn-nag
           ls -l -a
           pwd
           
