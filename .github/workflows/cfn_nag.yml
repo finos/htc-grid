@@ -6,7 +6,7 @@ name: Tests-CFN-Nag
 on: [push, pull_request]
 
 jobs:
-  flake:    
+  CFN_Nag:    
 
     runs-on: ubuntu-latest
     env:
@@ -29,7 +29,7 @@ jobs:
           path: ${{ env.MAIN_BRANCH }}
 #           ref: gh-pages
       
-      - name: Install flake8
+      - name: Install CFN_Nag
         run: |-
           pip3 install awscli 
           pip3 install cfn-lint             
@@ -39,10 +39,14 @@ jobs:
           pwd
           
       - name: Run CFN_Nag on the new branch
-        run: cd ./${{ env.NEW_BRANCH }}/ && cfn_nag_scan --input-path ./deployment/dev_environment_cloud9/cfn/  >> ./../${{ env.NEW_BRANCH_REPORT_FILE }} || true && cd ./../
+        run: |-
+          cd ./${{ env.NEW_BRANCH }}/ && cfn_nag_scan --input-path ./deployment/dev_environment_cloud9/cfn/  >> ./../${{ env.NEW_BRANCH_REPORT_FILE }} || true && cd ./../
+          cd ./${{ env.NEW_BRANCH }}/ && cfn_nag_scan --input-path ./deployment/init_grid/cloudformation/  >> ./../${{ env.NEW_BRANCH_REPORT_FILE }} || true && cd ./../
 
       - name: Run CFN_Nag on the main branch
-        run: cd ./${{ env.MAIN_BRANCH }}/ && cfn_nag_scan --input-path ./deployment/dev_environment_cloud9/cfn/ >> ./../${{ env.MAIN_BRANCH_REPORT_FILE }} || true && cd ./../
+        run: |-
+          cd ./${{ env.MAIN_BRANCH }}/ && cfn_nag_scan --input-path ./deployment/dev_environment_cloud9/cfn/ >> ./../${{ env.MAIN_BRANCH_REPORT_FILE }} || true && cd ./../
+          cd ./${{ env.MAIN_BRANCH }}/ && cfn_nag_scan --input-path ./deployment/init_grid/cloudformation/ >> ./../${{ env.MAIN_BRANCH_REPORT_FILE }} || true && cd ./../
         
       - name: Save report results for the new branch
         uses: actions/upload-artifact@v3
