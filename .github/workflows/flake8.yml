@@ -69,10 +69,3 @@ jobs:
           echo 'if [ "$(wc -l < $1 )" -lt "$(wc -l < $2 )" ]; then echo "Warning No Match!"; exit 1; fi; exit 0' >> script.sh
           bash ./script.sh ${{ env.NEW_BRANCH_REPORT_FILE }}. ${{ env.MAIN_BRANCH_REPORT_FILE }}
               
-#       - name: Line Count Check2
-#         run: |-
-#           wc -l ${{ env.NEW_BRANCH_REPORT_FILE }}
-#           wc -l ${{ env.MAIN_BRANCH_REPORT_FILE }}
-#           cat script.sh
-#           bash ./script.sh ${{ env.NEW_BRANCH_REPORT_FILE }}. ${{ env.MAIN_BRANCH_REPORT_FILE }}
-        
