@@ -77,14 +77,6 @@ export class GrafanaStack extends cdk.NestedStack {
       chart: "grafana",
       repository: "https://grafana.github.io/helm-charts/",
       release: "grafana",
-      // assetValues: [
-      //   new asset.Asset(this, "GrafanaPlacement", {
-      //     path: path.join(__dirname, "./grafana_placement_conf.yaml"),
-      //   }),
-      //   new asset.Asset(this, "GrafanaDashboard", {
-      //     path: path.join(__dirname, "./grafana_dashboard_k8s.yaml"),
-      //   }),
-      // ],
       values: {
         ...grafanaPlacementConfiguration,
         ...grafanaDashboardConfiguration,
