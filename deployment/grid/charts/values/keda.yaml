@@ -4,6 +4,15 @@
 env:
   - name : AWS_STS_REGIONAL_ENDPOINTS
     value: regional
+  - name: AWS_REGION
+    value: eu-central-1
+
+podSecurityContext:
+  operator:
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001
+    fsGroup: 1001
 
 image:
   keda:

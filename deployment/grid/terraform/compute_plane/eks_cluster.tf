@@ -20,6 +20,14 @@ module "eks" {
   # create_node_security_group    = false
 
   node_security_group_additional_rules = {
+    keda_metrics_server_access = {
+      description                   = "Cluster access to keda metrics"
+      protocol                      = "tcp"
+      from_port                     = 6443
+      to_port                       = 6443
+      type                          = "ingress"
+      source_cluster_security_group = true
+    }
     # Extend node-to-node security group rules. Recommended and required for the Add-ons
     ingress_dns_tcp = {
       description = "Node to node DNS(TCP)"
