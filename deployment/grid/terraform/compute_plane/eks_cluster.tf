@@ -10,13 +10,14 @@ module "eks" {
   cluster_name    = var.cluster_name
   cluster_version = var.kubernetes_version
   private_subnet_ids = var.vpc_private_subnet_ids
-  map_roles = [
+
+  map_roles = concat(var.input_role,[
     {
       rolearn  = aws_iam_role.role_lambda_drainer.arn
       username = "lambda"
       groups   = ["system:masters"]
     }
-  ]
+  ])
   # create_node_security_group    = false
 
   node_security_group_additional_rules = {
@@ -253,7 +254,6 @@ module "htc_agent_irsa" {
   eks_cluster_id = module.eks.eks_cluster_id
   eks_oidc_provider_arn = module.eks.eks_oidc_provider_arn
   irsa_iam_policies = [aws_iam_policy.agent_permissions.arn]
-  irsa_iam_role_name = "IrsaForHTCAgentRole"
   kubernetes_namespace = "default"
   kubernetes_service_account = "htc-agent-sa"
 }
