@@ -31,6 +31,7 @@ destroy:
 # execute terraform without confirmation
 #########################################
 auto-apply: $(TF_SRCS) $(GRID_CONFIG)
+	terraform apply -auto-approve -var-file $(GRID_CONFIG) -var="grafana_admin_password=$(GRAFANA_ADMIN_PASSWORD)" -target module.compute_plane.aws_iam_policy.eks_pull_through_cache_permission -target module.compute_plane.aws_iam_policy.agent_permissions
 	terraform apply -auto-approve -no-color -var-file $(GRID_CONFIG) -var="grafana_admin_password=$(GRAFANA_ADMIN_PASSWORD)"
 auto-destroy:
 	terraform destroy -auto-approve -no-color -var-file $(GRID_CONFIG)
