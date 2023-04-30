@@ -5,7 +5,7 @@ The high throughput compute grid project (HTC-Grid) is a container based cloud n
 
 ### When should I use HTC-Grid ?
 HTC-Grid should be used when the following criteria are meet:
-1. A high task throughput is required (from 250 to 10,000+ tasks per second).
+1. A high task throughput is required (from 250 to 30,000+ tasks per second).
 2. The tasks are loosely coupled.
 3. Variable workloads (tasks with heterogeneous execution times) are expected and the solution needs to dynamically scale with the load.
 
