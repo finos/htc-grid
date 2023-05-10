@@ -1,11 +1,6 @@
 # Default values for keda.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-env:
-  - name : AWS_STS_REGIONAL_ENDPOINTS
-    value: regional
-  - name: AWS_REGION
-    value: eu-central-1
 
 podSecurityContext:
   operator:

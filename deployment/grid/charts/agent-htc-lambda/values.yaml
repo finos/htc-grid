@@ -16,7 +16,7 @@ imageAgent:
 
 imageLambdaServer:
   runtime: provided
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
 imageGetLayer:
   pullPolicy: IfNotPresent
