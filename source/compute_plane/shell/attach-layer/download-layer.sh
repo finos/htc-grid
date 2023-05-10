@@ -140,7 +140,7 @@ else
     fi
 fi
 
-if ! unzip layer.zip
+if ! unzip -o layer.zip
 then
     echo "failed while unzipping the layer"
     echo "curl -o layer.zip $url"

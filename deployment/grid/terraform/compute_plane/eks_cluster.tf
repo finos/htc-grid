@@ -6,7 +6,7 @@
 
 
 module "eks" {
-  source  = "github.com/aws-ia/terraform-aws-eks-blueprints"
+  source  = "github.com/aws-ia/terraform-aws-eks-blueprints?ref=v4.20.0"
   cluster_name    = var.cluster_name
   cluster_version = var.kubernetes_version
   private_subnet_ids = var.vpc_private_subnet_ids
