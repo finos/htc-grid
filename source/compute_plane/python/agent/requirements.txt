@@ -8,3 +8,4 @@ aws-xray-sdk
 psutil
 ../../dist/api-0.1-py3-none-any.whl
 ../../dist/utils-0.1-py3-none-any.whl
+urllib3==1.26.15

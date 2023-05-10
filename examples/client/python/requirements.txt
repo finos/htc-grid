@@ -2,3 +2,4 @@
 ./../../../dist/python/publicapi-1.0.0-py3-none-any.whl
 ./../../../dist/python/api-0.1-py3-none-any.whl
 ./../../../dist/python/utils-0.1-py3-none-any.whl
+urllib3==1.26.15

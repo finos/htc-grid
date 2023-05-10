@@ -8,6 +8,7 @@ flake8
 boto3
 pytest-cov
 urllib3_mock
+urllib3==1.26.15
 warrant_lite
 apscheduler
 mkdocs
