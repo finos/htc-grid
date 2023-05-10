@@ -56,8 +56,10 @@ $(PUBLIC_PACKAGE_TARGET): $(GENERATED)/python/public_api/setup.py
 ###########################################
 install-private-package: $(PRIVATE_PACKAGE_TARGET)
 	pip install --force-reinstall $(PRIVATE_PACKAGE_TARGET)
+	pip install 'urllib3==1.26.15' --force-reinstall
 
 install-public-package: $(PUBLIC_PACKAGE_TARGET)
 	pip install --force-reinstall $(PUBLIC_PACKAGE_TARGET)
+	pip install 'urllib3==1.26.15' --force-reinstall
 
 install-packages: install-private-package install-public-package

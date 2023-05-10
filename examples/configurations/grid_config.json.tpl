@@ -23,6 +23,14 @@
         "min_size"            : 0,
         "max_size"            : 3,
         "desired_size"    : 0
+      },
+      {
+              "node_group_name"         : "worker-medium-spot",
+              "instance_types" : ["m5.4xlarge","m5d.4xlarge", "m5a.4xlarge"],
+              "capacity_type"       : "spot",
+              "min_size"            : 0,
+              "max_size"            : 3,
+              "desired_size"    : 0
       }
   ],
   "agent_configuration": {
@@ -35,7 +43,7 @@
       "runtime": "provided"
     }
   },
-  "enable_private_subnet" : {{enable_private_subnet}},
+  "enable_private_subnet" : false,
   "vpc_cidr_block_public" :24,
   "vpc_cidr_block_private" :18,
   "input_role":[
