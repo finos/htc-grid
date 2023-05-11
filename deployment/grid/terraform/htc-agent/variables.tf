@@ -147,7 +147,7 @@ variable "lambda_configuration_location" {
   description = "The location of the S3 bucket"
 }
 
-variable "lambda_configuration_region" {
+variable "region" {
   type = string
   description = "The region of the Lambda Layer"
   default = "eu-west-1"
