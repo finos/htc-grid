@@ -122,9 +122,9 @@ module "vpc_endpoints" {
 
     api_gateway = {
       service = "execute-api"
-      private_dns_enabled = var.enable_private_subnet
-      subnet_ids = var.enable_private_subnet == true ? module.vpc.private_subnets : []
-      security_group_ids = var.enable_private_subnet == true ? [module.vpc.default_security_group_id] : []
+      private_dns_enabled = true
+      subnet_ids =  module.vpc.private_subnets
+      security_group_ids =  [module.vpc.default_security_group_id]
     }
 
     ssm = {
