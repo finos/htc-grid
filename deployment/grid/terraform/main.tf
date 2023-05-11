@@ -211,6 +211,7 @@ module "control_plane" {
 
 module "htc_agent" {
     source = "./htc-agent"
+    region = var.region
     agent_chart_url = lookup(var.agent_configuration,"agent_chart_url",local.default_agent_configuration.agent_chart_url)
     termination_grace_period =  var.graceful_termination_delay
     agent_image_tag = lookup(lookup(var.agent_configuration,"agent",local.default_agent_configuration.agent),"tag",local.default_agent_configuration.agent.tag)

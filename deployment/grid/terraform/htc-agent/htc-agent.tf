@@ -176,7 +176,7 @@ resource "helm_release" "htc_agent" {
 
   set {
     name  = "hpa.metric.region"
-    value = var.lambda_configuration_region
+    value = var.region
   }
 
   set {
