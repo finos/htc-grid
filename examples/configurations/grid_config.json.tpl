@@ -25,12 +25,12 @@
         "desired_size"    : 0
       },
       {
-              "node_group_name"         : "worker-medium-spot",
-              "instance_types" : ["m5.4xlarge","m5d.4xlarge", "m5a.4xlarge"],
-              "capacity_type"       : "spot",
-              "min_size"            : 0,
-              "max_size"            : 3,
-              "desired_size"    : 0
+         "node_group_name"         : "worker-large-spot",
+         "instance_types" : ["m5.4xlarge","m5d.4xlarge", "m5a.4xlarge"],
+         "capacity_type"       : "spot",
+         "min_size"            : 0,
+         "max_size"            : 3,
+         "desired_size"    : 0
       }
   ],
   "agent_configuration": {
