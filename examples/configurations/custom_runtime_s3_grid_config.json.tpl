@@ -35,7 +35,7 @@
       "runtime": "provided"
     }
   },
-  "enable_private_subnet" : false,
+  "enable_private_subnet" : {{enable_private_subnet}},
   "vpc_cidr_block_public" :24,
   "vpc_cidr_block_private" :18,
   "input_role":[
