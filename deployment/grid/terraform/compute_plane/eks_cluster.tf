@@ -30,6 +30,15 @@ module "eks" {
       source_cluster_security_group = true
     }
     # Extend node-to-node security group rules. Recommended and required for the Add-ons
+
+    ingress_keda_apiservice = {
+      description = "apiservice for Keda"
+      type        = "ingress"
+      self        = true
+      from_port   = 9666
+      to_port     = 9666
+      protocol    = "tcp"
+    }
     ingress_dns_tcp = {
       description = "Node to node DNS(TCP)"
       protocol    = "tcp"
