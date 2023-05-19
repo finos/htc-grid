@@ -7,12 +7,6 @@ locals {
 }
 
 resource "aws_cognito_user_pool" "htc_pool" {
-  account_recovery_setting {
-    recovery_mechanism {
-      name     = "verified_email"
-      priority = 1
-    }
-  }
   name = "htc_pool"
   account_recovery_setting {
     recovery_mechanism {
