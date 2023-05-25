@@ -21,7 +21,7 @@ locals {
         ],[
           {
             node_group_name = "operational-worker-ondemand",
-            instance_types = ["m5.xlarge","m4.xlarge","m5d.xlarge"],
+            instance_types = ["m6a.xlarge","m6i.xlarge","m6idn.xlarge","m6in.xlarge","m5.xlarge"],
             capacity_type          = "ON_DEMAND",
             additional_iam_policies = [
               "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
