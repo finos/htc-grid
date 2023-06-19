@@ -30,7 +30,7 @@
     "@types/js-yaml": "^4.0.2",
     "@types/lodash": "^4.14.182",
     "@types/node-forge": "^0.10.2",
-    "aws-cdk-lib": "^2.0.0",
+    "aws-cdk-lib": "^2.80.0",
     "constructs": "^10.0.0",
     "fs-extra": "^10.0.0",
     "generate-password": "^1.7.0",
