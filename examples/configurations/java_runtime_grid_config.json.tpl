@@ -32,7 +32,7 @@
       "minMemory": "1200",
       "maxMemory": "1900",
       "location" : "s3://{{workload_bucket_name}}/lambda.zip",
-      "runtime": "python3.8",
+      "runtime": "java",
       "lambda_handler_file_name" : "{{java_file_handler}}",
       "lambda_handler_function_name" : "{{java_function_handler}}"
     }

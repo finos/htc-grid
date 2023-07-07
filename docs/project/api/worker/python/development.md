@@ -1,7 +1,7 @@
 
 # Developing Python3 Worker Function
 
-HTC-Grid comes with examples demonstrating how to build Python3 and C++ based Worker functions.
+HTC-Grid comes with examples demonstrating how to build Python3, Java, and C++ based Worker functions.
 The diagram below outlines the relationship between the Agent and the Worker function following Python3 example.
 
 ![ComputeEnvArchitecture](../../../images/developmentPy.png)

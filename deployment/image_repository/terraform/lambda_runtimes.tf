@@ -87,3 +87,31 @@ resource null_resource "push_dotnet50" {
     null_resource.build_dotnet50
   ]
 }
+
+#########################################
+##### build and push java runtime #####
+#########################################
+resource null_resource "build_java" {
+  triggers = {
+    always_run = timestamp()
+  }
+  provisioner "local-exec" {
+    command = "docker build --build-arg HTCGRID_REGION=${var.region} --build-arg HTCGRID_ACCOUNT=${data.aws_caller_identity.current.account_id} -t ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda:java -f ../lambda_runtimes/Dockerfile.java17 ../lambda_runtimes"
+  }
+  # depends_on = [
+  #   null_resource.authenticate_to_ecr_public_repository
+  # ]
+}
+
+resource null_resource "push_java" {
+  triggers = {
+    always_run = timestamp()
+  }
+  provisioner "local-exec" {
+    command = "docker push ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda:java"
+  }
+  depends_on = [
+    null_resource.authenticate_to_ecr_repository,
+    null_resource.build_java
+  ]
+}
