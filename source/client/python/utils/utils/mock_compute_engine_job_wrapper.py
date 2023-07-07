@@ -3,6 +3,7 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 import json
 
+
 class MockComputeEngineJobWrapper:
 
     def __init__(self, worker_arguments, n_tasks_per_job, payload_options):
