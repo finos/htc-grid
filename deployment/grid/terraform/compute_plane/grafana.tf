@@ -1,7 +1,7 @@
 # Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
- 
+
 resource "tls_private_key" "alb_certificate" {
   algorithm = "RSA"
   rsa_bits = 4096
@@ -112,6 +112,7 @@ resource "kubernetes_ingress_v1" "grafana_ingress" {
   depends_on = [
     #kubernetes_namespace.grafana,
     module.eks_blueprints_kubernetes_addons,
+    module.eks_blueprints_kubernetes_addons_for_alb
   ]
   provisioner "local-exec" {
     when    = destroy
@@ -132,11 +133,12 @@ resource "kubernetes_config_map" "dashboard" {
     "htc-metrics.json" = file("${path.module}/htc-dashboard.json")
     "kubernetes-metrics.json" = file("${path.module}/kubernetes-dashboard.json")
   }
-  
+
   depends_on = [
     #kubernetes_namespace.grafana,
     aws_iam_server_certificate.alb_certificate,
-    module.eks_blueprints_kubernetes_addons
+    module.eks_blueprints_kubernetes_addons,
+    module.eks_blueprints_kubernetes_addons_for_alb
   ]
 
 }

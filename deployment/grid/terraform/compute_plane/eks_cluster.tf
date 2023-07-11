@@ -153,7 +153,7 @@ data "aws_eks_cluster_auth" "cluster" {
 }
 
 module "eks_blueprints_kubernetes_addons" {
-  source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons?ref=v4.32.0"
+  source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons?ref=v4.32.1"
 
   eks_cluster_id       = module.eks.eks_cluster_id
   eks_cluster_endpoint = data.aws_eks_cluster.cluster.endpoint
@@ -184,15 +184,6 @@ module "eks_blueprints_kubernetes_addons" {
       account_id       = data.aws_caller_identity.current.account_id
       kube_state_metrics_tag = var.prometheus_configuration.kube_state_metrics_tag
       configmap_reload_tag = var.prometheus_configuration.configmap_reload_tag
-    })]
-  }
-
-  enable_aws_load_balancer_controller = true
-  aws_load_balancer_controller_helm_config = {
-    service_account = "aws-lb-sa"
-    values = [templatefile("${path.module}/../../charts/values/aws-alb-controller.yaml", {
-      region = var.region
-      eks_cluster_id =  module.eks.eks_cluster_id
     })]
   }
 
@@ -240,6 +231,45 @@ module "eks_blueprints_kubernetes_addons" {
       k8s_keda_version = var.k8s_keda_version
     })]
   }
+
+#  enable_aws_cloudwatch_metrics = true
+#  aws_cloudwatch_metrics_helm_config = {
+#    values = [
+#      templatefile("${path.module}/../../charts/values/aws-cloudwatch-metrics.yaml", {
+#        aws_htc_ecr    = var.aws_htc_ecr
+#        eks_cluster_id = module.eks.eks_cluster_id
+#      })
+#    ]
+#  }
+
+  depends_on = [
+    null_resource.patch_coredns
+  ]
+}
+
+module "eks_blueprints_kubernetes_addons_for_alb" {
+  source = "aws-ia/eks-blueprints-addons/aws"
+
+  #eks_cluster_id       = module.eks.eks_cluster_id
+  #eks_cluster_endpoint = data.aws_eks_cluster.cluster.endpoint
+  #eks_oidc_provider    = replace(data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer, "https://", "")
+  #eks_cluster_version  = data.aws_eks_cluster.cluster.version
+
+  cluster_name      = module.eks.eks_cluster_id
+  cluster_endpoint  = module.eks.eks_cluster_endpoint
+  cluster_version   = module.eks.eks_cluster_version
+  oidc_provider_arn = module.eks.eks_oidc_provider_arn
+  enable_aws_load_balancer_controller = true
+
+  aws_load_balancer_controller = {
+    service_account = "aws-lb-sa"
+    values = [templatefile("${path.module}/../../charts/values/aws-alb-controller.yaml", {
+      region = var.region
+      eks_cluster_id =  module.eks.eks_cluster_id
+    })]
+  }
+
+
 
 #  enable_aws_cloudwatch_metrics = true
 #  aws_cloudwatch_metrics_helm_config = {
