@@ -1,7 +1,6 @@
 # Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
-import json
 
 
 class MockComputeEngineJobWrapper:
@@ -11,9 +10,6 @@ class MockComputeEngineJobWrapper:
         self.payload_options = payload_options
         self.n_tasks_per_job = n_tasks_per_job
 
-        # This is a simple optional check, to make sure that the response that we have received
-        # is matching the request that is being sent. Worker Lambda is responsible to place an expected "check" value
-        # in the lambda response for verification.
         self.expected_output_string = ""
 
     def form_dict_task_definition(self):
@@ -46,8 +42,6 @@ class MockComputeEngineJobWrapper:
 
     def verify_results(self, stdout):
 
-        res = json.loads(stdout)
-
-        if res["check"] != self.expected_output_string:
+        if stdout.rstrip() != self.expected_output_string:
             return False, "Expected: [{}] != Received [{}]".format(self.expected_output_string, stdout.rstrip())
         return True, ""
