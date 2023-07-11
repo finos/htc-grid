@@ -153,7 +153,7 @@ data "aws_eks_cluster_auth" "cluster" {
 }
 
 module "eks_blueprints_kubernetes_addons" {
-  source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons?ref=v4.32.1"
+  source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons?ref=v4.32.0"
 
   eks_cluster_id       = module.eks.eks_cluster_id
   eks_cluster_endpoint = data.aws_eks_cluster.cluster.endpoint
