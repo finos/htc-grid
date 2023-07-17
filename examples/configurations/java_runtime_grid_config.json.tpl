@@ -7,13 +7,13 @@
   "dynamodb_default_read_capacity" : 10,
   "dynamodb_default_write_capacity" : 10,
   "eks_worker_groups" : [
-      {
+       {
         "node_group_name"         : "worker-small-spot",
         "instance_types" : ["m5.xlarge","m5d.xlarge","m5a.xlarge"],
         "capacity_type"       : "spot",
         "min_size"            : 0,
         "max_size"            : 3,
-        "desired_size"    : 2
+        "desired_size"    : 1
 
       },
       {
@@ -23,14 +23,6 @@
         "min_size"            : 0,
         "max_size"            : 3,
         "desired_size"    : 0
-      },
-      {
-         "node_group_name"         : "worker-large-spot",
-         "instance_types" : ["m5.4xlarge","m5d.4xlarge", "m5a.4xlarge"],
-         "capacity_type"       : "spot",
-         "min_size"            : 0,
-         "max_size"            : 3,
-         "desired_size"    : 0
       }
   ],
   "agent_configuration": {
@@ -40,7 +32,9 @@
       "minMemory": "1200",
       "maxMemory": "1900",
       "location" : "s3://{{workload_bucket_name}}/lambda.zip",
-      "runtime": "provided"
+      "runtime": "java",
+      "lambda_handler_file_name" : "{{java_file_handler}}",
+      "lambda_handler_function_name" : "{{java_function_handler}}"
     }
   },
   "enable_private_subnet" : {{enable_private_subnet}},
