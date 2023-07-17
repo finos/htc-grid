@@ -11,7 +11,7 @@
         "node_group_name"         : "worker-small-spot",
         "instance_types" : ["m5.xlarge","m5d.xlarge","m5a.xlarge"],
         "capacity_type"       : "spot",
-        "min_size"            : 2,
+        "min_size"            : 0,
         "max_size"            : 3,
         "desired_size"    : 2
 
