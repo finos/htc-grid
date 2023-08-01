@@ -1,7 +1,8 @@
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
- 
+
+
 resource "aws_elasticache_cluster" "stdin-stdout-cache" {
   cluster_id           = "stdin-stdout-cache-${lower(local.suffix)}"
   engine               = "redis"
@@ -12,11 +13,10 @@ resource "aws_elasticache_cluster" "stdin-stdout-cache" {
   port                 = 6379
   security_group_ids   = [aws_security_group.allow_incoming_redis.id]
   subnet_group_name    = "stdin-stdout-cache-subnet-${lower(local.suffix)}"
-  
-  depends_on = [
-    aws_elasticache_subnet_group.io_redis_subnet_group
-  ]
+
+  depends_on = [aws_elasticache_subnet_group.io_redis_subnet_group]
 }
+
 
 resource "aws_elasticache_subnet_group" "io_redis_subnet_group" {
   name       = "stdin-stdout-cache-subnet-${lower(local.suffix)}"
@@ -54,6 +54,4 @@ resource "aws_elasticache_parameter_group" "cache-config" {
     name  = "maxmemory-policy"
     value = "allkeys-lru"
   }
-
 }
-

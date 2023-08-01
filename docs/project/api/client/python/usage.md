@@ -113,12 +113,12 @@ Details:
                 value: "1"
         restartPolicy: Never
         nodeSelector:
-            grid/type: Operator
+            htc/node-type: core
         tolerations:
         - effect: NoSchedule
-            key: grid/type
+            key: htc/node-type
             operator: Equal
-            value: Operator
+            value: core
         volumes:
             - name: agent-config-volume
             configMap:

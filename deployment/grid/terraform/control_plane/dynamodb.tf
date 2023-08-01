@@ -1,11 +1,13 @@
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
+
 module "dynamodb_table" {
-  source = "terraform-aws-modules/dynamodb-table/aws"
-  version = "3.1.2"
-  name   = var.ddb_state_table
+  source  = "terraform-aws-modules/dynamodb-table/aws"
+  version = "~> 3.0"
+
+  name = var.ddb_state_table
 
   read_capacity  = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_read_capacity : null
   write_capacity = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_write_capacity : null
@@ -42,8 +44,6 @@ module "dynamodb_table" {
       type = "S"
     },
 
-
-
     #  {
     #   name = "task_owner"
     #   type = "S"
@@ -74,10 +74,7 @@ module "dynamodb_table" {
     #   name = "parent_session_id"
     #   type = "S"
     # }
-
   ]
-
-
 
   global_secondary_indexes = [
     {
@@ -100,7 +97,6 @@ module "dynamodb_table" {
     }
 
   ]
-
 
   autoscaling_read = {
     scale_in_cooldown  = 300

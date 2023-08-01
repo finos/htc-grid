@@ -1,5 +1,5 @@
 +++
-title = "Failure detection & recovery"
+title = "Failure detection & Recovery"
 weight = 40
 +++
 

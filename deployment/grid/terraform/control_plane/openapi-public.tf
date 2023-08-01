@@ -1,17 +1,17 @@
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
 resource "aws_api_gateway_rest_api" "htc_grid_public_rest_api" {
-  name        = "openapi-${var.cluster_name}-public"
-  body = jsonencode(yamldecode(templatefile("../../../source/control_plane/openapi/public/api_definition.yaml",{
-    region = var.region
-    account_id = data.aws_caller_identity.current.account_id
-    cancel_lambda_name = module.cancel_tasks.lambda_function_name
+  name = "openapi-${var.cluster_name}-public"
+  body = jsonencode(yamldecode(templatefile("../../../source/control_plane/openapi/public/api_definition.yaml", {
+    region                  = var.region
+    account_id              = data.aws_caller_identity.current.account_id
+    cancel_lambda_name      = module.cancel_tasks.lambda_function_name
     submit_task_lambda_name = module.submit_task.lambda_function_name
-    get_result_lambda_name = module.get_results.lambda_function_name
-    cognito_userpool_arn = var.cognito_userpool_arn
+    get_result_lambda_name  = module.get_results.lambda_function_name
+    cognito_userpool_arn    = var.cognito_userpool_arn
   })))
   endpoint_configuration {
     types = ["REGIONAL"]
@@ -22,13 +22,13 @@ resource "aws_api_gateway_rest_api" "htc_grid_public_rest_api" {
 resource "aws_api_gateway_deployment" "htc_grid_public_deployment" {
   rest_api_id = aws_api_gateway_rest_api.htc_grid_public_rest_api.id
   triggers = {
-    redeployment = templatefile("../../../source/control_plane/openapi/public/api_definition.yaml",{
-      region = var.region
-      account_id = data.aws_caller_identity.current.account_id
-      cancel_lambda_name = module.cancel_tasks.lambda_function_name
+    redeployment = templatefile("../../../source/control_plane/openapi/public/api_definition.yaml", {
+      region                  = var.region
+      account_id              = data.aws_caller_identity.current.account_id
+      cancel_lambda_name      = module.cancel_tasks.lambda_function_name
       submit_task_lambda_name = module.submit_task.lambda_function_name
-      get_result_lambda_name = module.get_results.lambda_function_name
-      cognito_userpool_arn = var.cognito_userpool_arn
+      get_result_lambda_name  = module.get_results.lambda_function_name
+      cognito_userpool_arn    = var.cognito_userpool_arn
     })
   }
 
@@ -50,6 +50,7 @@ resource "aws_lambda_permission" "openapi_htc_grid_apigw_public_lambda_permissio
   source_arn = "${aws_api_gateway_rest_api.htc_grid_public_rest_api.execution_arn}/*/*"
 }
 
+
 resource "aws_lambda_permission" "openapi_htc_grid_public_apigw_lambda_permission_result" {
   statement_id  = "AllowPublicResultAPIGatewayInvoke-${local.suffix}"
   action        = "lambda:InvokeFunction"
@@ -61,6 +62,7 @@ resource "aws_lambda_permission" "openapi_htc_grid_public_apigw_lambda_permissio
   source_arn = "${aws_api_gateway_rest_api.htc_grid_public_rest_api.execution_arn}/*/*"
 }
 
+
 resource "aws_lambda_permission" "openapi_htc_grid_apigw_public_lambda_permission_cancel" {
   statement_id  = "AllowPublicCancelAPIGatewayInvoke-${local.suffix}"
   action        = "lambda:InvokeFunction"
@@ -71,5 +73,3 @@ resource "aws_lambda_permission" "openapi_htc_grid_apigw_public_lambda_permissio
   # within the API Gateway REST API.
   source_arn = "${aws_api_gateway_rest_api.htc_grid_public_rest_api.execution_arn}/*/*"
 }
-
-

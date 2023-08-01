@@ -4,7 +4,7 @@ chapter: false
 weight: 90
 ---
 
-Great ! HTC-Grid has been deployed and now we can run a few tasks. The default installation of HTC-Grid comes with a [python test client application](https://github.com/ruecarlo/aws-htc-grid/blob/main/examples/client/python/client.py) that runs a [C++ test worker](https://github.com/ruecarlo/aws-htc-grid/tree/main/examples/workloads/c%2B%2B/mock_computation).
+Great! HTC-Grid has been deployed and now we can run a few tasks. The default installation of HTC-Grid comes with a [python test client application](https://github.com/ruecarlo/aws-htc-grid/blob/main/examples/client/python/client.py) that runs a [C++ test worker](https://github.com/ruecarlo/aws-htc-grid/tree/main/examples/workloads/c%2B%2B/mock_computation).
 
 Before we exectute the job, let's to the following, on your IDE, open two more terminals.
 

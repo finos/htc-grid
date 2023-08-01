@@ -5,7 +5,7 @@ Metadata:
   Author:
     Description: Pierre-Louis Gounod <gpilouis@amazon.com>
   License:
-    Description: 'Copyright 2021 Amazon.com, Inc. and its affiliates. All Rights Reserved.
+    Description: 'Copyright 2023 Amazon.com, Inc. and its affiliates. All Rights Reserved.
 
             Licensed under the Apache License, Version 2.0 (the "License");
             you may not use this file except in compliance with the License.
@@ -30,27 +30,27 @@ Parameters:
   C9KubectlVersion:
     Description: kubectl Version to install on Cloud9
     Type: String
-    Default: v1.21.0
+    Default: v1.25.12
     ConstraintDescription: Must be a valid kubectl version
   C9TerraformVersion:
     Description: Terraform Version to install on Cloud9
     Type: String
-    Default: 1.0.0
+    Default: 1.5.4
     ConstraintDescription: Must be a valid terraform version
   C9EKSctlVersion:
     Description: Cloud9 instance eksctl version
     Type: String
-    Default: 0.43.0
+    Default: 0.150.0
     ConstraintDescription: Must be a valid eksctl version
   C9HelmVersion:
     Description: Helm Version to install on Cloud9
     Type: String
-    Default: v3.5.3
+    Default: v3.12.2
     ConstraintDescription: Must be a valid helm version
-  HTCgridVersion:
+  HTCGridVersion:
     Description: HTC Grid Version to install on Cloud9
     Type: String
-    Default: 0.3.5
+    Default: 0.4.0
     ConstraintDescription: Must be a valid HTC Grid version
   #Used only by Event Engine, if you are self-deploying the stack leave the default value to NONE
   EETeamRoleArn:
@@ -343,8 +343,9 @@ Resources:
                 - sudo growpart /dev/nvme0n1 1
                 - sudo xfs_growfs -d /
                 - echo "=== Downloading HTC-Grid project ==="
-                - !Sub 'export HTCGRID_VERSION=${HTCgridVersion}'
-                - curl --silent --location -o /home/ec2-user/environment/aws-htc-grid.tar.gz "https://github.com/awslabs/aws-htc-grid/archive/refs/tags/v${HTCGRID_VERSION}.tar.gz"
+                - !Sub 'export HTCGRID_VERSION=${HTCGridVersion}'
+                - if [ "${HTCGRID_VERSION}" == "main" ]; then export HTCGRID_URI_REF="heads/main"; else export HTCGRID_URI_REF="tags/v${HTCGRID_VERSION}"; fi
+                - curl --silent --location -o /home/ec2-user/environment/aws-htc-grid.tar.gz "https://github.com/awslabs/aws-htc-grid/archive/refs/${HTCGRID_URI_REF}.tar.gz"
                 - cd /home/ec2-user/environment; tar xzvf aws-htc-grid.tar.gz
                 - mv aws-htc-grid-${HTCGRID_VERSION}/ aws-htc-grid
                 - sudo chown -R ec2-user:ec2-user /home/ec2-user/environment/

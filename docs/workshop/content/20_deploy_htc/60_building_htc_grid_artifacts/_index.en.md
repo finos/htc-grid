@@ -18,10 +18,11 @@ A few notes on this command:
  - If `TAG` is omitted then mainline will be the chosen has a default value.
  - If `REGION` is omitted then eu-west-1 will be used.
 
- Once the command above gets executed, A folder named `generated` will be created at `~/environment/aws-htc-grid/generated`. This folder should contain the following two important files:
+ Once the command above gets executed, A folder named `generated` will be created at `~/environment/aws-htc-grid/generated`. This folder will contain some important files, like the following:
 
-* **grid_config.json**: A configuration file for the grid with basic setting
-* **single-task-test.yaml**:  A kubernetes job that can be used to test the installation and submit a single task.
+* **grid_config.json**: A configuration file that contains the deployment settings for HTC-Grid.
+* **single-task-test.yaml**:  A Kubernetes job that can be used to test the installation and submit a single task.
+* **batch-task-test.yaml**:  A Kubernetes job that can be used to test the installation and submit multiple sessions of tasks.
 
 ## Configuring HTC-Grid Runtime
 
@@ -51,28 +52,33 @@ The `~/environment/aws-htc-grid/generated/grid_config.json` file contains the co
 Using EKS as the Compute Plane allows us to use EC2 Spot Instances. Amazon EC2 Spot Instances offer spare compute capacity available in the AWS cloud at steep discounts compared to On-Demand instances. Spot Instances enable you to optimize your costs on the AWS cloud and scale your application’s throughput up to 10X for the same budget.
 
 
-Given that we will use Kubernetes [Cluster Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler) we create two node groups each with instances of the same size. You can read more about [EKS and Spot best practices here](https://aws.amazon.com/blogs/compute/cost-optimization-and-resilience-eks-with-spot-instances/)
+Given that we will use Kubernetes [Cluster Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler) we create the following node groups each with instances of the same size. You can read more about [EKS and Spot best practices here](https://aws.amazon.com/blogs/compute/cost-optimization-and-resilience-eks-with-spot-instances/)
 
 {{< highlight json "linenos=table,linenostart=9" >}}
   "eks_worker_groups" : [
       {
-        "name"                    : "worker-small-spot",
-        "override_instance_types" : ["m5.xlarge","m4.xlarge","m5d.xlarge","m5a.xlarge"],
-        "spot_instance_pools"     : 0,
-        "asg_min_size"            : 0,
-        "asg_max_size"            : 3,
-        "asg_desired_capacity"    : 1,
-        "on_demand_base_capacity" : 0
+        "node_group_name" : "worker-small-spot",
+        "instance_types"  : ["m6i.xlarge", "m6id.xlarge", "m6a.xlarge", "m6in.xlarge", "m5.xlarge","m5d.xlarge","m5a.xlarge", "m5ad.xlarge", "m5n.xlarge"],
+        "capacity_type"   : "SPOT",
+        "min_size"        : 1,
+        "max_size"        : 3,
+        "desired_size"    : 1
       },
       {
-        "name"                    : "worker-medium-spot",
-        "override_instance_types" : ["m5.2xlarge","m5d.2xlarge", "m5a.2xlarge","m4.2xlarge"],
-        "spot_instance_pools"     : 0,
-        "asg_min_size"            : 0,
-        "asg_max_size"            : 3,
-        "asg_desired_capacity"    : 0,
-        "on_demand_base_capacity" : 0
-
+        "node_group_name" : "worker-medium-spot",
+        "instance_types"  : ["m6i.4xlarge", "m6id.4xlarge", "m6a.4xlarge", "m6in.4xlarge", "m5.4xlarge","m5d.4xlarge","m5a.4xlarge", "m5ad.4xlarge", "m5n.4xlarge"],
+        "capacity_type"   : "SPOT",
+        "min_size"        : 0,
+        "max_size"        : 3,
+        "desired_size"    : 0
+      },
+      {
+         "node_group_name" : "worker-large-spot",
+         "instance_types"  : ["m6i.8xlarge", "m6id.8xlarge", "m6a.8xlarge", "m6in.8xlarge", "m5.8xlarge","m5d.8xlarge","m5a.8xlarge", "m5ad.8xlarge", "m5n.8xlarge"],
+         "capacity_type"   : "SPOT",
+         "min_size"        : 0,
+         "max_size"        : 3,
+         "desired_size"    : 0
       }
   ],
 {{< / highlight >}}
@@ -90,30 +96,26 @@ Finally the last section of the file. We have highlighted a section that defines
 
 Note also how the location of the lambda points to the `lambda.zip` that we just created by executing the `make` command above.
 
-{{< highlight json "linenos=table,hl_lines=1-10,linenostart=30" >}}
+{{< highlight json "linenos=table,hl_lines=1-10,linenostart=35" >}}
   "agent_configuration": {
     "lambda": {
-      "minCPU": "800",
-      "maxCPU": "900",
+      "minCPU"   : "800",
+      "maxCPU"   : "900",
       "minMemory": "1200",
       "maxMemory": "1900",
-      "location" : "s3://main-lambda-unit-htc-grid-2b8838c8eecc/lambda.zip",
-      "runtime": "provided"
+      "location" : "s3://main-lambda-unit-htc-grid-0d7b1b70/lambda.zip",
+      "runtime"  : "provided"
     }
   },
-  "enable_private_subnet" : true,
-  "vpc_cidr_block_public" :["10.0.192.0/24", "10.0.193.0/24", "10.0.194.0/24"],
-  "vpc_cidr_block_private" :["10.0.0.0/18","10.0.64.0/18", "10.0.128.0/18"],
+  "enable_private_subnet"  : true,
+  "vpc_cidr_block_public"  : 24,
+  "vpc_cidr_block_private" : 18,
   "input_role":[
       {
-        "rolearn"  : "arn:aws:iam::021436251583:role/Admin",
+        "rolearn"  : "arn:aws:iam::XXXXXXXXXXXXXX:role/Admin",
         "username" : "lambda",
         "groups"   : ["system:masters"]
       }
   ]
 }
 {{< / highlight >}}
-
-
-
-

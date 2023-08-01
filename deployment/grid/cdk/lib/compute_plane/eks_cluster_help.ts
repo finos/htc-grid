@@ -141,13 +141,13 @@ export class EksClusterHelperStack extends cdk.NestedStack {
         new ec2.InstanceType("m5d.xlarge"),
       ],
       labels: {
-        "grid/type": "Operator",
+        "htc/node-type": "core",
       },
       taints: [
         {
           effect: eks.TaintEffect.NO_SCHEDULE,
-          key: "grid/type",
-          value: "Operator",
+          key: "htc/node-type",
+          value: "core",
         },
       ],
     });

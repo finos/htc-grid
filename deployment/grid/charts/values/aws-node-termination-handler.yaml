@@ -1,6 +1,7 @@
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
 enableSqsTerminationDraining: true
 enablePrometheusServer: true
 
@@ -8,15 +9,10 @@ image:
   repository: ${aws_htc_ecr}/ecr-public/aws-ec2/aws-node-termination-handler
 
 tolerations:
-  - key: "grid/type"
+  - key: "htc/node-type"
     operator: "Equal"
-    value: "Operator"
+    value: "core"
     effect: "NoSchedule"
 
 rbac:
   pspEnabled: false
-
-
-
-
-

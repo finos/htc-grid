@@ -20,6 +20,8 @@ the EKS IAM authentication, so we will disable it and rely on the IAM role inste
 
 ## Configuring Workspaces credentials
 
+Disabling Cloud9 managed credentials can be achieved using the following point and click steps, or running the command further below.
+
 - Return to your workspace and click the sprocket, or launch a new tab to open the Preferences tab
 - Select **AWS SETTINGS**
 - Turn off **AWS managed temporary credentials**
@@ -27,9 +29,12 @@ the EKS IAM authentication, so we will disable it and rely on the IAM role inste
 
 {{< img "c9disableiam.png" "Disable Cloud9 IAM">}}
 
+The above can easily be achieved by running this command in your Cloud9 terminal:
+```
+aws cloud9 update-environment --environment-id ${C9_PID} --managed-credentials-action DISABLE
+```
 
-To ensure temporary credentials aren't already in place we will also remove
-any existing credentials file:
+To ensure that we don't use any temporary credentials, we will also remove any existing credentials file:
 ```
 rm -vf ${HOME}/.aws/credentials
 ```
@@ -40,7 +45,6 @@ Use the [GetCallerIdentity](https://docs.aws.amazon.com/cli/latest/reference/sts
 
 ```
 aws sts get-caller-identity
-
 ```
 
 
@@ -62,9 +66,9 @@ If the _Arn_ contains the role name from above and an Instance ID, you may proce
 
 #### Validating the IAM Role when running on your own
 
-The output assumed-role name should contain:
+The output assumed-role name should contain the name you chose for your CloudFormation stack at the [Deploying Cloud9 Workspace]({{< ref "20_deploy_htc/10_self_paced/_index.en.md#deploying-cloud9-workspace" >}}) section:
 ```
-htc-worskhop-admin
+htc-grid-workshop
 ```
 
 If the _Arn_ contains the role name from above and an Instance ID, you may proceed.
@@ -73,7 +77,7 @@ If the _Arn_ contains the role name from above and an Instance ID, you may proce
 {
     "Account": "123456789012", 
     "UserId": "AROA1SAMPLEAWSIAMROLE:i-01234567890abcdef", 
-    "Arn": "arn:aws:sts::123456789012:assumed-role/eksworkshop-admin/i-01234567890abcdef"
+    "Arn": "arn:aws:sts::123456789012:assumed-role/htc-grid-workshop-C9Role-XXXXXXXXXXXXXXXX/i-01234567890abcdef"
 }
 ```
 

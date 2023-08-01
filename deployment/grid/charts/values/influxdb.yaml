@@ -1,0 +1,39 @@
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
+persistence:
+    enabled: false
+
+image:
+    repository: "${aws_htc_ecr}/influxdb"
+    tag: "1.8.6-alpine"
+
+service:
+    type: "LoadBalancer"
+    annotations: 
+        "service.beta.kubernetes.io/aws-load-balancer-internal": "true"
+        "service.beta.kubernetes.io/aws-load-balancer-type": "nlb"
+
+nodeSelector:
+  htc/node-type: "core"
+
+tolerations:
+  - key: "htc/node-type"
+    operator: "Equal"
+    value: "core"
+    effect: "NoSchedule"
+
+resources: 
+  requests:
+    memory: 2048Mi
+    cpu: 2
+  limits:
+    memory: 4096Gi
+    cpu: 4
+
+initScripts:
+  enabled: true
+  scripts:
+    init.iql: |+
+      CREATE DATABASE "measurementsdb"

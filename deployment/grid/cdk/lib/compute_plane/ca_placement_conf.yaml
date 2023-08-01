@@ -1,4 +1,4 @@
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
@@ -17,10 +17,10 @@ resources:
     memory: 1000Mi
 
 nodeSelector:
-  grid/type: "Operator"
+  htc/node-type: "core"
 
 tolerations:
-  - key: "grid/type"
+  - key: "htc/node-type"
     operator: "Equal"
-    value: "Operator"
+    value: "core"
     effect: "NoSchedule"

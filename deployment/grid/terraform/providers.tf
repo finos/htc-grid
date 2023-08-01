@@ -1,4 +1,4 @@
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
@@ -28,7 +28,7 @@ terraform {
       version = "~> 4.0.4"
     }
     archive = {
-      source = "hashicorp/archive"
+      source  = "hashicorp/archive"
       version = "2.2.0"
     }
   }
@@ -39,7 +39,7 @@ provider "tls" {
 }
 
 provider "aws" {
-  region  = var.region
+  region = var.region
 }
 
 provider "archive" {
@@ -47,19 +47,19 @@ provider "archive" {
 
 provider "kubernetes" {
   host                   = module.compute_plane.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.compute_plane.certificate_authority.0.data)
-  token                  = module.compute_plane.token
+  cluster_ca_certificate = base64decode(module.compute_plane.certificate_authority)
+  //token                  = module.compute_plane.token
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
     command     = "aws"
     # This requires the awscli to be installed locally where Terraform is executed
-    args        = [
+    args = [
       "--region",
       var.region,
       "eks",
       "get-token",
       "--cluster-name",
-      var.cluster_name,
+      module.compute_plane.cluster_name,
     ]
   }
 }
@@ -69,8 +69,21 @@ provider "helm" {
   helm_driver = "configmap"
   kubernetes {
     host                   = module.compute_plane.cluster_endpoint
-    cluster_ca_certificate = base64decode(module.compute_plane.certificate_authority.0.data)
-    token                  = module.compute_plane.token
+    cluster_ca_certificate = base64decode(module.compute_plane.certificate_authority)
+    //token                  = module.compute_plane.token
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "aws"
+      # This requires the awscli to be installed locally where Terraform is executed
+      args = [
+        "--region",
+        var.region,
+        "eks",
+        "get-token",
+        "--cluster-name",
+        module.compute_plane.cluster_name,
+      ]
+    }
   }
 }
 
