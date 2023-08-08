@@ -43,6 +43,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - Add template file and generation for submitting a batch of multi-session tasks instead of copying/replacing at runtime of the workshop. Adjust docs/workshop accordingly.
 
 ### Cloud9:
+- Fix issues with Cloud9 deploy script causing failed installations of pre-requisite components.
 - Update default versions for all pre-requisites for the Cloud9 environment to the latest versions.
 - Add support for using main (i.e. downloading the current HEAD version of the repo) as a value for `HTCGridVersion` when deploying the Cloud9 environment.
 

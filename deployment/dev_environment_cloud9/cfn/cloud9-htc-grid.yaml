@@ -30,7 +30,7 @@ Parameters:
   C9KubectlVersion:
     Description: kubectl Version to install on Cloud9
     Type: String
-    Default: v1.25.12
+    Default: 1.25.12
     ConstraintDescription: Must be a valid kubectl version
   C9TerraformVersion:
     Description: Terraform Version to install on Cloud9
@@ -40,12 +40,12 @@ Parameters:
   C9EKSctlVersion:
     Description: Cloud9 instance eksctl version
     Type: String
-    Default: 0.150.0
+    Default: 0.151.0
     ConstraintDescription: Must be a valid eksctl version
   C9HelmVersion:
     Description: Helm Version to install on Cloud9
     Type: String
-    Default: v3.12.2
+    Default: 3.12.2
     ConstraintDescription: Must be a valid helm version
   HTCGridVersion:
     Description: HTC Grid Version to install on Cloud9
@@ -295,60 +295,208 @@ Resources:
             inputs:
               runCommand:
                 - "#!/bin/bash"
-                - date
-                - . /home/ec2-user/.bashrc
-                - whoami
-                - !Sub 'echo "export KUBECTL_VERSION=${C9KubectlVersion}"'
-                - sudo -H -u ec2-user aws sts get-caller-identity
-                - echo '=== INSTALL kubectl ==='
-                - !Sub 'export KUBECTL_VERSION=${C9KubectlVersion}'
-                - sudo curl --silent --location -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-                - sudo chmod +x /usr/local/bin/kubectl
-                - echo '=== Install JQ and envsubst ==='
-                - sudo yum -y install jq gettext unzip
-                - echo '=== Update to the latest AWS CLI ==='
-                - sudo -H -u ec2-user aws --version
-                - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                - unzip awscliv2.zip
-                - sudo ./aws/install
-                - . /home/ec2-user/.bash_profile
-                - sudo -H -u ec2-user aws --version
-                - echo '=== setup AWS configs ==='
-                - rm -vf /home/ec2-user/.aws/credentials
-                - export ACCOUNT_ID=$(aws sts get-caller-identity --output text --query Account)
-                - export AWS_REGION=$(curl -s 169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')
-                - echo "export ACCOUNT_ID=${ACCOUNT_ID}" >> /home/ec2-user/.bash_profile
-                - echo "export AWS_REGION=${AWS_REGION}" >> /home/ec2-user/.bash_profile
-                - sudo -H -u ec2-user aws configure set default.region ${AWS_REGION}
-                - sudo -H -u ec2-user aws configure get default.region
-                - sudo -H -u ec2-user aws sts get-caller-identity
-                - echo '=== Install EKSCTL ==='
-                - !Sub 'export EKSCTL_VERSION=${C9EKSctlVersion}'
-                - curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/${EKSCTL_VERSION}/eksctl_Linux_amd64.tar.gz" | tar xz -C /tmp
-                - sudo mv -v /tmp/eksctl /usr/local/bin
-                - echo '=== Install Terraform ==='
-                - !Sub 'export TERRAFORM_VERSION=${C9TerraformVersion}'
-                - curl --silent --location -o /tmp/terraform.zip "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_386.zip"
-                - unzip /tmp/terraform.zip -d /tmp/terraform
-                - sudo chmod +x /tmp/terraform/terraform
-                - sudo mv -v /tmp/terraform/terraform /usr/local/bin/terraform
-                - echo '=== Install HELM ==='
-                - !Sub 'export HELM_VERSION=${C9HelmVersion}'
-                - mkdir -p /tmp/helm
-                - curl --silent --location -o /tmp/helm.tar.gz "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz"
-                - tar -zxf /tmp/helm.tar.gz -C /tmp/helm/
-                - sudo chmod +x /tmp/helm/linux-amd64/helm
-                - sudo cp /tmp/helm/linux-amd64/helm /usr/local/bin/
-                - echo '=== Increasing Volume Capacity ==='
-                - sudo growpart /dev/nvme0n1 1
-                - sudo xfs_growfs -d /
-                - echo "=== Downloading HTC-Grid project ==="
-                - !Sub 'export HTCGRID_VERSION=${HTCGridVersion}'
-                - if [ "${HTCGRID_VERSION}" == "main" ]; then export HTCGRID_URI_REF="heads/main"; else export HTCGRID_URI_REF="tags/v${HTCGRID_VERSION}"; fi
-                - curl --silent --location -o /home/ec2-user/environment/aws-htc-grid.tar.gz "https://github.com/awslabs/aws-htc-grid/archive/refs/${HTCGRID_URI_REF}.tar.gz"
-                - cd /home/ec2-user/environment; tar xzvf aws-htc-grid.tar.gz
-                - mv aws-htc-grid-${HTCGRID_VERSION}/ aws-htc-grid
-                - sudo chown -R ec2-user:ec2-user /home/ec2-user/environment/
+
+                - !Sub 'export KUBECTL_VERSION="${C9KubectlVersion}"'
+                - !Sub 'export EKSCTL_VERSION="${C9EKSctlVersion}"'
+                - !Sub 'export TERRAFORM_VERSION="${C9TerraformVersion}"'
+                - !Sub 'export HELM_VERSION="${C9HelmVersion}"'
+                - !Sub 'export HTCGRID_VERSION="${HTCGridVersion}"'
+
+                - |
+                  #source /home/ec2-user/.bashrc
+
+                  echo -e "========================================================"
+                  echo -e " Starting the Cloud9 instance boostrap at: $(date)"
+                  echo -e "========================================================"
+                  echo -e "\n"
+  
+                  echo -e "========================================================"
+                  echo -e "                 Checking user identity"
+                  echo -e "========================================================"
+                  echo -e "[INFO] Running as OS user: $(whoami)"
+                  echo -e "[INFO] Running with the following IAM Role:"
+                  sudo -H -u ec2-user aws sts get-caller-identity
+                  echo -e "========================================================"
+                  echo -e "\n\n"
+
+                  echo -e "========================================================"
+                  echo -e "              Increasing volume capacity"
+                  echo -e "========================================================"
+                  if sudo growpart /dev/nvme0n1 1; then sudo xfs_growfs -d /; fi
+                  echo -e "========================================================"
+                  echo -e "\n\n"
+
+
+                  echo -e "========================================================"
+                  echo -e "            Setting up temporary directory"
+                  echo -e "========================================================"
+                  export TMP_DIR="$(mktemp -d)"
+                  if [[ "${TMP_DIR}" != "/tmp/"* ]]; then
+                    export TMP_DIR="/tmp";
+                  fi
+                  echo -e "[INFO] All the packages will be temporarily downloaded to ${TMP_DIR}"
+                  echo -e "========================================================"
+                  echo -e "\n\n"
+
+                  echo -e "========================================================"
+                  echo -e "                  Installing kubectl"
+                  echo -e "========================================================"
+                  sudo curl --silent --location \
+                              -o "${TMP_DIR}/kubectl" \
+                              "https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+
+                  sudo chmod +x "${TMP_DIR}/kubectl"
+                  sudo mv "${TMP_DIR}/kubectl" "/usr/local/bin/kubectl"
+                  if kubectl > /dev/null 2>&1; then
+                    echo -e "[INFO] Successfully installed [$(which kubectl)] with version:\n$(kubectl version --client=true)"; 
+                  else 
+                    echo -e "[ERROR] Failed to install kubectl.."; 
+                  fi
+                  echo -e "========================================================"
+                  echo -e "\n\n"
+
+
+                  echo -e "========================================================"
+                  echo -e "                 Installing jq and envsubst"
+                  echo -e "========================================================"
+                  sudo yum -y install jq gettext unzip
+                  echo -e "========================================================"
+                  echo -e "\n\n"
+
+
+                  echo -e "========================================================"
+                  echo -e "          Updating AWS CLI to the latest version"
+                  echo -e "========================================================"
+                  sudo -H -u ec2-user aws --version
+                  curl --silent --location \
+                        -o "${TMP_DIR}/awscliv2.zip" \
+                        "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+
+                  unzip -q "${TMP_DIR}/awscliv2.zip" -d "${TMP_DIR}/awscli"
+                  sudo "${TMP_DIR}/awscli/aws/install" --update
+                  source /home/ec2-user/.bash_profile
+
+                  if aws --version > /dev/null 2>&1; then
+                    echo -e "[INFO] Successfully installed [$(which aws)] with version:\n$(aws --version)";
+                  else
+                    echo -e "[ERROR] Failed to install awscli..";
+                  fi
+                  echo -e "========================================================"
+                  echo -e "\n\n"
+
+                  echo -e "========================================================"
+                  echo -e "                 Setting up AWS Configs"
+                  echo -e "========================================================"
+                  rm -rvf /home/ec2-user/.aws/credentials
+                  export ACCOUNT_ID="$(aws sts get-caller-identity --output text --query Account)"
+                  export AWS_REGION="$(curl -s 169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')"
+
+                  if ! grep -q 'ACCOUNT_ID' ~/.bash_profile; then
+                    echo -e "export ACCOUNT_ID=\"${ACCOUNT_ID}\"" >> /home/ec2-user/.bash_profile;
+                  else
+                    echo -e "ACCOUNT_ID already exists in the file;
+                  fi
+
+                  if ! grep -q 'AWS_REGION' ~/.bash_profile; then
+                    echo -e "export AWS_REGION=\"${AWS_REGION}\"" >> /home/ec2-user/.bash_profile;
+                  else
+                    echo -e "AWS_REGION already exists in the file;
+                  fi
+
+                  sudo -H -u ec2-user aws configure set default.region "${AWS_REGION}" > /dev/null 2>&1
+                  sudo -H -u ec2-user aws configure get default.region
+                  echo -e "[INFO] Running with the following IAM Role:"
+                  sudo -H -u ec2-user aws sts get-caller-identity
+                  echo -e "========================================================"
+                  echo -e "\n\n"
+
+
+                  echo -e "========================================================"
+                  echo -e "                   Installing eksctl"
+                  echo -e "========================================================"
+                  curl --silent --location \
+                        -o "${TMP_DIR}/eksctl_Linux_amd64.tar.gz" \
+                        "https://github.com/weaveworks/eksctl/releases/download/v${EKSCTL_VERSION}/eksctl_Linux_amd64.tar.gz"
+
+                  tar -zxf "${TMP_DIR}/eksctl_Linux_amd64.tar.gz" -C "${TMP_DIR}/"
+                  chmod +x "${TMP_DIR}/eksctl"
+                  sudo mv "${TMP_DIR}/eksctl" /usr/local/bin/eksctl
+                  if eksctl > /dev/null 2>&1; then
+                    echo -e "[INFO] Successfully installed $(which eksctl) with version:\n$(eksctl version)";
+                  else
+                    echo -e "[ERROR] Failed to install eksctl..";
+                  fi
+                  echo -e "========================================================"
+                  echo -e "\n\n"
+
+
+                  echo -e "========================================================"
+                  echo -e "                   Installing Terraform"
+                  echo -e "========================================================"
+                  curl --silent --location \
+                        -o "${TMP_DIR}/terraform.zip" \
+                        "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
+
+                  unzip -q "${TMP_DIR}/terraform.zip" -d "${TMP_DIR}/terraform"
+                  sudo chmod +x "${TMP_DIR}/terraform/terraform"
+                  sudo mv "${TMP_DIR}/terraform/terraform" "/usr/local/bin/terraform"
+                  if terraform version > /dev/null 2>&1; then
+                    echo -e "[INFO] Successfully installed [$(which terraform)] with version:\n$(terraform version | head -1)";
+                  else
+                    echo -e "[ERROR] Failed to install terraform..";
+                  fi
+                  echo -e "========================================================"
+                  echo -e "\n\n"
+
+
+                  echo -e "========================================================"
+                  echo -e "                     Installing Helm"
+                  echo -e "========================================================"
+                  curl --silent --location \
+                        -o "${TMP_DIR}/helm.tar.gz" \
+                        "https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz"
+
+                  mkdir -p "${TMP_DIR}/helm"
+                  tar -zxf "${TMP_DIR}/helm.tar.gz" -C "${TMP_DIR}/helm/"
+                  sudo chmod +x "${TMP_DIR}/helm/linux-amd64/helm"
+                  sudo mv "${TMP_DIR}/helm/linux-amd64/helm" "/usr/local/bin/"
+                  if helm > /dev/null 2>&1; then
+                    echo -e "[INFO] Successfully installed [$(which helm)] with version:\n$(helm version)";
+                  else
+                    echo -e "[ERROR] Failed to install helm..";
+                  fi
+                  echo -e "========================================================"
+                  echo -e "\n\n"
+
+
+                  echo -e "========================================================"
+                  echo -e "                   Downloading HTC-Grid"
+                  echo -e "========================================================"
+                  if [ "${HTCGRID_VERSION}" == "main" ]; then 
+                    export HTCGRID_URI_REF="heads/main";
+                  else
+                    export HTCGRID_URI_REF="tags/v${HTCGRID_VERSION}";
+                  fi
+
+                  curl --silent --location \
+                        -o "/home/ec2-user/environment/aws-htc-grid.tar.gz" \
+                        "https://github.com/awslabs/aws-htc-grid/archive/refs/${HTCGRID_URI_REF}.tar.gz"
+
+                  cd /home/ec2-user/environment; tar -zxf aws-htc-grid.tar.gz
+                  if [ ! -e "aws-htc-grid" ]; then
+                    mv "aws-htc-grid-${HTCGRID_VERSION}" "aws-htc-grid";
+                    echo -e "[INFO] Successfully downloaded HTC-Grid to [~/environment/aws-htc-grid] with version:\n${HTCGRID_VERSION}"
+                  else
+                    echo -e "[ERROR] Directory [~/environment/aws-htc-grid] already exists! Skipping the rename ...";
+                  fi
+                  sudo chown -R ec2-user:ec2-user "/home/ec2-user/environment/"
+                  echo -e "========================================================"
+                  echo -e "\n\n"
+
+                  echo -e "========================================================"
+                  echo -e " Completed instance boostrap process at: $(date)"
+                  echo -e "========================================================"
+
   C9BootstrapAssociation:
     Type: AWS::SSM::Association
     DependsOn:
