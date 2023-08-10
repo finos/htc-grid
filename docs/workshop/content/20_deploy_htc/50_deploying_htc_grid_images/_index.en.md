@@ -19,13 +19,13 @@ HTC-Grid uses a few open source project with container images stored at Dockerhu
 1. Go into the terraform image deployment directory. This contains the terraform project that will help to create a copy of the required images to your ECR repository. The following command will go to the `~/environment/aws-htc-grid/deployment/image_repository/terraform` and initialize the terraform project using the bucket `$S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME` as the bucket that will hold the terraform state:
 
     ```
-    make init-images  TAG=$TAG REGION=$HTCGRID_REGION
+    make init-images TAG=$TAG REGION=$HTCGRID_REGION
     ```
 
 1. If successful, you can now run terraform apply to create the HTC-Grid infrastructure. This can take between 10 and 15 minutes depending on the Internet connection.
 
     ```
-    make transfer-images  TAG=$TAG REGION=$HTCGRID_REGION
+    make transfer-images TAG=$TAG REGION=$HTCGRID_REGION
     ```
 {{% notice note %}}
 The execution of this command will prompt for `yes` to continue. Just type yes, for the command to proceed
@@ -41,3 +41,11 @@ The following command will list the repositories You can check which repositorie
 aws ecr describe-repositories --query "repositories[*].repositoryUri"
 ```
 
+{{% notice note %}}
+The above `transfer-images` command builds and stores your runtime images locally and then pushes those to the ECR repository. Unless there are major changes to the Dockerfile, any consequitive runs of this command will re-use the cache.
+To enforce a rebuild of the runetime images locally and also push them to ECR, the above command can be customized as below:
+
+```
+make transfer-images TAG=$TAG REGION=$HTCGRID_REGION REBUILD_RUNTIMES=true
+```
+{{% /notice %}}

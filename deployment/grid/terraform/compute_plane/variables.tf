@@ -172,22 +172,22 @@ variable "enable_private_subnet" {
 variable "grafana_configuration" {
   description = "this variable store the configuration for the grafana helm chart"
   type = object({
-    downloadDashboardsImage_tag = string
-    grafana_tag                 = string
-    initChownData_tag           = string
-    sidecar_tag                 = string
-    admin_password              = string
+    # downloadDashboardsImage_tag = string
+    # grafana_tag                 = string
+    # initChownData_tag           = string
+    # sidecar_tag                 = string
+    admin_password = string
   })
 }
 
-variable "prometheus_configuration" {
-  description = "this variable store the configuration for the prometheus helm chart"
-  type = object({
-    node_exporter_tag      = string
-    server_tag             = string
-    alertmanager_tag       = string
-    kube_state_metrics_tag = string
-    pushgateway_tag        = string
-    configmap_reload_tag   = string
-  })
-}
+# variable "prometheus_configuration" {
+#   description = "this variable store the configuration for the prometheus helm chart"
+#   type = object({
+#     node_exporter_tag      = string
+#     server_tag             = string
+#     alertmanager_tag       = string
+#     kube_state_metrics_tag = string
+#     pushgateway_tag        = string
+#     configmap_reload_tag   = string
+#   })
+# }

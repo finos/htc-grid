@@ -13,6 +13,7 @@ export BUCKET_NAME
 export FILE_HANDLER
 export FUNCTION_HANDLER
 export DIST_DIR=$(shell pwd)/dist
+export REBUILD_RUNTIMES
 export GRAFANA_ADMIN_PASSWORD
 export BUILD_DIR:=(shell pwd)/.build
 export IAS?=terraform

@@ -27,7 +27,7 @@ resource "tls_self_signed_cert" "alb_certificate" {
   ]
 
   subject {
-    common_name         = "*.${var.region}.elb.amazonaws.com"
+    common_name         = "*.${var.region}.elb.${local.dns_suffix}"
     organization        = "Amazon.com, Inc."
     country             = "US"
     locality            = "WA"
@@ -36,10 +36,9 @@ resource "tls_self_signed_cert" "alb_certificate" {
 }
 
 
-resource "aws_iam_server_certificate" "alb_certificate" {
-  name             = "alb_self_signed_cert-${local.suffix}-${tls_self_signed_cert.alb_certificate.id}"
-  certificate_body = tls_self_signed_cert.alb_certificate.cert_pem
+resource "aws_acm_certificate" "alb_certificate" {
   private_key      = tls_private_key.alb_certificate.private_key_pem
+  certificate_body = tls_self_signed_cert.alb_certificate.cert_pem
 
   lifecycle {
     create_before_destroy = true

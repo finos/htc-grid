@@ -10,17 +10,21 @@ module "lambda_drainer" {
 
   source_path     = "../../../source/compute_plane/python/lambda/drainer"
   function_name   = "lambda_drainer-${local.suffix}"
-  handler         = "handler.lambda_handler"
-  memory_size     = 1024
-  timeout         = 900
-  create_role     = false
-  lambda_role     = aws_iam_role.role_lambda_drainer.arn
-  runtime         = var.lambda_runtime
   build_in_docker = true
-  docker_image    = "${var.aws_htc_ecr}/lambda-build:build-${var.lambda_runtime}"
+  docker_image    = local.lambda_build_runtime
   docker_additional_options = [
     "--platform", "linux/amd64",
   ]
+  handler     = "handler.lambda_handler"
+  memory_size = 1024
+  timeout     = 900
+  runtime     = var.lambda_runtime
+  create_role = false
+  lambda_role = aws_iam_role.role_lambda_drainer.arn
+
+  vpc_subnet_ids         = var.vpc_private_subnet_ids
+  vpc_security_group_ids = [var.vpc_default_security_group_id]
+
   environment_variables = {
     CLUSTER_NAME = var.cluster_name
   }
@@ -121,7 +125,7 @@ resource "aws_iam_policy" "lambda_drainer_logging_policy" {
         "logs:CreateLogStream",
         "logs:PutLogEvents"
       ],
-      "Resource": "arn:aws:logs:*:*:*",
+      "Resource": "arn:${local.partition}:logs:*:*:*",
       "Effect": "Allow"
     }
   ]

@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
-awsRegion: ${region}
+awsRegion: "${region}"
 
 autoDiscovery:
-  clusterName: ${cluster_name}
+  clusterName: "${cluster_name}"
 extraArgs:
   logtostderr: true
   stderrthreshold: info
@@ -24,8 +24,8 @@ resources:
     memory: 1000Mi
 
 image:
-  repository: ${aws_htc_ecr}/cluster-autoscaler
-  tag: ${k8s_ca_version}
+  repository: "${aws_htc_ecr}/registry-k8s-io/autoscaling/cluster-autoscaler"
+  tag: "${k8s_ca_version}"
 
 nodeSelector:
   htc/node-type: "core"

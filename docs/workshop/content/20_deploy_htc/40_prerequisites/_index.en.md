@@ -54,7 +54,7 @@ The following step creates 3 S3 buckets that will be needed during the installat
 * 1 bucket will store the HTC artifacts (the lambda to be executed by the agent)
 
 ```
-make init-grid-state  TAG=$TAG REGION=$HTCGRID_REGION
+make init-grid-state TAG=$TAG REGION=$HTCGRID_REGION
 ```
 
 To validate the creation of the S3 buckets, you can run

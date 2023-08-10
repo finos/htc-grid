@@ -2,13 +2,22 @@
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
+
 locals {
   # check if var.suffix is empty then create a random suffix else use var.suffix
-  suffix = var.suffix != "" ? var.suffix : random_string.random.result
+  suffix               = var.suffix != "" ? var.suffix : random_string.random.result
+  account_id           = data.aws_caller_identity.current.account_id
+  dns_suffix           = data.aws_partition.current.dns_suffix
+  partition            = data.aws_partition.current.partition
+  lambda_build_runtime = "${var.aws_htc_ecr}/ecr-public/sam/build-${var.lambda_runtime}:1"
 
   eks_worker_group = concat([
     for index in range(0, length(var.eks_worker_groups)) :
     merge(var.eks_worker_groups[index], {
+      iam_role_additional_policies = {
+        AmazonEC2ContainerRegistryReadOnly = "arn:${local.partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+        eks_pull_through_cache_permission  = aws_iam_policy.eks_pull_through_cache_permission.arn
+      }
       labels = {
         "htc/node-type" = "worker"
       }
@@ -23,11 +32,13 @@ locals {
     [
       {
         node_group_name = "core-ondemand",
-        # instance_types  = ["m6i.xlarge", "m6id.xlarge", "m6a.xlarge", "m6in.xlarge", "m5.xlarge", "m5d.xlarge", "m5a.xlarge", "m5ad.xlarge", "m5n.xlarge"],
-        capacity_type = "ON_DEMAND",
+        capacity_type   = "ON_DEMAND",
         iam_role_additional_policies = {
-          agent_permissions = aws_iam_policy.agent_permissions.arn
+          AmazonEC2ContainerRegistryReadOnly = "arn:${local.partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+          eks_pull_through_cache_permission  = aws_iam_policy.eks_pull_through_cache_permission.arn,
+          agent_permissions                  = aws_iam_policy.agent_permissions.arn
         }
+
         min_size     = 2,
         max_size     = 6,
         desired_size = 2,

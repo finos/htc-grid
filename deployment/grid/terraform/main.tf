@@ -4,7 +4,10 @@
 
 
 locals {
-  aws_htc_ecr                = var.aws_htc_ecr != "" ? var.aws_htc_ecr : "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com"
+  account_id                 = data.aws_caller_identity.current.account_id
+  dns_suffix                 = data.aws_partition.current.dns_suffix
+  partition                  = data.aws_partition.current.partition
+  aws_htc_ecr                = var.aws_htc_ecr != "" ? var.aws_htc_ecr : "${local.account_id}.dkr.ecr.${var.region}.${local.dns_suffix}"
   project_name               = var.project_name != "" ? var.project_name : random_string.random_resources.result
   grafana_admin_password     = var.grafana_admin_password != "" ? var.grafana_admin_password : random_password.password.result
   cluster_name               = "${var.cluster_name}-${local.project_name}"
@@ -34,6 +37,7 @@ locals {
       maxMemory  = "100"
       minMemory  = "50"
     }
+
     lambda = {
       image                        = "${local.aws_htc_ecr}/lambda"
       runtime                      = "provided"
@@ -51,12 +55,14 @@ locals {
       layer_version                = 1
       region                       = var.region
     }
+
     get_layer = {
       image             = "${local.aws_htc_ecr}/lambda-init"
       tag               = local.project_name
       pullPolicy        = "IfNotPresent"
       lambda_layer_type = "S3"
     }
+
     test = {
       image      = "${local.aws_htc_ecr}/submitter"
       tag        = local.project_name
@@ -66,7 +72,12 @@ locals {
 }
 
 
+# Retrieve the account ID
 data "aws_caller_identity" "current" {}
+
+
+# Retrieve AWS Partition
+data "aws_partition" "current" {}
 
 
 resource "random_string" "random_resources" {
@@ -87,14 +98,12 @@ resource "random_password" "password" {
 module "vpc" {
   source = "./vpc"
 
-  region          = var.region
-  cluster_name    = local.cluster_name
-  vpc_range       = 16
-  private_subnets = var.vpc_cidr_block_private
-  public_subnets  = var.vpc_cidr_block_public
-
+  region                = var.region
+  cluster_name          = local.cluster_name
+  vpc_range             = 16
+  private_subnets       = var.vpc_cidr_block_private
+  public_subnets        = var.vpc_cidr_block_public
   enable_private_subnet = var.enable_private_subnet
-
 }
 
 
@@ -139,23 +148,8 @@ module "compute_plane" {
   task_queue_config                    = var.task_queue_config
   error_log_group                      = local.error_log_group
   error_logging_stream                 = local.error_logging_stream
-
-  grafana_configuration = {
-    downloadDashboardsImage_tag = var.grafana_configuration.downloadDashboardsImage_tag
-    grafana_tag                 = var.grafana_configuration.grafana_tag
-    initChownData_tag           = var.grafana_configuration.initChownData_tag
-    sidecar_tag                 = var.grafana_configuration.sidecar_tag
-    admin_password              = local.grafana_admin_password
-
-  }
-  prometheus_configuration = {
-    node_exporter_tag      = var.prometheus_configuration.node_exporter_tag
-    server_tag             = var.prometheus_configuration.server_tag
-    alertmanager_tag       = var.prometheus_configuration.alertmanager_tag
-    kube_state_metrics_tag = var.prometheus_configuration.kube_state_metrics_tag
-    pushgateway_tag        = var.prometheus_configuration.pushgateway_tag
-    configmap_reload_tag   = var.prometheus_configuration.configmap_reload_tag
-  }
+  grafana_configuration                = var.grafana_configuration
+  # prometheus_configuration             = var.prometheus_configuration
 }
 
 module "control_plane" {
@@ -207,7 +201,6 @@ module "control_plane" {
   cognito_userpool_arn                          = module.compute_plane.cognito_userpool_arn
   api_gateway_version                           = var.api_gateway_version
 
-
   depends_on = [module.vpc]
 }
 
@@ -256,9 +249,9 @@ module "htc_agent" {
   lambda_configuration_function_name = lookup(lookup(var.agent_configuration, "lambda", local.default_agent_configuration.lambda), "function_name", local.default_agent_configuration.lambda.function_name)
 
   depends_on = [
+    module.vpc,
     module.compute_plane,
     module.control_plane,
-    module.vpc,
     kubernetes_config_map.htcagentconfig
   ]
 }

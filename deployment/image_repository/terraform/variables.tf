@@ -7,6 +7,11 @@ variable "region" {
   default     = "eu-west-1"
 }
 
+variable "aws_htc_ecr" {
+  description = "URL of Amazon ECR image repostiories"
+  default     = ""
+}
+
 variable "image_to_copy" {
   description = "contains the list of third party images to copy (and where to copy them)"
   type        = map(any)
@@ -21,4 +26,10 @@ variable "lambda_runtime" {
   description = "runtime used for the custom worker"
   type        = string
   default     = "python3.7"
+}
+
+variable "rebuild_runtimes" {
+  description = "Enforce a local rebuild of the runtime images"
+  type        = string
+  default     = "false"
 }

@@ -46,8 +46,9 @@ data "aws_iam_policy_document" "eks_pull_through_cache_permission" {
     ]
 
     resources = [
-      "arn:aws:ecr:${var.region}:${data.aws_caller_identity.current.account_id}:repository/ecr-public/*",
-      "arn:aws:ecr:${var.region}:${data.aws_caller_identity.current.account_id}:repository/quay/*"
+      "arn:${local.partition}:ecr:${var.region}:${local.account_id}:repository/ecr-public/*",
+      "arn:${local.partition}:ecr:${var.region}:${local.account_id}:repository/quay/*",
+      "arn:${local.partition}:ecr:${var.region}:${local.account_id}:repository/registry-k8s-io/*"
     ]
   }
 }

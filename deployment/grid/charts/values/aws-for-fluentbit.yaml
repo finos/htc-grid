@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 image:
-  repository: ${aws_htc_ecr}/ecr-public/aws-observability/aws-for-fluent-bit
+  repository: "${aws_htc_ecr}/ecr-public/aws-observability/aws-for-fluent-bit"
 
 env:
   - name : AWS_STS_REGIONAL_ENDPOINTS
@@ -24,3 +24,12 @@ kinesis:
 
 elasticsearch:
   enabled: false
+
+nodeSelector:
+  htc/node-type: "core"
+
+tolerations:
+  - key: "htc/node-type"
+    operator: "Equal"
+    value: "core"
+    effect: "NoSchedule"

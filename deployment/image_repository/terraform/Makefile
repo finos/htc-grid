@@ -16,7 +16,7 @@ init:
 	terraform init -backend-config="bucket=$(S3_IMAGE_TFSTATE_BUCKET_NAME)" -backend-config="region=$(REGION)"
 
 apply: $(TF_SRCS) $(GRID_CONFIG)
-	terraform apply -var-file ../images_config.json -parallelism=1 -var region=$(REGION)
+	terraform apply -var-file ../images_config.json -parallelism=1 -var region=$(REGION) -var rebuild_runtimes=$(REBUILD_RUNTIMES)
 
 destroy:
 	terraform destroy -var-file ../images_config.json -var region=$(REGION)

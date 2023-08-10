@@ -57,7 +57,7 @@ export class InfluxdbStack extends cdk.NestedStack {
           enabled: "false",
         },
         image: {
-          repository: `${this.account}.dkr.ecr.${this.region}.amazonaws.com/influxdb`,
+          repository: `${this.account}.dkr.ecr.${this.region}.amazonaws.com/ecr-public/docker/library/influxdb`,
           tag: props.influxDbTag,
         },
         service: {

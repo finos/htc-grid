@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file. Dates are d
 
 #### [v0.4.0](https://github.com/awslabs/aws-htc-grid/compare/v0.3.6...v0.4.0)
 
-> 07 August 2023
+> 12 August 2023
 
 ### EKS Cluster & Nodes:
 - Change to using [terraform-aws-modules/eks](https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest) for managing and deploying the EKS Cluster as well as related resources, such as: Node IAM Roles & Policies, Node Defaults incl. instance types, Security Groups and the AWS Auth ConfigMap.
@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file. Dates are d
 
 ### EKS AddOns:
 - Change to [eks-blueprints-addons](https://registry.terraform.io/modules/aws-ia/eks-blueprints-addons/aws/latest) for managing and deploying all of the EKS Blueprint AddOns and OSS Helm Releases, such as: CoreDNS, Kube-Proxy, VPC CNI, FluentBit, Cluster Autoscaler, AWS LoadBalancer Controller, CloudWatch Metrics, KEDA, InfluxDB, Prometheus & Grafana, as well as **all** the relevant configuration.
+- Add implicit and explicit dependencies to fix the race conditions where the `AWS Loadbalancer Controller` may get deleted before being able to cleanup the AWS resources that it manages. The new dependency order guarantees a proper clean up of those resources before the `AWS LoadBalancer Controller` is destroyed during unprovisioning.
+- Fix the explicit and implicit dependencies between the Kubernetes data sources and the underlying resources created by the `EKS Blueprints Addons` module.
 - Move ingress and dashboard creation for Grafana to be handled via the Helm chart and clean up the un-needed additional Terraform resources. Add the Grafana Ingress URL as a Terraform output for the module.
 - Adjust image and repo configuration to pull the correct version for Cluster Autoscaler and other components.
 
@@ -29,27 +31,57 @@ All notable changes to this project will be documented in this file. Dates are d
 ### Terraform & Helm:
 - Adjust all of the Terraform Registry modules to use `~>` version pinning, allowing any new non-major versions to be used (any minor and patch updates are allowed), simplifying dependency version updates and ensuring consistency.
 - Upgrade all of the Terraform modules from the Terraform Registry to use the **current latest** versions.
+- Upgrade all of the Terraform providers to use the latest available versions and major version pinning using thre `~>` operator.
+- Upgrade all of the Helm charts and container images to the current latest version for all of the components.
+- Remove image level pinning of Helm AddOn components and pinned only using the Helm release versions.
 - Remove un-needed explicit `depends_on` statemenets which cause slowness and cyclic dependencies or failures on plan (by not allowing data sources to be computed before an apply).
 - Fix cyclic dependency and remove the need for running targeted applies for the IAM Policies for the EKS Pull Through Cache and Agent permissions in the `apply`/`auto-apply` stages.
+- Move to using `aws_api_gateway_rest_api_policy` instead of a direct policy attachment of a generic policy for `OpenAPI Private`, which showed changes on every `terraform apply`, due to the wildcard allow policy.
+- Configure the AWS CloudWatch Metrics and AWS for FluentBit deployments to run on the `Core` nodes.
+- Configure Grafana to start two replicas and spread them across different nodes for high availability.
+- Clean up the Helm chart `values.yaml` files, removing any unneeded and nrequired config, simplifying the deployments. Consolidating Helm chart versions into a single variable for ease of change and visibility.
 - Remove un-needed data sources and use module outputs as required to also enforce consistent implicit dependencies in Terraform.
+- Simplify and consolidate the variable definitions, usage and functions across all of the resources and modules.
 - Adjust output and variable descriptions, types and values to reflect the required information and ensure consistency.
 - Adjust provider configurations to ensure correct credential retrieval and handling.
 - Use `aws_htc_ecr` consistently across all of the Helm charts as the ECR source repository for pulling internal and pull-through images.
 
 ### New Features:
+- Upgrade `ElastiCache` to version 7 and started using the ***AWS Graviton3*** based `cache.r7g.large` instance(s) for the Redis cluster.
+- Add ability to do in-place upgrades of the `ElastiCache` clusters by versioning the `Parameter Groups` created/used.
 - Add `watch_htc.sh` script, which can be used to monitor the status of a Kubernetes job running tasks on HTC-Grid, as well as the status of the overall compute plane, including the HPA, Deployment, Nodes and Job Completion statuses as well as durations. The scripts takes two arguments, namely the namespace to be watched as well as the name of the Kubernetes job.
+- Add support for correct handling of the `AWS Partition` as well as `AWS Partition DNS Suffix`.
 - Add ability to automatically manage the lifecycle of the self-signed ALB Certificates via the deployment process (any certs about to expire will get automatically updated and rolled out without any downtime).
+- Migrate to using `AWS Certificate Manager` instead of the `IAM Server Certificates` for the ALB Certs.
 - Add ability to automatically create, update and destroy an `admin` Cognito user via the deployment, to be used for the Grafana authentication, reducing the need for manual steps during the setup as well as the workshop.
+- Add user cleanup on `destroy` for the `admin` Cognito user (created for use with Grafana) as well as the relevant Cognito config with the Grafana Ingress.
 - Add template file and generation for submitting a batch of multi-session tasks instead of copying/replacing at runtime of the workshop. Adjust docs/workshop accordingly.
 
+### Lambda Runtimes:
+- Unify all of the `lambda_runtimes` into a single Dockerfile, driving behavior via build time arguments.
+- Add package updates at build time (incl. cache clearing post updates), to ensure latest versions of updates are always included in the runtime images.
+- Migrate all build runtimes to use the ECR Pull Through Cache for the build images.
+- Simplify and consolidated the lambda runtime build and push Terraform resources into a single map of resources.
+
+### ECR & Image Builds:
+- Change all container images to use the ECR pull through-cache where possible.
+- Add a new pull-through-cache config for `registry.k8s.io`, to allow for pulling any cluster components automatically, i.e. the `cluster-autoscaler`.
+- Add flag (`REBUILD_RUNTIMES`) which allows re-creating the local images for all the runtimes (without using the cache) and pushing them to ECR.
+- Clean up `image_repository` keeping the minimum number of required external dependencies (that were not availble via an ECR Pull Through Cache), to be manually copied over to the local ECR repositories.
+- Add the ability to cleanup the ECR Pull Through Cache repositories upon running `destroy-images`.
+- Add image scanning on push/upload for all of the ECR Repositories.
+- Move to using `for_each` instead of `count` for ECR Repositories ensuring they don't get destroyed from a simple order change in the JSON Config.
+
 ### Cloud9:
-- Fix issues with Cloud9 deploy script causing failed installations of pre-requisite components.
+- Fix all of the Cloud9 bootstrap errors, handling of different packages, correct installation and upgrade of all the components and improved the bootstrap logging to increase visibilty on the success or issues of the Cloud9 deployment.
 - Update default versions for all pre-requisites for the Cloud9 environment to the latest versions.
 - Add support for using main (i.e. downloading the current HEAD version of the repo) as a value for `HTCGridVersion` when deploying the Cloud9 environment.
 
 ### Docs:
-- Adjust workshop texts, screenshots and configs to reflect the latest changes introduced as part of this or previous PRs. Adjust wording, correct grammar mistakes and other typos and simplify language.
+- Adjust workshop texts, screenshots and configs to reflect the latest changes introduced as part of this or previous PRs and give instructions on any possible deploy time issues and how to fix them.
+- Add instructions on how to use the `watch-htc.sh` script for monitoring jobs and deployments.
 - Add the quick one-command based option for disabling of Cloud9 Managed Temporary Credentials.
+- Adjust wording, correct grammar mistakes and other typos and simplify language.
 
 ### Misc.:
 - Add `CHANGELOG.md` to the repository, including reflecting all of the previous releases and commits.

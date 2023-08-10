@@ -3,4 +3,13 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 image:
-  repository: ${aws_htc_ecr}/ecr-public/cloudwatch-agent/cloudwatch-agent
+  repository: "${aws_htc_ecr}/ecr-public/cloudwatch-agent/cloudwatch-agent"
+
+nodeSelector:
+  htc/node-type: "core"
+
+tolerations:
+  - key: "htc/node-type"
+    operator: "Equal"
+    value: "core"
+    effect: "NoSchedule"

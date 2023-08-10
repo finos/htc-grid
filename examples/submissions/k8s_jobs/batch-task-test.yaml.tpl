@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: single-task
+  name: batch-task
 spec:
   template:
     spec:

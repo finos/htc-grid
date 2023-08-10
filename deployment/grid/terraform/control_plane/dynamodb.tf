@@ -9,67 +9,54 @@ module "dynamodb_table" {
 
   name = var.ddb_state_table
 
-  read_capacity  = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_read_capacity : null
-  write_capacity = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_write_capacity : null
-
   autoscaling_enabled = var.dynamodb_autoscaling_enabled
-
-  billing_mode = var.dynamodb_billing_mode
+  billing_mode        = var.dynamodb_billing_mode
+  read_capacity       = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_read_capacity : null
+  write_capacity      = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_write_capacity : null
 
   hash_key = "task_id"
-
   attributes = [
     {
       name = "session_id"
       type = "S"
     },
-
     {
       name = "task_id"
       type = "S"
     },
-
-    #  {
+    # {
     #   name = "submission_timestamp"
     #   type = "N"
-    # }
-
-    #  {
+    # },
+    # {
     #   name = "task_completion_timestamp"
     #   type = "N"
-    # }
-
+    # },
     {
       name = "task_status"
       type = "S"
     },
-
-    #  {
+    # {
     #   name = "task_owner"
     #   type = "S"
-    # }
+    # },
     # default value "None"
-
-    #  {
+    # {
     #   name = "retries"
     #   type = "N"
-    # }
-
-    #  {
+    # },
+    # {
     #   name = "task_definition"
     #   type = "S"
-    # }
-
-    #  {
+    # },
+    # {
     #   name = "sqs_handler_id"
     #   type = "S"
-    # }
-
+    # },
     {
       name = "heartbeat_expiration_timestamp"
       type = "N"
     }
-
     # attribute {
     #   name = "parent_session_id"
     #   type = "S"
@@ -95,7 +82,6 @@ module "dynamodb_table" {
       projection_type    = "INCLUDE"
       non_key_attributes = ["task_id"]
     }
-
   ]
 
   autoscaling_read = {

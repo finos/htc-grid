@@ -29,9 +29,10 @@ module "cancel_tasks" {
       pip_requirements = "../../../source/control_plane/python/lambda/cancel_tasks/requirements.txt"
     }
   ]
+
   function_name   = var.lambda_name_cancel_tasks
   build_in_docker = true
-  docker_image    = "${var.aws_htc_ecr}/lambda-build:build-${var.lambda_runtime}"
+  docker_image    = local.lambda_build_runtime
   docker_additional_options = [
     "--platform", "linux/amd64",
   ]

@@ -15,17 +15,14 @@ podSecurityContext:
 
 image:
   keda:
-    repository: ${aws_htc_ecr}/kedacore/keda
-    # Allows people to override tag if they don't want to use the app version
-    tag: ${k8s_keda_version}
+    repository: "${aws_htc_ecr}/kedacore/keda"
+
   metricsApiServer:
-    repository: ${aws_htc_ecr}/kedacore/keda-metrics-apiserver
-    # Allows people to override tag if they don't want to use the app version
-    tag: ${k8s_keda_version}
+    repository: "${aws_htc_ecr}/kedacore/keda-metrics-apiserver"
+
   webhooks:
-    repository: ${aws_htc_ecr}/kedacore/keda-admission-webhooks
-    # Allows people to override tag if they don't want to use the app version
-    tag: ${k8s_keda_version}
+    repository: "${aws_htc_ecr}/kedacore/keda-admission-webhooks"
+
   pullPolicy: Always
 
 

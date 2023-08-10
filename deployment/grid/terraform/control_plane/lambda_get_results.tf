@@ -29,20 +29,23 @@ module "get_results" {
       pip_requirements = "../../../source/control_plane/python/lambda/get_results/requirements.txt"
     }
   ]
+
   function_name   = var.lambda_name_get_results
   build_in_docker = true
-  docker_image    = "${var.aws_htc_ecr}/lambda-build:build-${var.lambda_runtime}"
+  docker_image    = local.lambda_build_runtime
   docker_additional_options = [
     "--platform", "linux/amd64",
   ]
-  handler                = "get_results.lambda_handler"
-  memory_size            = 1024
-  timeout                = 300
-  runtime                = var.lambda_runtime
-  create_role            = false
-  lambda_role            = aws_iam_role.role_lambda_get_results.arn
+  handler     = "get_results.lambda_handler"
+  memory_size = 1024
+  timeout     = 300
+  runtime     = var.lambda_runtime
+  create_role = false
+  lambda_role = aws_iam_role.role_lambda_get_results.arn
+
   vpc_subnet_ids         = var.vpc_private_subnet_ids
   vpc_security_group_ids = [var.vpc_default_security_group_id]
+
   environment_variables = {
     STATE_TABLE_NAME                             = var.ddb_state_table,
     STATE_TABLE_SERVICE                          = var.state_table_service,
@@ -61,6 +64,7 @@ module "get_results" {
     METRICS_GRAFANA_PRIVATE_IP                   = var.nlb_influxdb,
     REGION                                       = var.region
   }
+
   tags = {
     service = "htc-grid"
   }

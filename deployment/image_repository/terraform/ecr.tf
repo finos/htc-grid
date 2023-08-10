@@ -3,30 +3,35 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
-# retrieve the account ID
-data "aws_caller_identity" "current" {}
-
-
-# create all ECR repository
+# Create the ECR repositories
 resource "aws_ecr_repository" "third_party" {
-  count = length(var.repository)
+  for_each = toset(var.repository)
 
-  name  = var.repository[count.index]
+  name         = each.key
+  force_delete = true
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
 }
 
 
-# authenticate to ECR repository
+# Authenticate to ECR
 resource "null_resource" "authenticate_to_ecr_repository" {
   triggers = {
     always_run = timestamp()
   }
 
   provisioner "local-exec" {
-    command = " aws ecr get-login-password --region ${var.region} | docker login --username AWS --password-stdin ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com"
+    command = <<-EOT
+      aws ecr get-login-password --region ${var.region} | \
+      docker login --username AWS --password-stdin ${local.aws_htc_ecr}
+    EOT
   }
 }
 
 
+# Create the pull-through cache rules
 resource "aws_ecr_pull_through_cache_rule" "ecr-public" {
   ecr_repository_prefix = "ecr-public"
   upstream_registry_url = "public.ecr.aws"
@@ -39,13 +44,42 @@ resource "aws_ecr_pull_through_cache_rule" "quay" {
 }
 
 
+resource "aws_ecr_pull_through_cache_rule" "registry_k8s_io" {
+  ecr_repository_prefix = "registry-k8s-io"
+  upstream_registry_url = "registry.k8s.io"
+}
+
+
+# Destroy ECR Pull Through Cache Repositories
+resource "null_resource" "delete_pull_through_cache_repos" {
+  for_each = toset(["ecr-public", "quay", "registry-k8s-io"])
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<-EOT
+      for repo in $(aws ecr describe-repositories | \
+        jq -r -c '.repositories[].repositoryName | select(. | contains("${each.key}"))'); do
+          aws ecr delete-repository --force --repository-name $repo;
+        done
+    EOT
+  }
+
+  depends_on = [
+    aws_ecr_pull_through_cache_rule.ecr-public,
+    aws_ecr_pull_through_cache_rule.quay,
+    aws_ecr_pull_through_cache_rule.registry_k8s_io
+  ]
+}
+
+
+#Pull Lambda Build Runtime for local builds
 resource "null_resource" "pull_python_env" {
   triggers = {
     always_run = timestamp()
   }
 
   provisioner "local-exec" {
-    command = "docker pull  --platform linux/amd64 ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda-build:build-${var.lambda_runtime}"
+    command = "docker pull --platform linux/amd64 ${local.lambda_build_runtime}"
   }
 
   depends_on = [
@@ -55,33 +89,35 @@ resource "null_resource" "pull_python_env" {
 }
 
 
-# push tag and pull images from every image to copy
+# Pull the required images locally, retag and push to ECR
 resource "null_resource" "copy_image" {
   for_each = var.image_to_copy
 
   triggers = {
-    state      = "${each.key}-${each.value}",
     always_run = timestamp()
   }
 
   provisioner "local-exec" {
     command = <<-EOT
-    if ! docker pull  --platform linux/amd64 ${each.key}
-    then
-      echo "cannot download image ${each.key}"
-      exit 1
-    fi
-    if ! docker tag ${each.key} ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${split(":", each.value)[0]}:${length(split(":", each.value)) == 2 ? split(":", each.value)[1] : split(":", each.key)[1]}
-    then
-      echo "cannot tag ${each.key} to ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${split(":", each.value)[0]}:${length(split(":", each.value)) == 2 ? split(":", each.value)[1] : split(":", each.key)[1]}"
-      exit 1
-    fi
-    if ! docker push ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${split(":", each.value)[0]}:${length(split(":", each.value)) == 2 ? split(":", each.value)[1] : split(":", each.key)[1]}
-    then
-      echo "echo cannot push ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${split(":", each.value)[0]}:${length(split(":", each.value)) == 2 ? split(":", each.value)[1] : split(":", each.key)[1]}"
-      exit 1
-    fi
-  EOT
+      if ! docker pull --platform linux/amd64 ${each.key}
+      then
+        echo "Failed to download image: ${each.key}. Please check if images_config.json contains the correct source image URI."
+        exit 1
+      fi
+      if ! docker tag ${each.key} $IMAGE_ECR_URI
+      then
+        echo "Failed to tag ${each.key} to $IMAGE_ECR_URI. Please check if images_config.json contains the correct ECR destination."
+        exit 1
+      fi
+      if ! docker push $IMAGE_ECR_URI
+      then
+        echo "Failed to push $IMAGE_ECR_URI. Please check if images_config.json contains the correct ECR destination."
+        exit 1
+      fi
+    EOT
+    environment = {
+      IMAGE_ECR_URI = "${local.aws_htc_ecr}/${split(":", each.value)[0]}:${try(split(":", each.value)[1], split(":", each.key)[1])}"
+    }
   }
 
   depends_on = [

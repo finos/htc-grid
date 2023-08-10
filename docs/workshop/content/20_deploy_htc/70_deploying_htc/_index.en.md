@@ -19,11 +19,28 @@ make apply-custom-runtime TAG=$TAG REGION=$HTCGRID_REGION GRAFANA_ADMIN_PASSWORD
 ```
 
 {{% notice note %}}
-The execution of this command will prompt for `yes` to continue. Just type yes, for the command to proceed
+The execution of this command will prompt for `yes` to continue. Just type `yes` and click Enter for the command to proceed.
 {{% /notice %}}
 
 {{% notice warning %}}
-The install operation may take ~20mins. If the `terraform apply` fails with errors related to timeouts, re-run the command until the `terraform apply` step successfully completes. 
+The installation may take ~20mins. If the `terraform apply` fails with the following error, then it will be due to  [known issue](https://github.com/aws/containers-roadmap/issues/1389) in the CoreDNS AddOn and should be fixed in a future release.
+To fix this error, please run the `delete-addon` command below first and then re-run the `apply-custom-runtime` step from above.
+
+```
+Error: waiting for EKS Add-On (htc-main:coredns) create: timeout while waiting for state to become 'ACTIVE' (last state: 'DEGRADED', timeout: 2m0s)
+```
+
+```
+aws eks delete-addon --cluster-name htc-$TAG --addon coredns
+```
+{{% /notice %}}
+
+
+{{% notice warning %}}
+If your installation fails with the following error, then re-running `apply-custom-runtime` will fix the issue. This is a cross dependency issue when creating private APIs but haven't yet created an attachment to the policy itself (which requires the API to exist to reflect the correct resources).
+```
+Error: creating API Gateway Deployment: BadRequestException: Private REST API doesn't have a resource policy attached to it
+```
 {{% /notice %}}
 
 ### Validating HTC-Grid Deployment

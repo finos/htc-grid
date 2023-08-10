@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
-region: ${region}
-vpcId: ${vpc_id}
+region: "${region}"
+vpcId: "${vpc_id}"
 
 podDisruptionBudget:
   maxUnavailable: 1
@@ -14,7 +14,8 @@ enableWaf: false
 enableWafv2: false
 
 image:
-  repository: "602401143452.dkr.ecr.${region}.amazonaws.com/amazon/aws-load-balancer-controller"
+  repository: "${aws_htc_ecr}/ecr-public/eks/aws-load-balancer-controller"
+
 nodeSelector:
   htc/node-type: "core"
 

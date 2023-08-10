@@ -6,49 +6,49 @@ terraform {
   backend "s3" {
     key    = ".terraform/terraform.tfstate"
     region = "eu-west-1"
-    // encrypt         = true
-    // bucket          = "pipelinedeployinglambdasta-terraformstatee9552559-1bd2jx74ma36z"
-    // dynamodb_table  = "PipelineDeployingLambdaStack-terraformstatelock0C7DA880-1W6LKAH4MQDDI"
   }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.5.0"
+      version = "~> 5.0"
     }
+
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "~> 2.21.1"
+      version = "~> 2.0"
     }
+
     helm = {
       source  = "hashicorp/helm"
-      version = ">= 2.10.1"
+      version = ">= 2.0"
     }
+
     tls = {
       source  = "hashicorp/tls"
-      version = "~> 4.0.4"
+      version = "~> 4.0"
     }
+
     archive = {
       source  = "hashicorp/archive"
-      version = "2.2.0"
+      version = "~> 2.0"
     }
   }
 }
 
 
-provider "tls" {
-}
+provider "tls" {}
 
 provider "aws" {
   region = var.region
 }
 
-provider "archive" {
-}
+provider "archive" {}
 
 provider "kubernetes" {
   host                   = module.compute_plane.cluster_endpoint
   cluster_ca_certificate = base64decode(module.compute_plane.certificate_authority)
-  //token                  = module.compute_plane.token
+
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
     command     = "aws"
@@ -70,7 +70,7 @@ provider "helm" {
   kubernetes {
     host                   = module.compute_plane.cluster_endpoint
     cluster_ca_certificate = base64decode(module.compute_plane.certificate_authority)
-    //token                  = module.compute_plane.token
+
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
       command     = "aws"
@@ -86,5 +86,3 @@ provider "helm" {
     }
   }
 }
-
-

@@ -14,9 +14,33 @@ module "vpc" {
   public_subnets     = local.public_subnets
   enable_nat_gateway = !var.enable_private_subnet
   single_nat_gateway = !var.enable_private_subnet
-  # required for private endpoint
+  # Required for private endpoints
   enable_dns_hostnames = true
   enable_dns_support   = true
+
+  default_security_group_ingress = [
+    {
+      description = "HTTPS Ingress from within VPC"
+      type        = "ingress"
+      self        = true
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+      cidr_blocks = "10.0.0.0/16"
+    }
+  ]
+
+  default_security_group_egress = [
+    {
+      description      = "Default allow ALL Egress"
+      protocol         = "-1"
+      from_port        = 0
+      to_port          = 0
+      type             = "egress"
+      cidr_blocks      = "0.0.0.0/0"
+      ipv6_cidr_blocks = "::/0"
+    }
+  ]
 
   tags = {
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
@@ -63,24 +87,4 @@ module "vpc_endpoints" {
         security_group_ids  = var.enable_private_subnet == true ? [module.vpc.default_security_group_id] : []
       }
   })
-}
-
-
-resource "aws_security_group_rule" "https" {
-  type              = "ingress"
-  from_port         = 443
-  to_port           = 443
-  protocol          = "tcp"
-  cidr_blocks       = [module.vpc.vpc_cidr_block]
-  security_group_id = module.vpc.default_security_group_id
-}
-
-resource "aws_security_group_rule" "egress_rule" {
-  type              = "egress"
-  from_port         = 0
-  to_port           = 0
-  protocol          = "-1"
-  cidr_blocks       = ["0.0.0.0/0"]
-  ipv6_cidr_blocks  = ["::/0"]
-  security_group_id = module.vpc.default_security_group_id
 }

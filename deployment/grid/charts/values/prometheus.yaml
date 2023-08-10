@@ -11,7 +11,7 @@ server:
     scrape_timeout: 10s
 
   image:
-    repository: ${aws_htc_ecr}/quay/prometheus/prometheus
+    repository: "${aws_htc_ecr}/quay/prometheus/prometheus"
   resources:
     requests:
       cpu: 500m
@@ -35,8 +35,9 @@ alertmanager:
 kube-state-metrics:
   enabled: true
   image:
-    repository: ${aws_htc_ecr}/kube-state-metrics
-    tag: ${kube_state_metrics_tag}
+    registry: "${aws_htc_ecr}"
+    repository: "registry-k8s-io/kube-state-metrics/kube-state-metrics"
+
   resources:
     limits:
       cpu: 200m
@@ -53,13 +54,14 @@ kube-state-metrics:
     htc/node-type: "core"
 
 
-pushgateway:
+prometheus-pushgateway:
   enabled: false
 
 
-nodeExporter:
+prometheus-node-exporter:
   image:
-    repository: ${aws_htc_ecr}/quay/prometheus/node-exporter
+    registry: "${aws_htc_ecr}"
+    repository: "quay/prometheus/node-exporter"
   resources:
     limits:
       cpu: 200m
@@ -79,5 +81,4 @@ nodeExporter:
 configmapReload:
   prometheus:
     image:
-      repository: ${aws_htc_ecr}/configmap-reload
-      tag: ${configmap_reload_tag}
+      repository: "${aws_htc_ecr}/quay/prometheus-operator/prometheus-config-reloader"

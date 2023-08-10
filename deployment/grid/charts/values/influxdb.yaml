@@ -6,13 +6,12 @@ persistence:
     enabled: false
 
 image:
-    repository: "${aws_htc_ecr}/influxdb"
-    tag: "1.8.6-alpine"
+    repository: "${aws_htc_ecr}/ecr-public/docker/library/influxdb"
 
 service:
     type: "LoadBalancer"
     annotations: 
-        "service.beta.kubernetes.io/aws-load-balancer-internal": "true"
+        "service.beta.kubernetes.io/aws-load-balancer-scheme": "internal"
         "service.beta.kubernetes.io/aws-load-balancer-type": "nlb"
 
 nodeSelector:

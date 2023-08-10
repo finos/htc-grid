@@ -23,6 +23,23 @@ resource "aws_cognito_user_pool" "htc_pool" {
 }
 
 
+resource "aws_cognito_user_pool_domain" "domain" {
+  user_pool_id = aws_cognito_user_pool.htc_pool.id
+  domain       = local.cognito_domain_name
+}
+
+
+resource "aws_cognito_user_pool_client" "user_data_client" {
+  name         = "user_data_client"
+  user_pool_id = aws_cognito_user_pool.htc_pool.id
+  explicit_auth_flows = [
+    "ALLOW_ADMIN_USER_PASSWORD_AUTH",
+    "ALLOW_USER_SRP_AUTH",
+    "ALLOW_REFRESH_TOKEN_AUTH"
+  ]
+}
+
+
 resource "aws_cognito_user_pool_client" "client" {
   name                                 = "client"
   user_pool_id                         = aws_cognito_user_pool.htc_pool.id
@@ -41,23 +58,8 @@ resource "aws_cognito_user_pool_client" "client" {
     "ALLOW_USER_SRP_AUTH",
     "ALLOW_REFRESH_TOKEN_AUTH"
   ]
-}
 
-
-resource "aws_cognito_user_pool_domain" "domain" {
-  user_pool_id = aws_cognito_user_pool.htc_pool.id
-  domain       = local.cognito_domain_name
-}
-
-
-resource "aws_cognito_user_pool_client" "user_data_client" {
-  name         = "user_data_client"
-  user_pool_id = aws_cognito_user_pool.htc_pool.id
-  explicit_auth_flows = [
-    "ALLOW_ADMIN_USER_PASSWORD_AUTH",
-    "ALLOW_USER_SRP_AUTH",
-    "ALLOW_REFRESH_TOKEN_AUTH"
-  ]
+  depends_on = [data.kubernetes_ingress_v1.grafana_ingress]
 }
 
 
@@ -87,17 +89,12 @@ resource "null_resource" "cognito_user" {
   }
 
   provisioner "local-exec" {
-    when    = destroy
-    command = "aws cognito-idp admin-delete-user --region ${self.triggers.region} --user-pool-id ${self.triggers.user_pool_id} --username admin"
+    when       = destroy
+    command    = "aws cognito-idp admin-delete-user --region ${self.triggers.region} --user-pool-id ${self.triggers.user_pool_id} --username admin"
+    on_failure = continue
   }
 }
 
-data "kubernetes_ingress_v1" "grafana_ingress" {
-  metadata {
-    name      = "grafana"
-    namespace = "grafana"
-  }
-}
 
 resource "null_resource" "grafana_ingress_auth" {
   triggers = {
@@ -109,12 +106,35 @@ resource "null_resource" "grafana_ingress_auth" {
   }
 
   provisioner "local-exec" {
-    command = "kubectl -n grafana annotate ingress grafana --overwrite alb.ingress.kubernetes.io/auth-idp-cognito=\"{\\\"UserPoolArn\\\": \\\"${self.triggers.user_pool_arn}\\\",\\\"UserPoolClientId\\\":\\\"${self.triggers.client_id}\\\",\\\"UserPoolDomain\\\":\\\"${self.triggers.cognito_domain}\\\"}\" alb.ingress.kubernetes.io/auth-on-unauthenticated-reques=authenticate alb.ingress.kubernetes.io/auth-scope=openid alb.ingress.kubernetes.io/auth-session-cookie=AWSELBAuthSessionCookie alb.ingress.kubernetes.io/auth-session-timeout=\"3600\" alb.ingress.kubernetes.io/auth-type=cognito"
+    command = <<-EOT
+      kubectl -n grafana annotate ingress grafana --overwrite \
+        alb.ingress.kubernetes.io/auth-idp-cognito="{\"UserPoolArn\": \"${self.triggers.user_pool_arn}\",\"UserPoolClientId\":\"${self.triggers.client_id}\",\"UserPoolDomain\":\"${self.triggers.cognito_domain}\"}" \
+        alb.ingress.kubernetes.io/auth-on-unauthenticated-request=authenticate \
+        alb.ingress.kubernetes.io/auth-scope=openid \
+        alb.ingress.kubernetes.io/auth-session-cookie=AWSELBAuthSessionCookie \
+        alb.ingress.kubernetes.io/auth-session-timeout="3600" \
+        alb.ingress.kubernetes.io/auth-type=cognito
+    EOT
+  }
+
+  provisioner "local-exec" {
+    when       = destroy
+    command    = <<-EOT
+      kubectl -n grafana annotate ingress grafana \
+        alb.ingress.kubernetes.io/auth-idp-cognito- \
+        alb.ingress.kubernetes.io/auth-on-unauthenticated-request- \
+        alb.ingress.kubernetes.io/auth-scope- \
+        alb.ingress.kubernetes.io/auth-session-cookie- \
+        alb.ingress.kubernetes.io/auth-session-timeout- \
+        alb.ingress.kubernetes.io/auth-type-
+    EOT
+    on_failure = continue
   }
 
   depends_on = [
+    module.eks,
     module.eks_blueprints_addons,
     data.kubernetes_ingress_v1.grafana_ingress,
-    null_resource.cognito_user
+    null_resource.update_kubeconfig
   ]
 }

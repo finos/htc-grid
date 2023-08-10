@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
-module "eks_blueprints_addon" {
+module "htc-agent" {
   source  = "aws-ia/eks-blueprints-addon/aws"
   version = "~>1.0"
 

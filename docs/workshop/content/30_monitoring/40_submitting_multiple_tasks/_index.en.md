@@ -27,7 +27,33 @@ It may take a few seconds for the single-job to be deployed to the kubernetes cl
 
 ### Dynamic Scaling 
 
-This time it will take longer for the command to complete. The client should complete in ~5 minutes. In the background we will check how the Cluster will scale the number of workers and the number of instances. In the architecture section we did mention that the **Horizontal Pod Autoscaler** would be in charge of scaling up the number of pods. We can review the HPA activity by running the following command:
+This time it will take longer for the command to complete. The client should complete in ~5 minutes. In the background we will check how the Cluster will scale the number of workers and the number of instances.
+
+{{% notice note %}}
+The repository contains a helper script which can be used to monitor the progress and health of your batch job. It can be run using the command below (replacing the values for the correct `$HTC_NAMESPACE` and `$HTC_JOB_NAME`).
+Running this script will give you an output as below, allowing you to track the progress of the job (the script updates in 30 second intervals) and show you the scale of your HPA (more below), deployment, nodes and job completion time and status.
+{{% /notice %}}
+
+```
+export $HTC_NAMESPACE="default"
+export $HTC_JOB_NAME="batch-task"
+~/environment/aws-htc-grid/deployment/grid/scripts/shell/watch_htc.sh $HTC_NAMESPACE $HTC_JOB_NAME
+
+=================================================================================================================================================
+|                 Date | HPA (Desired/Max [Targets]) | Deployment (Ready/Total) | Nodes (Ready [NotReady/Total]) | Job (Completions [Duration]) |
+=================================================================================================================================================
+| 2023-08-11T12:41:13Z |                 1/100 [0/2] |                      1/1 |                        3 [0/3] |                    0/1 [22s] |
+| 2023-08-11T12:41:46Z |                 1/100 [0/2] |                      1/1 |                        3 [0/3] |                    0/1 [55s] |
+| 2023-08-11T12:42:19Z |           4/100 [246750m/2] |                      4/8 |                        3 [0/3] |                    0/1 [87s] |
+| 2023-08-11T12:42:51Z |           16/100 [61688m/2] |                     4/32 |                        3 [1/4] |                     0/1 [2m] |
+| 2023-08-11T12:43:24Z |           64/100 [14844m/2] |                    4/100 |                        4 [0/4] |                  0/1 [2m33s] |
+| 2023-08-11T12:43:57Z |           100/100 [9500m/2] |                   43/100 |                        6 [0/6] |                   0/1 [3m6s] |
+| 2023-08-11T12:44:30Z |           100/100 [8610m/2] |                   72/100 |                        7 [0/7] |                  0/1 [3m39s] |
+| 2023-08-11T12:45:03Z |           100/100 [8610m/2] |                  100/100 |                        7 [0/7] |                  0/1 [4m11s] |
+| 2023-08-11T12:45:35Z |           100/100 [1150m/2] |                  100/100 |                        7 [0/7] |                  1/1 [4m16s] |
+```
+
+In the architecture section we did mention that the **Horizontal Pod Autoscaler** would be in charge of scaling up the number of pods. We can review the HPA activity by running the following command in a new terminal window:
 
 ```
 kubectl get hpa -w
@@ -80,13 +106,3 @@ To check how the Scaling exercise has gone, you can re-visit a few of the dashbo
     {{< img "cloudwatch_example.png" "grafana_example" >}}
 
 1. Auto Scaling Groups:  As a result of Cluster Autoscaler scaling up the cluster, you should be able to see an increase in the number of instances on the Auto Scaling Groups.  In the AWS Console go to **EC2** / **Auto Scaling Groups**. The `spot` worker groups originally only needed one instance, but during the sale up operation they will reach ~6 to 7 nodes.
-
-
-
-
-
-
-
-
-
-

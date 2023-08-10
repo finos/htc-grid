@@ -3,120 +3,49 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
-#########################################
-##### build and push custom runtime #####
-#########################################
-resource "null_resource" "build_provided" {
-  triggers = {
-    always_run = timestamp()
+locals {
+  # The key represents the tag of the resulting image,
+  # while the value is the tag of the source image.
+  runtimes_to_build = {
+    "provided"  = "provided:al2",
+    "python3.8" = "python:3.8",
+    "dotnet5.0" = "dotnet:5.0",
+    "java17"    = "java:17"
   }
-  provisioner "local-exec" {
-    command = "docker build --platform linux/amd64 --build-arg HTCGRID_REGION=${var.region} --build-arg HTCGRID_ACCOUNT=${data.aws_caller_identity.current.account_id} -t ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda:provided -f ../lambda_runtimes/Dockerfile.provided ../lambda_runtimes"
-  }
-  # depends_on = [
-  #   null_resource.authenticate_to_ecr_public_repository
-  # ]
+  architecture = "linux/amd64"
 }
 
 
-resource "null_resource" "push_provided" {
+resource "null_resource" "build_and_push_runtimes" {
+  for_each = local.runtimes_to_build
+
   triggers = {
-    always_run = timestamp()
+    aws_htc_ecr      = local.aws_htc_ecr
+    architecture     = local.architecture
+    rebuild_runtimes = var.rebuild_runtimes
+    always_run       = timestamp()
   }
+
   provisioner "local-exec" {
-    command = "docker push ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda:provided"
+    command = <<-EOT
+      docker build --platform "${self.triggers.architecture}" \
+        --build-arg HTCGRID_ECR_REPO="${self.triggers.aws_htc_ecr}/ecr-public/lambda/${each.value}" \
+        -t "${self.triggers.aws_htc_ecr}/lambda:${each.key}" \
+        -f ../lambda_runtimes/Dockerfile ../lambda_runtimes
+      docker push ${self.triggers.aws_htc_ecr}/lambda:${each.key}
+    EOT
   }
-  depends_on = [
-    null_resource.authenticate_to_ecr_repository,
-    null_resource.build_provided
-  ]
-}
 
-
-#########################################
-##### build and push python runtime #####
-#########################################
-resource "null_resource" "build_python38" {
-  triggers = {
-    always_run = timestamp()
-  }
   provisioner "local-exec" {
-    command = "docker build --platform linux/amd64 --build-arg HTCGRID_REGION=${var.region} --build-arg HTCGRID_ACCOUNT=${data.aws_caller_identity.current.account_id} -t ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda:python3.8 -f ../lambda_runtimes/Dockerfile.python3.8 ../lambda_runtimes"
+    when       = destroy
+    command    = <<-EOT
+      if [ "${self.triggers.rebuild_runtimes}" == "true" ]; then
+        docker rmi ${self.triggers.aws_htc_ecr}/lambda:${each.key}
+        aws ecr batch-delete-image --repository-name lambda --image-ids imageTag=${each.key}
+      fi
+    EOT
+    on_failure = continue
   }
-  # depends_on = [
-  #   null_resource.authenticate_to_ecr_public_repository
-  # ]
-}
 
-
-resource "null_resource" "push_python38" {
-  triggers = {
-    always_run = timestamp()
-  }
-  provisioner "local-exec" {
-    command = "docker push ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda:python3.8"
-  }
-  depends_on = [
-    null_resource.authenticate_to_ecr_repository,
-    null_resource.build_python38
-  ]
-}
-
-
-#########################################
-##### build and push dotnet runtime #####
-#########################################
-resource "null_resource" "build_dotnet50" {
-  triggers = {
-    always_run = timestamp()
-  }
-  provisioner "local-exec" {
-    command = "docker build --platform linux/amd64 --build-arg HTCGRID_REGION=${var.region} --build-arg HTCGRID_ACCOUNT=${data.aws_caller_identity.current.account_id} -t ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda:5.0 -f ../lambda_runtimes/Dockerfile.dotnet5.0 ../lambda_runtimes"
-  }
-  # depends_on = [
-  #   null_resource.authenticate_to_ecr_public_repository
-  # ]
-}
-
-
-resource "null_resource" "push_dotnet50" {
-  triggers = {
-    always_run = timestamp()
-  }
-  provisioner "local-exec" {
-    command = "docker push ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda:5.0"
-  }
-  depends_on = [
-    null_resource.authenticate_to_ecr_repository,
-    null_resource.build_dotnet50
-  ]
-}
-
-
-#########################################
-##### build and push java runtime #####
-#########################################
-resource "null_resource" "build_java" {
-  triggers = {
-    always_run = timestamp()
-  }
-  provisioner "local-exec" {
-    command = "docker build --build-arg HTCGRID_REGION=${var.region} --build-arg HTCGRID_ACCOUNT=${data.aws_caller_identity.current.account_id} -t ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda:java -f ../lambda_runtimes/Dockerfile.java17 ../lambda_runtimes"
-  }
-  # depends_on = [
-  #   null_resource.authenticate_to_ecr_public_repository
-  # ]
-}
-
-resource "null_resource" "push_java" {
-  triggers = {
-    always_run = timestamp()
-  }
-  provisioner "local-exec" {
-    command = "docker push ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/lambda:java"
-  }
-  depends_on = [
-    null_resource.authenticate_to_ecr_repository,
-    null_resource.build_java
-  ]
+  depends_on = [null_resource.authenticate_to_ecr_repository]
 }

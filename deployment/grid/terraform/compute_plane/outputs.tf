@@ -45,7 +45,7 @@ output "self_managed_node_groups_autoscaling_group_names" {
 
 output "nlb_influxdb" {
   description = "url of the NLB in front of the influx DB"
-  value       = try(data.kubernetes_service.influxdb_load_balancer.status.0.load_balancer.0.ingress.0.hostname, "")
+  value       = data.kubernetes_service_v1.influxdb_load_balancer.status.0.load_balancer.0.ingress.0.hostname
 }
 
 output "cognito_userpool_arn" {

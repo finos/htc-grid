@@ -31,7 +31,7 @@ module "ttl_checker" {
   ]
   function_name   = var.lambda_name_ttl_checker
   build_in_docker = true
-  docker_image    = "${var.aws_htc_ecr}/lambda-build:build-${var.lambda_runtime}"
+  docker_image    = local.lambda_build_runtime
   docker_additional_options = [
     "--platform", "linux/amd64",
   ]

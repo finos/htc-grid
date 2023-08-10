@@ -30,22 +30,20 @@ module "scaling_metrics" {
     }
   ]
 
-  function_name = var.lambda_name_scaling_metrics
-  handler       = "scaling_metrics.lambda_handler"
-  memory_size   = 1024
-  timeout       = 60
-  runtime       = var.lambda_runtime
-  create_role   = false
-  lambda_role   = aws_iam_role.role_scaling_metrics.arn
-
-  vpc_subnet_ids         = var.vpc_private_subnet_ids
-  vpc_security_group_ids = [var.vpc_default_security_group_id]
-  build_in_docker        = true
-  docker_image           = "${var.aws_htc_ecr}/lambda-build:build-${var.lambda_runtime}"
+  function_name   = var.lambda_name_scaling_metrics
+  build_in_docker = true
+  docker_image    = local.lambda_build_runtime
   docker_additional_options = [
     "--platform", "linux/amd64",
   ]
+  handler                           = "scaling_metrics.lambda_handler"
+  memory_size                       = 1024
+  timeout                           = 60
+  runtime                           = var.lambda_runtime
+  create_role                       = false
+  lambda_role                       = aws_iam_role.role_scaling_metrics.arn
   use_existing_cloudwatch_log_group = false
+
   environment_variables = {
     STATE_TABLE_CONFIG   = var.ddb_state_table,
     NAMESPACE            = var.namespace_metrics,
@@ -125,7 +123,7 @@ resource "aws_iam_policy" "scaling_metrics_logging_policy" {
         "logs:CreateLogStream",
         "logs:PutLogEvents"
       ],
-      "Resource": "arn:aws:logs:*:*:*",
+      "Resource": "arn:${local.partition}:logs:*:*:*",
       "Effect": "Allow"
     }
   ]
