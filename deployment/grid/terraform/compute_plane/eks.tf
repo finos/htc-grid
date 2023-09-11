@@ -5,13 +5,13 @@
 
 locals {
   chart_version = {
-    aws_for_fluentbit      = "0.1.28"
+    aws_for_fluentbit      = "0.1.30"
     aws_cloudwatch_metrics = "0.0.9"
-    cluster_autoscaler     = "9.29.1"
+    cluster_autoscaler     = "9.29.3"
     keda                   = try(var.k8s_keda_version, "2.11.2")
-    influxdb               = "4.12.3"
-    prometheus             = "23.3.0"
-    grafana                = "6.58.8"
+    influxdb               = "4.12.5"
+    prometheus             = "24.3.1"
+    grafana                = "6.59.4"
   }
 }
 
@@ -41,82 +41,6 @@ module "eks" {
   }
 
   eks_managed_node_groups = local.eks_worker_group_map
-
-  # create_node_security_group    = true
-  node_security_group_additional_rules = {
-    # Extend node-to-node security group rules. Recommended and required for the Add-ons
-    ingress_keda_apiservice = {
-      description = "apiservice for Keda"
-      type        = "ingress"
-      self        = true
-      from_port   = 9666
-      to_port     = 9666
-      protocol    = "tcp"
-    }
-    ingress_dns_tcp = {
-      description = "Node to node DNS(TCP)"
-      protocol    = "tcp"
-      from_port   = 53
-      to_port     = 53
-      type        = "ingress"
-      cidr_blocks = [var.vpc_cidr]
-    }
-    ingress_influxdb_tcp = {
-      description = "Node to node influxdb"
-      protocol    = "tcp"
-      from_port   = 8086
-      to_port     = 8088
-      type        = "ingress"
-      cidr_blocks = [var.vpc_cidr]
-    }
-    ingress_dns_udp = {
-      description = "Node to node DNS(UDP)"
-      protocol    = "udp"
-      from_port   = 53
-      to_port     = 53
-      type        = "ingress"
-      cidr_blocks = [var.vpc_cidr]
-    }
-
-    egress_dns_tcp = {
-      description = "Node to node DNS(TCP)"
-      protocol    = "tcp"
-      from_port   = 53
-      to_port     = 53
-      type        = "egress"
-      cidr_blocks = [var.vpc_cidr]
-    }
-    egress_dns_udp = {
-      description = "Node to node DNS(UDP)"
-      protocol    = "udp"
-      from_port   = 53
-      to_port     = 53
-      type        = "egress"
-      cidr_blocks = [var.vpc_cidr]
-    }
-
-    # Allow Control Plane Nodes to talk to Worker nodes on all ports. Added this to simplify the example and further avoid issues with Add-ons communication with Control plane.
-    # This can be restricted further to specific port based on the requirement for each Add-on e.g., metrics-server 4443, spark-operator 8080, karpenter 8443 etc.
-    # Change this according to your security requirements if needed
-    ingress_cluster_to_node_all_traffic = {
-      description                   = "Cluster API to Nodegroup all traffic"
-      protocol                      = "-1"
-      from_port                     = 0
-      to_port                       = 0
-      type                          = "ingress"
-      source_cluster_security_group = true
-    }
-    # Recommended outbound traffic for Node groups
-    egress_all = {
-      description      = "Node all egress"
-      protocol         = "-1"
-      from_port        = 0
-      to_port          = 0
-      type             = "egress"
-      cidr_blocks      = ["0.0.0.0/0"]
-      ipv6_cidr_blocks = ["::/0"]
-    }
-  }
 
   # aws-auth configmap
   manage_aws_auth_configmap = true
@@ -164,7 +88,7 @@ module "eks_blueprints_addons" {
       )
 
       timeouts = {
-        create = "1m"
+        create = "25m"
         delete = "5m"
       }
     }
@@ -194,8 +118,9 @@ module "eks_blueprints_addons" {
 
   enable_aws_for_fluentbit = true
   aws_for_fluentbit_cw_log_group = {
-    create    = true
-    retention = 30
+    create          = true
+    use_name_prefix = false
+    retention       = 30
   }
   aws_for_fluentbit = {
     name             = "aws-for-fluent-bit"
@@ -247,6 +172,7 @@ module "eks_blueprints_addons" {
         aws_htc_ecr = var.aws_htc_ecr
       })]
     }
+
     influxdb = {
       description      = "A Helm chart for InfluxDB"
       namespace        = "influxdb"
@@ -258,6 +184,7 @@ module "eks_blueprints_addons" {
         aws_htc_ecr = var.aws_htc_ecr
       })]
     }
+
     prometheus = {
       description      = "A Helm chart for Prometheus"
       namespace        = "prometheus"
@@ -270,6 +197,7 @@ module "eks_blueprints_addons" {
         region      = var.region
       })]
     }
+
     grafana = {
       description      = "A Helm chart for Grafana"
       namespace        = "grafana"
@@ -278,12 +206,12 @@ module "eks_blueprints_addons" {
       chart_version    = local.chart_version.grafana
       repository       = "https://grafana.github.io/helm-charts"
       values = [templatefile("${path.module}/../../charts/values/grafana.yaml", {
-        aws_htc_ecr                          = var.aws_htc_ecr
-        grafana_configuration_admin_password = var.grafana_configuration.admin_password
-        alb_certificate_arn                  = aws_acm_certificate.alb_certificate.arn
-        vpc_public_subnets                   = join(",", var.vpc_public_subnet_ids)
-        htc_metrics_dashboard_json           = indent(8, file("${path.module}/files/htc-dashboard.json"))
-        kubernetes_metrics_dashboard_json    = indent(8, file("${path.module}/files/kubernetes-dashboard.json"))
+        aws_htc_ecr                       = var.aws_htc_ecr
+        grafana_admin_password            = var.grafana_admin_password
+        alb_certificate_arn               = aws_acm_certificate.alb_certificate.arn
+        vpc_public_subnets                = join(",", var.vpc_public_subnet_ids)
+        htc_metrics_dashboard_json        = indent(8, file("${path.module}/files/htc-dashboard.json"))
+        kubernetes_metrics_dashboard_json = indent(8, file("${path.module}/files/kubernetes-dashboard.json"))
       })]
     }
   }
@@ -297,14 +225,12 @@ module "eks_blueprints_addons" {
 # (via a TF dependency or a finalizer), these will be removed and all of the chart resources will be managed via Helm.
 
 
-# This resource is used to create an implicit dependency between the EKS Addons and the AWS External resources
-resource "time_sleep" "this" {
+# These resource are used to create an implicit dependency between the EKS Addons and the AWS External resources
+resource "time_sleep" "influxdb_service_dependency" {
   # Giving EKS some time to create the Helm resources
   create_duration = "10s"
 
   triggers = {
-    grafana_namespace     = module.eks_blueprints_addons.helm_releases["grafana"].namespace
-    grafana_release_name  = module.eks_blueprints_addons.helm_releases["grafana"].name
     influxdb_namespace    = module.eks_blueprints_addons.helm_releases["influxdb"].namespace
     influxdb_release_name = module.eks_blueprints_addons.helm_releases["influxdb"].name
   }
@@ -317,12 +243,29 @@ resource "time_sleep" "this" {
 }
 
 
-# These null_resoures are used to ensure the external resources are deleted, by ie removing the annotations/resources, and allowing the LB COntroller to
+resource "time_sleep" "grafana_ingress_dependency" {
+  # Giving EKS some time to create the Helm resources
+  create_duration = "10s"
+
+  triggers = {
+    grafana_namespace    = module.eks_blueprints_addons.helm_releases["grafana"].namespace
+    grafana_release_name = module.eks_blueprints_addons.helm_releases["grafana"].name
+  }
+
+  depends_on = [
+    module.eks,
+    module.eks_blueprints_addons,
+    null_resource.update_kubeconfig
+  ]
+}
+
+
+# These null_resoures are used to ensure the external resources are deleted, by ie removing the annotations/resources, and allowing the LB Controller to
 # cleanup the external resources before the EKS Addons are destroyed.
 resource "null_resource" "destroy_external_influxdb_lb" {
   triggers = {
-    influxdb_namespace    = time_sleep.this.triggers["influxdb_namespace"]
-    influxdb_release_name = time_sleep.this.triggers["influxdb_release_name"]
+    influxdb_namespace    = time_sleep.influxdb_service_dependency.triggers["influxdb_namespace"]
+    influxdb_release_name = time_sleep.influxdb_service_dependency.triggers["influxdb_release_name"]
   }
 
   provisioner "local-exec" {
@@ -343,8 +286,8 @@ resource "null_resource" "destroy_external_influxdb_lb" {
 
 resource "null_resource" "destroy_external_grafana_lb" {
   triggers = {
-    grafana_namespace    = time_sleep.this.triggers["grafana_namespace"]
-    grafana_release_name = time_sleep.this.triggers["grafana_release_name"]
+    grafana_namespace    = time_sleep.grafana_ingress_dependency.triggers["grafana_namespace"]
+    grafana_release_name = time_sleep.grafana_ingress_dependency.triggers["grafana_release_name"]
   }
 
   provisioner "local-exec" {

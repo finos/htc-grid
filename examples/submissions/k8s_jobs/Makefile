@@ -27,6 +27,8 @@ generated:
 
 	mkdir -p $(GENERATED) && cat portfolio-pricing-book.yaml.tpl | sed "s/{{account_id}}/$(ACCOUNT_ID)/;s/{{region}}/$(REGION)/;s/{{image_name}}/$(SUBMITTER_IMAGE_NAME)/;s/{{image_tag}}/$(TAG)/" > $(GENERATED)/portfolio-pricing-book.yaml
 
+	mkdir -p $(GENERATED) && cat portfolio-pricing-full-run.yaml.tpl | sed "s/{{account_id}}/$(ACCOUNT_ID)/;s/{{region}}/$(REGION)/;s/{{image_name}}/$(SUBMITTER_IMAGE_NAME)/;s/{{image_tag}}/$(TAG)/" > $(GENERATED)/portfolio-pricing-full-run.yaml
+
 	mkdir -p $(GENERATED) && cat cancel-many-small-tasks-test.yaml.tpl | sed "s/{{account_id}}/$(ACCOUNT_ID)/;s/{{region}}/$(REGION)/;s/{{image_name}}/$(SUBMITTER_IMAGE_NAME)/;s/{{image_tag}}/$(TAG)/" > $(GENERATED)/cancel-many-small-tasks-test.yaml
 
 	mkdir -p $(GENERATED) && cat cancel-one-long-task-test.yaml.tpl | sed "s/{{account_id}}/$(ACCOUNT_ID)/;s/{{region}}/$(REGION)/;s/{{image_name}}/$(SUBMITTER_IMAGE_NAME)/;s/{{image_tag}}/$(TAG)/" > $(GENERATED)/cancel-one-long-task-test.yaml

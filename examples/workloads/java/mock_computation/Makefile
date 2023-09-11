@@ -23,7 +23,7 @@ upload: compile
 
 	cd ./lambda/ &&  zip -r ./../lambda.zip ./ && cd -
 
-	aws s3 cp lambda.zip s3://$(BUCKET_NAME)
+	aws s3 cp lambda.zip s3://$(BUCKET_NAME) --region $(REGION)
 
 clean:
 	rm  lambda.zip

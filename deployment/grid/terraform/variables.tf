@@ -364,52 +364,11 @@ variable "agent_configuration" {
 }
 
 variable "grafana_admin_password" {
-  description = "Holds the default password that wouldbe used within grafana"
+  description = "Holds the default/initial password that will be used for authenticating with Grafana"
   type        = string
-  default     = "htcadmin"
+  default     = ""
+  sensitive   = true
 }
-
-variable "grafana_configuration" {
-  description = "this variable store the configuration for the grafana helm chart"
-  type = object({
-
-    # downloadDashboardsImage_tag = string
-    # grafana_tag                 = string
-    # initChownData_tag           = string
-    # sidecar_tag                 = string
-    admin_password = string
-
-  })
-  default = {
-    # sidecar_tag                 = "" //"1.10.7"
-    # initChownData_tag           = "" //"1.31.1"
-    # grafana_tag                 = "" //"7.4.2"
-    # downloadDashboardsImage_tag = "" //"7.73.0"
-    admin_password = ""
-  }
-}
-
-# variable "prometheus_configuration" {
-#   description = "this variable store the configuration for the prometheus helm chart"
-#   type = object({
-
-#     node_exporter_tag      = string
-#     server_tag             = string
-#     alertmanager_tag       = string
-#     kube_state_metrics_tag = string
-#     pushgateway_tag        = string
-#     configmap_reload_tag   = string
-
-#   })
-#   default = {
-#     node_exporter_tag      = "" //"v1.1.2"
-#     server_tag             = "" //"v2.26.0"
-#     alertmanager_tag       = "" //"v0.22.0"
-#     kube_state_metrics_tag = "" //"v2.5.0"
-#     pushgateway_tag        = "" //"v1.3.1"
-#     configmap_reload_tag   = "" //"v0.5.0"
-#   }
-# }
 
 variable "vpc_cidr_block_public" {
   description = "netmask for the cidr for each public subnet"

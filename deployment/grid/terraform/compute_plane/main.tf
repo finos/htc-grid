@@ -16,8 +16,22 @@ locals {
     merge(var.eks_worker_groups[index], {
       iam_role_additional_policies = {
         AmazonEC2ContainerRegistryReadOnly = "arn:${local.partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
-        eks_pull_through_cache_permission  = aws_iam_policy.eks_pull_through_cache_permission.arn
+        CloudWatchAgentServerPolicy        = "arn:${local.partition}:iam::aws:policy/CloudWatchAgentServerPolicy",
+        eks_pull_through_cache_permission  = aws_iam_policy.eks_pull_through_cache_permission.arn,
+        agent_permissions                  = aws_iam_policy.agent_permissions.arn,
       }
+
+      block_device_mappings = {
+        xvda = {
+          device_name = "/dev/xvda"
+          ebs = {
+            volume_size           = 50
+            volume_type           = "gp3"
+            delete_on_termination = true
+          }
+        }
+      }
+
       labels = {
         "htc/node-type" = "worker"
       }
@@ -35,13 +49,25 @@ locals {
         capacity_type   = "ON_DEMAND",
         iam_role_additional_policies = {
           AmazonEC2ContainerRegistryReadOnly = "arn:${local.partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+          CloudWatchAgentServerPolicy        = "arn:${local.partition}:iam::aws:policy/CloudWatchAgentServerPolicy",
           eks_pull_through_cache_permission  = aws_iam_policy.eks_pull_through_cache_permission.arn,
-          agent_permissions                  = aws_iam_policy.agent_permissions.arn
+          agent_permissions                  = aws_iam_policy.agent_permissions.arn,
         }
 
         min_size     = 2,
         max_size     = 6,
         desired_size = 2,
+
+        block_device_mappings = {
+          xvda = {
+            device_name = "/dev/xvda"
+            ebs = {
+              volume_size           = 20
+              volume_type           = "gp3"
+              delete_on_termination = true
+            }
+          }
+        }
 
         labels = {
           "htc/node-type" = "core"

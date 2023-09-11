@@ -48,7 +48,8 @@ get-client-id:
 	@terraform output -raw user_pool_client_id
 
 get-grafana-password:
-	@terraform output grafana_admin_password
+	@terraform output -raw grafana_admin_password
+	@echo
 
 clean:
 	rm -rf $(BUILD_DIR)/tag.*

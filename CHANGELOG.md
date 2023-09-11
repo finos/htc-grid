@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file. Dates are d
 
 #### [v0.4.0](https://github.com/awslabs/aws-htc-grid/compare/v0.3.6...v0.4.0)
 
-> 12 August 2023
+> 11 September 2023
 
 ### EKS Cluster & Nodes:
 - Change to using [terraform-aws-modules/eks](https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest) for managing and deploying the EKS Cluster as well as related resources, such as: Node IAM Roles & Policies, Node Defaults incl. instance types, Security Groups and the AWS Auth ConfigMap.
@@ -15,13 +15,20 @@ All notable changes to this project will be documented in this file. Dates are d
 - Change node taints from `grid/type: Operator` to `htc/node-type: core` and `htc/node-type: worker`. Add those as labels and tags as well, to simplify operations and cluster visibility via kubectl and other monitoring solutions.
 - Adjust default instance types for the Core and Worker Node Groups to allow for better diversification and deplopyment, both for OnDemand and Spot workloads.
 - Change to using `cluster_name` instead of `eks_cluster_id` everywhere, in line with the new module changes.
+- Add ability to specify EBS Volume type and size for the EKS Nodes.
 
 ### EKS AddOns:
 - Change to [eks-blueprints-addons](https://registry.terraform.io/modules/aws-ia/eks-blueprints-addons/aws/latest) for managing and deploying all of the EKS Blueprint AddOns and OSS Helm Releases, such as: CoreDNS, Kube-Proxy, VPC CNI, FluentBit, Cluster Autoscaler, AWS LoadBalancer Controller, CloudWatch Metrics, KEDA, InfluxDB, Prometheus & Grafana, as well as **all** the relevant configuration.
 - Add implicit and explicit dependencies to fix the race conditions where the `AWS Loadbalancer Controller` may get deleted before being able to cleanup the AWS resources that it manages. The new dependency order guarantees a proper clean up of those resources before the `AWS LoadBalancer Controller` is destroyed during unprovisioning.
 - Fix the explicit and implicit dependencies between the Kubernetes data sources and the underlying resources created by the `EKS Blueprints Addons` module.
 - Move ingress and dashboard creation for Grafana to be handled via the Helm chart and clean up the un-needed additional Terraform resources. Add the Grafana Ingress URL as a Terraform output for the module.
-- Adjust image and repo configuration to pull the correct version for Cluster Autoscaler and other components.
+- Adjust image and repo configuration to pull the correct version for `Cluster Autoscaler` and other components.
+- Adjust the node selectors for FluentBit and CloudWatch agent DaemonSets to deploy to all nodes.
+- Switch to using the new Go based high-performance FluentBit logger for CloudWatch.
+- Disable Grafana Live Server (as it requires WebSockets).
+- Add cookie based session stickiness to the Grafana ingress to allow the ALB Controller and the Grafana HA deployment to handle auth properly.
+- Fix FluentBit based Container Insights Logs.
+- Extend the CoreDNS creation timeout to 25Mins to allow for the control plane to self-heal in case of issues.
 
 ### HTC-Grid:
 - Change to using [eks-blueprints-addon](https://registry.terraform.io/modules/aws-ia/eks-blueprints-addon/aws/latest) for deploying the HTC-Grid Helm Chart as well as create the respective [IRSA Role](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html).
@@ -53,8 +60,11 @@ All notable changes to this project will be documented in this file. Dates are d
 - Add support for correct handling of the `AWS Partition` as well as `AWS Partition DNS Suffix`.
 - Add ability to automatically manage the lifecycle of the self-signed ALB Certificates via the deployment process (any certs about to expire will get automatically updated and rolled out without any downtime).
 - Migrate to using `AWS Certificate Manager` instead of the `IAM Server Certificates` for the ALB Certs.
+- Increase the self-signed ALB Cert validity to 1 year, with auto-renew if run within 6 months of expiration time
 - Add ability to automatically create, update and destroy an `admin` Cognito user via the deployment, to be used for the Grafana authentication, reducing the need for manual steps during the setup as well as the workshop.
 - Add user cleanup on `destroy` for the `admin` Cognito user (created for use with Grafana) as well as the relevant Cognito config with the Grafana Ingress.
+- Switch to creating the Cognito User for Grafana using TF native resources.
+- Switch the `grafana_admin_password` variable to be sensitive everywhere.
 - Add template file and generation for submitting a batch of multi-session tasks instead of copying/replacing at runtime of the workshop. Adjust docs/workshop accordingly.
 
 ### Lambda Runtimes:
@@ -62,6 +72,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - Add package updates at build time (incl. cache clearing post updates), to ensure latest versions of updates are always included in the runtime images.
 - Migrate all build runtimes to use the ECR Pull Through Cache for the build images.
 - Simplify and consolidated the lambda runtime build and push Terraform resources into a single map of resources.
+- Fix Lambda Runtimes Dockerfile to handle different entrypoint source script for the provided runtime.
 
 ### ECR & Image Builds:
 - Change all container images to use the ECR pull through-cache where possible.
@@ -82,6 +93,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - Add instructions on how to use the `watch-htc.sh` script for monitoring jobs and deployments.
 - Add the quick one-command based option for disabling of Cloud9 Managed Temporary Credentials.
 - Adjust wording, correct grammar mistakes and other typos and simplify language.
+- Extend workshop cleanup steps to handle local state cleaning as well.
 
 ### Misc.:
 - Add `CHANGELOG.md` to the repository, including reflecting all of the previous releases and commits.

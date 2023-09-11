@@ -23,18 +23,18 @@ output "user_pool_arn" {
 }
 
 output "grafana_admin_password" {
+  description = "The password for the admin user for Grafana"
   value       = local.grafana_admin_password
-  description = "The password for grafana."
   sensitive   = true
 }
 
 output "user_pool_id" {
-  description = "Userpool id of the user pool created"
+  description = "UserPoolID of the Cognito User Pool created"
   value       = module.compute_plane.cognito_userpool_id
 }
 
 output "user_pool_client_id" {
-  description = "Client id of the user pool created"
+  description = "ClientID of the Cognito User Pool created"
   value       = module.compute_plane.cognito_userpool_client_id
 }
 

@@ -10,7 +10,7 @@ Container Insights  collects, aggregates, and summarizes metrics and logs from H
 
 1. In the AWS Console, select **Cloudwatch** and on the left hand menu, select  **Logs** /**Logs Insights**.
 
-1. In the Select group box, select **/aws/containerinsights/htc-main/application**. Then in the edit box add the query below and then run the query
+1. In the Select group box, select **/aws/eks/htc-main/aws-fluentbit-logs**. Then in the edit box add the query below and then run the query
 
 ```text
 fields @timestamp, @message

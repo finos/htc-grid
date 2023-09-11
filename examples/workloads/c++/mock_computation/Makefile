@@ -17,7 +17,7 @@ compile: build-env
 	docker run   --platform linux/amd64 --rm -v  $(shell pwd):/app/build  builded-env:$(TAG)
 
 upload: compile
-	aws s3 cp lambda.zip s3://$(BUCKET_NAME)
+	aws s3 cp lambda.zip s3://$(BUCKET_NAME) --region $(REGION)
 
 clean:
 	rm mock_compute_engine lambda.zip

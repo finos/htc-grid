@@ -5,16 +5,16 @@
 
 data "kubernetes_service_v1" "influxdb_load_balancer" {
   metadata {
-    name      = time_sleep.this.triggers["influxdb_release_name"]
-    namespace = time_sleep.this.triggers["influxdb_namespace"]
+    name      = time_sleep.influxdb_service_dependency.triggers["influxdb_release_name"]
+    namespace = time_sleep.influxdb_service_dependency.triggers["influxdb_namespace"]
   }
 }
 
 
 data "kubernetes_ingress_v1" "grafana_ingress" {
   metadata {
-    name      = time_sleep.this.triggers["grafana_release_name"]
-    namespace = time_sleep.this.triggers["grafana_namespace"]
+    name      = time_sleep.grafana_ingress_dependency.triggers["grafana_release_name"]
+    namespace = time_sleep.grafana_ingress_dependency.triggers["grafana_namespace"]
   }
 }
 

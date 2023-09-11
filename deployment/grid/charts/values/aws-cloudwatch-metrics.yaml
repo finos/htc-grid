@@ -5,8 +5,6 @@
 image:
   repository: "${aws_htc_ecr}/ecr-public/cloudwatch-agent/cloudwatch-agent"
 
-nodeSelector:
-  htc/node-type: "core"
 
 tolerations:
   - key: "htc/node-type"

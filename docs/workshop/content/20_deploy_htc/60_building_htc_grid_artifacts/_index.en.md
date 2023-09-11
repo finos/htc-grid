@@ -15,7 +15,7 @@ make happy-path TAG=$TAG REGION=$HTCGRID_REGION
 ```
 
 A few notes on this command:
- - If `TAG` is omitted then mainline will be the chosen has a default value.
+ - If `TAG` is omitted then *mainline* will be chosen as the default value.
  - If `REGION` is omitted then eu-west-1 will be used.
 
  Once the command above gets executed, A folder named `generated` will be created at `~/environment/aws-htc-grid/generated`. This folder will contain some important files, like the following:

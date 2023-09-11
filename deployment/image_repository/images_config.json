@@ -1,7 +1,7 @@
 {
     "image_to_copy": {
         "curlimages/curl:7.85.0":"curl",
-        "grafana/grafana:10.0.3":"grafana",
+        "grafana/grafana:10.1.1":"grafana",
         "ghcr.io/kedacore/keda:2.11.2": "kedacore/keda",
         "ghcr.io/kedacore/keda-metrics-apiserver:2.11.2": "kedacore/keda-metrics-apiserver",
         "ghcr.io/kedacore/keda-admission-webhooks:2.11.2": "kedacore/keda-admission-webhooks"

@@ -20,16 +20,18 @@ resource "null_resource" "build_and_push_runtimes" {
   for_each = local.runtimes_to_build
 
   triggers = {
-    aws_htc_ecr      = local.aws_htc_ecr
-    architecture     = local.architecture
-    rebuild_runtimes = var.rebuild_runtimes
-    always_run       = timestamp()
+    aws_htc_ecr       = local.aws_htc_ecr
+    lambda_entrypoint = each.key == "provided" ? "lambda_entry_point_provided.sh" : "lambda_entry_point.sh"
+    architecture      = local.architecture
+    rebuild_runtimes  = var.rebuild_runtimes
+    always_run        = timestamp()
   }
 
   provisioner "local-exec" {
     command = <<-EOT
       docker build --platform "${self.triggers.architecture}" \
         --build-arg HTCGRID_ECR_REPO="${self.triggers.aws_htc_ecr}/ecr-public/lambda/${each.value}" \
+        --build-arg HTCGRID_LAMBDA_ENTRYPOINT="${self.triggers.lambda_entrypoint}" \
         -t "${self.triggers.aws_htc_ecr}/lambda:${each.key}" \
         -f ../lambda_runtimes/Dockerfile ../lambda_runtimes
       docker push ${self.triggers.aws_htc_ecr}/lambda:${each.key}
@@ -41,7 +43,7 @@ resource "null_resource" "build_and_push_runtimes" {
     command    = <<-EOT
       if [ "${self.triggers.rebuild_runtimes}" == "true" ]; then
         docker rmi ${self.triggers.aws_htc_ecr}/lambda:${each.key}
-        aws ecr batch-delete-image --repository-name lambda --image-ids imageTag=${each.key}
+        aws ecr batch-delete-image --repository-name lambda --image-ids imageTag=${each.key} --region ${var.region}
       fi
     EOT
     on_failure = continue

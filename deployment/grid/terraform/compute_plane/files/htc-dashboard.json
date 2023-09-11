@@ -2742,7 +2742,7 @@
           }
         }
       ],
-      "title": "Influx API Meatrics",
+      "title": "Influx API Metrics",
       "type": "row"
     },
     {

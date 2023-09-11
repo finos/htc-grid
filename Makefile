@@ -291,9 +291,8 @@ k8s-jobs:
 ##### path per example ######
 #############################
 
-happy-path: all upload-c++ config-c++
+happy-path: ecr-login all upload-c++ config-c++
 
-python-happy-path: all upload-python config-python
+python-happy-path: ecr-login all upload-python config-python
 
-python-quant-lib-path: all upload-python-ql config-python-ql
-
+python-quant-lib-path: ecr-login all upload-python-ql config-python-ql

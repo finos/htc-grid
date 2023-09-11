@@ -57,9 +57,9 @@ resource "null_resource" "delete_pull_through_cache_repos" {
   provisioner "local-exec" {
     when    = destroy
     command = <<-EOT
-      for repo in $(aws ecr describe-repositories | \
+      for repo in $(aws ecr describe-repositories --region ${var.region} | \
         jq -r -c '.repositories[].repositoryName | select(. | contains("${each.key}"))'); do
-          aws ecr delete-repository --force --repository-name $repo;
+          aws ecr delete-repository --force --repository-name $repo --region ${var.region};
         done
     EOT
   }

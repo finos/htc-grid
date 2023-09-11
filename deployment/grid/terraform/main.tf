@@ -91,7 +91,7 @@ resource "random_string" "random_resources" {
 resource "random_password" "password" {
   length           = 16
   special          = true
-  override_special = "_%@"
+  override_special = "_%@!"
 }
 
 
@@ -148,8 +148,7 @@ module "compute_plane" {
   task_queue_config                    = var.task_queue_config
   error_log_group                      = local.error_log_group
   error_logging_stream                 = local.error_logging_stream
-  grafana_configuration                = var.grafana_configuration
-  # prometheus_configuration             = var.prometheus_configuration
+  grafana_admin_password               = local.grafana_admin_password
 }
 
 module "control_plane" {

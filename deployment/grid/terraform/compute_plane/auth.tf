@@ -46,7 +46,7 @@ resource "aws_cognito_user_pool_client" "client" {
   allowed_oauth_flows_user_pool_client = true
   generate_secret                      = true
   allowed_oauth_flows                  = ["code"]
-  callback_urls                        = [try("https://${data.kubernetes_ingress_v1.grafana_ingress.status.0.load_balancer.0.ingress.0.hostname}/oauth2/idpresponse", "")]
+  callback_urls                        = ["https://${data.kubernetes_ingress_v1.grafana_ingress.status.0.load_balancer.0.ingress.0.hostname}/oauth2/idpresponse"]
   allowed_oauth_scopes = [
     "email", "openid"
   ]
@@ -58,41 +58,13 @@ resource "aws_cognito_user_pool_client" "client" {
     "ALLOW_USER_SRP_AUTH",
     "ALLOW_REFRESH_TOKEN_AUTH"
   ]
-
-  depends_on = [data.kubernetes_ingress_v1.grafana_ingress]
 }
 
 
-resource "null_resource" "cognito_user" {
-  triggers = {
-    user_pool_id           = aws_cognito_user_pool.htc_pool.id
-    client_id              = aws_cognito_user_pool_client.user_data_client.id
-    grafana_admin_password = sensitive(var.grafana_configuration.admin_password)
-    region                 = var.region
-  }
-
-  # The grafana_configuration.admin_password variable value is used at first creation only, and then the trigger value is used for further changes/updates
-  provisioner "local-exec" {
-    command    = <<-EOT
-      aws cognito-idp sign-up --region ${self.triggers.region} --client-id ${self.triggers.client_id} --username admin --password ${sensitive(var.grafana_configuration.admin_password)} && \
-      aws cognito-idp admin-confirm-sign-up --region ${self.triggers.region} --user-pool-id ${self.triggers.user_pool_id} --username admin
-    EOT
-    on_failure = continue
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      aws cognito-idp admin-get-user --region ${self.triggers.region} --user-pool-id ${self.triggers.user_pool_id} --username admin >/dev/null 2>&1 && \
-      aws cognito-idp admin-set-user-password --region ${self.triggers.region} --user-pool-id ${self.triggers.user_pool_id} --username admin --password '${self.triggers.grafana_admin_password}' || \
-      echo "Failed creating admin user in Cognito for Grafana! Please do so manually!"
-    EOT
-  }
-
-  provisioner "local-exec" {
-    when       = destroy
-    command    = "aws cognito-idp admin-delete-user --region ${self.triggers.region} --user-pool-id ${self.triggers.user_pool_id} --username admin"
-    on_failure = continue
-  }
+resource "aws_cognito_user" "grafana_admin" {
+  user_pool_id       = aws_cognito_user_pool.htc_pool.id
+  username           = "admin"
+  temporary_password = var.grafana_admin_password
 }
 
 
@@ -102,7 +74,6 @@ resource "null_resource" "grafana_ingress_auth" {
     client_id              = aws_cognito_user_pool_client.client.id
     cognito_domain         = local.cognito_domain_name
     grafana_domain_name    = data.kubernetes_ingress_v1.grafana_ingress.status.0.load_balancer.0.ingress.0.hostname
-    grafana_admin_password = sensitive(var.grafana_configuration.admin_password)
   }
 
   provisioner "local-exec" {

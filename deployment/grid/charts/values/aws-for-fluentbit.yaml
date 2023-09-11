@@ -9,7 +9,7 @@ env:
   - name : AWS_STS_REGIONAL_ENDPOINTS
     value: regional
 
-cloudWatch:
+cloudWatchLogs:
   enabled: true
   region: ${region}
 
@@ -25,8 +25,6 @@ kinesis:
 elasticsearch:
   enabled: false
 
-nodeSelector:
-  htc/node-type: "core"
 
 tolerations:
   - key: "htc/node-type"
