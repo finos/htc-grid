@@ -1,4 +1,4 @@
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
@@ -110,7 +110,6 @@ variable "dynamodb_table_read_capacity" {
   description = "read capacity for the status table"
 }
 
-
 variable "dynamodb_gsi_index_table_write_capacity" {
   description = "write capacity for the status table (gsi index)"
 }
@@ -158,9 +157,10 @@ variable "vpc_id" {
 variable "vpc_cidr" {
   description = "Default VPC CIDR"
 }
+
 variable "nlb_influxdb" {
   description = "network load balancer url  in front of influxdb"
-  default = ""
+  default     = ""
 }
 
 variable "cognito_userpool_arn" {
@@ -181,4 +181,10 @@ variable "state_table_service" {
 
 variable "state_table_config" {
   description = "State Table configuration"
+}
+
+variable "priorities" {
+  default = {
+    "__0" = 0
+  }
 }

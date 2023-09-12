@@ -48,6 +48,10 @@ HTC-Grid project provides a CloudFormation Cloud9 Stack that installs all the pr
 
 Just follow the process below in your account to deploy the Cloud9 Cloudformation Stack. 
 
+{{% notice info %}}
+If you would like to use the current version of the project, change the value of the `HTCGridVersion` field to `main` in step 4 below.
+{{% /notice %}}
+
 1. Download the latest HTC-Grid Cloud9 Cloudformation Stack. **[The stack is available on this link](https://raw.githubusercontent.com/awslabs/aws-htc-grid/main/deployment/dev_environment_cloud9/cfn/cloud9-htc-grid.yaml)**.
 
 1. On the AWS Console, select **CloudFormation** and **Create a Stack**. Select the (with new resources, Standard)
@@ -56,7 +60,7 @@ Just follow the process below in your account to deploy the Cloud9 Cloudformatio
 
     {{< img "Cloud9-stack-creation-1.png" "Cloud9 stack creation 1" >}}
 
-1. Set the name of the stack to **htc-grid-workshop** . With a memorable name, later on it will be easier to identify and clean up the resources. Click on **Next**.
+1. Set the name of the stack to **htc-grid-workshop**. With a memorable name, later on it will be easier to identify and clean up the resources. Click on **Next**.
 
     {{< img "Cloud9-stack-creation-2.png" "Cloud9 stack creation 2" >}}
 

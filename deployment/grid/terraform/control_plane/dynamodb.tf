@@ -1,83 +1,67 @@
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
-module "dynamodb_table" {
-  source = "terraform-aws-modules/dynamodb-table/aws"
-  version = "3.1.2"
-  name   = var.ddb_state_table
 
-  read_capacity  = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_read_capacity : null
-  write_capacity = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_write_capacity : null
+module "dynamodb_table" {
+  source  = "terraform-aws-modules/dynamodb-table/aws"
+  version = "~> 3.0"
+
+  name = var.ddb_state_table
 
   autoscaling_enabled = var.dynamodb_autoscaling_enabled
-
-  billing_mode = var.dynamodb_billing_mode
+  billing_mode        = var.dynamodb_billing_mode
+  read_capacity       = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_read_capacity : null
+  write_capacity      = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_write_capacity : null
 
   hash_key = "task_id"
-
   attributes = [
     {
       name = "session_id"
       type = "S"
     },
-
     {
       name = "task_id"
       type = "S"
     },
-
-    #  {
+    # {
     #   name = "submission_timestamp"
     #   type = "N"
-    # }
-
-    #  {
+    # },
+    # {
     #   name = "task_completion_timestamp"
     #   type = "N"
-    # }
-
+    # },
     {
       name = "task_status"
       type = "S"
     },
-
-
-
-    #  {
+    # {
     #   name = "task_owner"
     #   type = "S"
-    # }
+    # },
     # default value "None"
-
-    #  {
+    # {
     #   name = "retries"
     #   type = "N"
-    # }
-
-    #  {
+    # },
+    # {
     #   name = "task_definition"
     #   type = "S"
-    # }
-
-    #  {
+    # },
+    # {
     #   name = "sqs_handler_id"
     #   type = "S"
-    # }
-
+    # },
     {
       name = "heartbeat_expiration_timestamp"
       type = "N"
     }
-
     # attribute {
     #   name = "parent_session_id"
     #   type = "S"
     # }
-
   ]
-
-
 
   global_secondary_indexes = [
     {
@@ -98,9 +82,7 @@ module "dynamodb_table" {
       projection_type    = "INCLUDE"
       non_key_attributes = ["task_id"]
     }
-
   ]
-
 
   autoscaling_read = {
     scale_in_cooldown  = 300

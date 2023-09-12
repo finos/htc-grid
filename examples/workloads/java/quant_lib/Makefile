@@ -1,4 +1,4 @@
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
@@ -29,7 +29,7 @@ upload: compile
 	cp -r ./ql/libQuantLib.so.0 ./lambda/lib/
 
 	cd ./lambda/ &&  zip -r ./../lambda.zip ./ && cd -
-	aws s3 cp lambda.zip s3://$(BUCKET_NAME)
+	aws s3 cp lambda.zip s3://$(BUCKET_NAME) --region $(REGION)
 
 clean:
 	rm  lambda.zip

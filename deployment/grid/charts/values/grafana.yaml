@@ -1,6 +1,8 @@
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
+replicas: 2
 
 resources:
   limits:
@@ -11,28 +13,68 @@ resources:
     memory: 512Mi
 
 grafana.ini:
-  auth:
-    disable_login_form: true
   auth.anonymous:
     enabled: true
+  live:
+    max_connections: 0
 
-persistence:
-  enabled: false
+adminPassword: "${grafana_admin_password}"
+
 
 service:
   type: "NodePort"
 
 
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: "alb"
+    alb.ingress.kubernetes.io/scheme: "internet-facing"
+    alb.ingress.kubernetes.io/target-type: "ip"
+    alb.ingress.kubernetes.io/target-group-attributes: "stickiness.enabled=true, stickiness.lb_cookie.duration_seconds=3600"
+    alb.ingress.kubernetes.io/listen-ports: "[{\"HTTP\": 80},{\"HTTPS\":443}]"
+    alb.ingress.kubernetes.io/certificate-arn: "${alb_certificate_arn}"
+    alb.ingress.kubernetes.io/actions.ssl-redirect: "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}"
+    alb.ingress.kubernetes.io/subnets: "${vpc_public_subnets}"
+  path: /*
+  pathType: ImplementationSpecific
+  hosts:
+    - ""
+  extraPaths:
+    - path: /*
+      pathType: ImplementationSpecific
+      backend:
+        service:
+          name: ssl-redirect
+          port:
+            name: use-annotation
+
 
 nodeSelector:
-  grid/type: "Operator"
+  htc/node-type: "core"
 
 tolerations:
-  - key: "grid/type"
+  - key: "htc/node-type"
     operator: "Equal"
-    value: "Operator"
+    value: "core"
     effect: "NoSchedule"
 
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - grafana
+        topologyKey: kubernetes.io/hostname
+      weight: 100
+
+
+persistence:
+  enabled: false
 
 datasources:
   datasources.yaml:
@@ -55,7 +97,6 @@ datasources:
         httpMode: POST
 
 
-
 dashboardProviders:
   dashboardproviders.yaml:
     apiVersion: 1
@@ -70,23 +111,29 @@ dashboardProviders:
         path: /var/lib/grafana/dashboards/default
 
 
+dashboards:
+  default:
+    htc-metrics:
+      json: |
+        ${htc_metrics_dashboard_json}
+    kubernetes-metrics:
+      json: |
+        ${kubernetes_metrics_dashboard_json}
+
+
 initChownData:
   image:
     pullPolicy: Always
-    repository: "${aws_htc_ecr}/busybox"
-    tag: "${grafana_configuration_initChownData_tag}"
+    repository: "${aws_htc_ecr}/ecr-public/docker/library/busybox"
 
 image:
   repository: "${aws_htc_ecr}/grafana"
-  tag: "${grafana_configuration_grafana_tag}"
 
 downloadDashboardsImage:
   repository: "${aws_htc_ecr}/curl"
-  tag: "${grafana_configuration_downloadDashboardsImage_tag}"
 
 sidecar:
   dashboards:
     enabled : true
   image:
-    repository: "${aws_htc_ecr}/k8s-sidecar"
-    tag: "${grafana_configuration_sidecar_tag}"
+    repository: "${aws_htc_ecr}/quay/kiwigrid/k8s-sidecar"

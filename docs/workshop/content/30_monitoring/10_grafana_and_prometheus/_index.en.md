@@ -4,7 +4,7 @@ chapter: false
 weight: 10
 ---
 
-HTC-Grid blueprint deploys Grafana and Prometheus as Pods within the EKS Cluster (in this case using On-Demand instances, given this services are expected to have a state / VolumeSet).
+HTC-Grid blueprint deploys Grafana and Prometheus as pods within the EKS Cluster (in this case using OnDemand instances, given that these services are expected to have a state).
 
 {{% notice note %}}
 While the deployment of Grafana uses self-signed certifictes for encryption, our end plan for HTC-Grid is to adhere to the tenets. We are planning to move over to [Amazon Managed Service for Prometheus](https://aws.amazon.com/prometheus/) (currently in preview) and [Amazon Managed Service for Grafana](https://aws.amazon.com/grafana/). 
@@ -13,61 +13,49 @@ While the deployment of Grafana uses self-signed certifictes for encryption, our
 
 ## Create a cognito user (CLI)
 
+All the services accessible via a public URL require authentication via Amazon Cognito. In the case of Grafana, a default user called `admin` is created as part of the deployment.
+The initial password for the user will be the value for `GRAFANA_ADMIN_PASSWORD`, as used in the section [Deploy HTC-Grid]({{< ref "20_deploy_htc/70_deploying_htc/_index.en.md" >}}). However, you will be required to change this upon your first login.
+
+In addition to the already setup `admin` user, more users can be created as below:
 
 {{% notice warning %}}
-Replace the  `<my_cognito_user>` and `<my_grafana_admin_password>` with your own user and passowrd.
+Replace `<my_cognito_user>` and `<my_cognito_password>` with your own username and password.
 {{% /notice %}}
 
-All the services behind a public URL are protected wih an authentication mecanism based on Cognito. So in order to access the grafana dashboard you will need to create a cognito user.
-Please from the root of the project :
-Choose a cognito username:
+
+Choose a Cognito username and password, making sure they follow the [Amazon Cognito Default Policy](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html):
 ```bash
+cd ~/environment/aws-htc-grid
 export USERNAME=<my_cognito_user>
-```
-Choose a cognito password (make this password follows [cognito default policy](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html) ) :
-You can reuse the password chosen  in section [Deploy HTC-Grid]({{< ref "20_deploy_htc/70_deploying_htc/_index.en.md" >}}) or create a new one.
-```bash
 export PASSWORD=<my_grafana_admin_password>
 ```
 
-Get the client id:
+Running the following commands will create and confirm the above user in Cognito:
 ```bash
 clientid=$(make get-client-id  TAG=$TAG REGION=$HTCGRID_REGION)
-```
-
-Get the user pool id:
-```bash
 userpoolid=$(make get-userpool-id  TAG=$TAG REGION=$HTCGRID_REGION)
-```
-
-Create the user
-```bash
 aws cognito-idp sign-up --region $HTCGRID_REGION --client-id $clientid --username $USERNAME --password $PASSWORD
-```
-The user newly created will be unconfirmed.
-
-Confirm user creation:
-```bash
 aws cognito-idp admin-confirm-sign-up --region $HTCGRID_REGION --user-pool-id $userpoolid --username $USERNAME
 ```
+
 ## Grafana
 
-During the [Deploy HTC-Grid]({{< ref "20_deploy_htc/70_deploying_htc/_index.en.md" >}}) section you replaced and selected a **<my_grafana_admin_password>** that we will need now to access grafana. The HTC-Grid project captures metrics into influxdb and prometheus and exposes those metrics through Grafana. 
+During the [Deploy HTC-Grid]({{< ref "20_deploy_htc/70_deploying_htc/_index.en.md" >}}) section you replaced and selected a **<my_grafana_admin_password>** that we will need now to access Grafana. The HTC-Grid project captures metrics into InfluxDB and Prometheus and exposes those metrics through Grafana. 
 
-To find out the https endpoint where grafana has been deployed type:
+The URL for the Grafana service can be retrieved as below:
 
 ```
-kubectl -n grafana get ingress | tail -n 1 | awk '{ print "Grafana URL  -> https://"$4 }'
+kubectl -n grafana get ingress | tail -n 1 | awk '{ print "Grafana URL -> https://"$4 }'
 ```
 
 it should output something like:
 
 ```
-Grafana URL  -> https://k8s-grafana-grafanai-XXXXXXXXXXXX-YYYYYYYYYYY.eu-west-2.elb.amazonaws.com
+Grafana URL -> https://k8s-grafana-grafanai-XXXXXXXXXXXX-YYYYYYYYYYY.eu-west-2.elb.amazonaws.com
 ```
 
-If you open this URL you will be redirected to a cognito sign in page. Please enter the username and password created in the previous section.
-Once you are sign up  with cognito you will be redirected to the Grafana sign in page.
+When you open this URL, you should be redirected to a Cognito sign in page. Please enter either the default username or one the additional users created in the previous section and their respective password and then click `Sign In`.
+Once you are signed in with Cognito, you will be redirected to the Grafana sign in page.
 
 Pleas use the user `admin` and the password you selected at creation time to login into Grafana.
 

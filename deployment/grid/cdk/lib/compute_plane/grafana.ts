@@ -93,7 +93,7 @@ export class GrafanaStack extends cdk.NestedStack {
         },
         initChownData : {
           image: {
-            repository : `${this.account}.dkr.ecr.${this.region}.amazonaws.com/busybox`,
+            repository : `${this.account}.dkr.ecr.${this.region}.amazonaws.com/ecr-public/docker/library/busybox`,
             tag : props.busyboxTag
           }
         },
@@ -111,7 +111,7 @@ export class GrafanaStack extends cdk.NestedStack {
           },
           image : {
             tag:props.k8sSideCarTag,
-            repository: `${this.account}.dkr.ecr.${this.region}.amazonaws.com/k8s-sidecar`,
+            repository: `${this.account}.dkr.ecr.${this.region}.amazonaws.com/quay/kiwigrid/k8s-sidecar`,
           }
         },
         service : {

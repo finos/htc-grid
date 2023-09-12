@@ -41,11 +41,13 @@ The section highlighted provides a few information of the changes that we are ap
 To apply this change, we just need to point and apply the new configuration using terraform.
 
 ```
-make apply-python-runtime  TAG=$TAG REGION=$HTCGRID_REGION
+make apply-python-runtime TAG=$TAG REGION=$HTCGRID_REGION GRAFANA_ADMIN_PASSWORD='<my_grafana_admin_password>'
 ```
 
 {{% notice note %}}
 The execution of this command will prompt for `yes` to continue. Just type yes, for the command to proceed. You should see how this time around only a few changes are applied; Those changes have to do with the minimum changes required to modify the htc-agent configuration and redeploy it back again.
+
+Keep in mind that the value for `GRAFANA_ADMIN_PASSWORD` should be the same as the one used in the section [Deploy HTC-Grid]({{< ref "20_deploy_htc/70_deploying_htc/_index.en.md" >}}), unless you would like to change it.
 {{% /notice %}}
 
 

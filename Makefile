@@ -1,4 +1,4 @@
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
@@ -13,6 +13,7 @@ export BUCKET_NAME
 export FILE_HANDLER
 export FUNCTION_HANDLER
 export DIST_DIR=$(shell pwd)/dist
+export REBUILD_RUNTIMES
 export GRAFANA_ADMIN_PASSWORD
 export BUILD_DIR:=(shell pwd)/.build
 export IAS?=terraform
@@ -290,9 +291,8 @@ k8s-jobs:
 ##### path per example ######
 #############################
 
-happy-path: all upload-c++ config-c++
+happy-path: ecr-login all upload-c++ config-c++
 
-python-happy-path: all upload-python config-python
+python-happy-path: ecr-login all upload-python config-python
 
-python-quant-lib-path: all upload-python-ql config-python-ql
-
+python-quant-lib-path: ecr-login all upload-python-ql config-python-ql

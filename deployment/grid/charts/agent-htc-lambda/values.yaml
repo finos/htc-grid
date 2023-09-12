@@ -1,4 +1,4 @@
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
@@ -31,7 +31,7 @@ fullnameOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: false
+  create: true
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
@@ -61,7 +61,6 @@ lambda:
 #  layerName: myLambdaLayer
 #  layerVersion: myLayerVersion
   handler: bootstrap.main
-
 
 
 resourcesAgent:
@@ -95,13 +94,13 @@ tolerations: []
 affinity: {}
 
 testNodeSelector:
-  grid/type: Operator
+  htc/node-type: core
 
 testTolerations:
   - effect: NoSchedule
-    key: grid/type
+    key: htc/node-type
     operator: Equal
-    value: Operator
+    value: core
 
 testAffinity: {}
 
@@ -113,5 +112,3 @@ hpa:
     name: ""
     targetValue: 0
     region: ""
-
-

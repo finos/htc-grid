@@ -1,11 +1,15 @@
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
 image:
-  repository: ${account_id}.dkr.ecr.${region}.amazonaws.com/ecr-public/aws-observability/aws-for-fluent-bit
+  repository: "${aws_htc_ecr}/ecr-public/aws-observability/aws-for-fluent-bit"
 
 env:
   - name : AWS_STS_REGIONAL_ENDPOINTS
     value: regional
 
-cloudWatch:
+cloudWatchLogs:
   enabled: true
   region: ${region}
 
@@ -22,4 +26,8 @@ elasticsearch:
   enabled: false
 
 
-
+tolerations:
+  - key: "htc/node-type"
+    operator: "Equal"
+    value: "core"
+    effect: "NoSchedule"

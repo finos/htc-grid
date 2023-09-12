@@ -1,4 +1,4 @@
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
@@ -44,9 +44,9 @@ clean-lambda-storage:
 clean-terraform: clean-image-state clean-grid-state clean-lambda-storage
 clean-cdk: clean-lambda-storage
 
-delete: clean-$(IAC_TOOL)
-	aws cloudformation delete-stack --stack-name $(TAG) --region $(REGION)
-	aws cloudformation wait stack-delete-complete --stack-name $(shell aws cloudformation describe-stacks --region $(REGION) --stack-name $(TAG) --query 'Stacks[0].StackId' --output text) --region $(REGION)
-
 clean:
-	rm -rf $(BUILD_DIR)/tag.*
+	rm -rf $(BUILD_DIR)/grid_init/tag.*
+
+delete: clean-$(IAC_TOOL) clean
+	aws cloudformation delete-stack --stack-name $(TAG) --region $(REGION) && \
+	aws cloudformation wait stack-delete-complete --stack-name $(shell aws cloudformation describe-stacks --region $(REGION) --stack-name $(TAG) --query 'Stacks[0].StackId' --output text) --region $(REGION) || true

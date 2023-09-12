@@ -1,4 +1,4 @@
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
@@ -20,8 +20,7 @@ output "private_api_gateway_url" {
   value = aws_api_gateway_deployment.htc_grid_private_deployment.invoke_url
 }
 
-
 output "api_gateway_key" {
-  value = aws_api_gateway_api_key.htc_grid_api_key.value
+  value     = aws_api_gateway_api_key.htc_grid_api_key.value
   sensitive = true
 }

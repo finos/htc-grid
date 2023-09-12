@@ -14,10 +14,11 @@ If you are running the workshop at an AWS event, you can skip this section. We s
 
 ### Cleanup HTC-Grid Deployment
 
-To remove and destroy all the resources deployed within HTC-Grid use the following command:
+To remove and destroy all the resources deployed within HTC-Grid and delete the locally cached modules, run the following commands:
 
 ```
 make destroy-python-runtime TAG=$TAG REGION=$HTCGRID_REGION
+make reset-grid-deployment TAG=$TAG REGION=$HTCGRID_REGION
 ```
 
 {{% notice warning %}}
@@ -27,10 +28,11 @@ The destruction of some of the resources may take some time. If for whatever rea
 
 ### Cleanup HTC-Grid ECR Images
 
-To remove the images from the ECR repository go to the images folder
+To clean up the images and repositories from ECR and delete the locally cached modules, run the following commands:
 
 ```
 make destroy-images TAG=$TAG REGION=$HTCGRID_REGION
+make reset-images-deployment TAG=$TAG REGION=$HTCGRID_REGION
 ```
 
 ### Cleanup of the S3 buckets

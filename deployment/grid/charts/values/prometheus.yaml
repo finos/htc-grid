@@ -1,3 +1,7 @@
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
 server:
   retention: 1h
 
@@ -7,7 +11,7 @@ server:
     scrape_timeout: 10s
 
   image:
-    repository: ${account_id}.dkr.ecr.${region}.amazonaws.com/quay/prometheus/prometheus
+    repository: "${aws_htc_ecr}/quay/prometheus/prometheus"
   resources:
     requests:
       cpu: 500m
@@ -16,21 +20,24 @@ server:
   persistentVolume:
     enabled: false
   tolerations:
-    - key: "grid/type"
+    - key: "htc/node-type"
       operator: "Equal"
-      value: "Operator"
+      value: "core"
       effect: "NoSchedule"
   nodeSelector:
-    grid/type: "Operator"
+    htc/node-type: "core"
+
 
 alertmanager:
   enabled: false
 
+
 kube-state-metrics:
   enabled: true
   image:
-    repository: ${account_id}.dkr.ecr.${region}.amazonaws.com/kube-state-metrics
-    tag: ${kube_state_metrics_tag}
+    registry: "${aws_htc_ecr}"
+    repository: "registry-k8s-io/kube-state-metrics/kube-state-metrics"
+
   resources:
     limits:
       cpu: 200m
@@ -39,19 +46,22 @@ kube-state-metrics:
       cpu: 200m
       memory: 512Mi
   tolerations:
-    - key: "grid/type"
+    - key: "htc/node-type"
       operator: "Equal"
-      value: "Operator"
+      value: "core"
       effect: "NoSchedule"
   nodeSelector:
-    grid/type: "Operator"
+    htc/node-type: "core"
 
-pushgateway:
+
+prometheus-pushgateway:
   enabled: false
 
-nodeExporter:
+
+prometheus-node-exporter:
   image:
-    repository: ${account_id}.dkr.ecr.${region}.amazonaws.com/quay/prometheus/node-exporter
+    registry: "${aws_htc_ecr}"
+    repository: "quay/prometheus/node-exporter"
   resources:
     limits:
       cpu: 200m
@@ -60,17 +70,15 @@ nodeExporter:
       cpu: 200m
       memory: 512Mi
   tolerations:
-    - key: "grid/type"
+    - key: "htc/node-type"
       operator: "Equal"
-      value: "Operator"
+      value: "core"
       effect: "NoSchedule"
   nodeSelector:
-    grid/type: "Operator"
+    htc/node-type: "core"
 
 
 configmapReload:
   prometheus:
     image:
-      repository: ${account_id}.dkr.ecr.${region}.amazonaws.com/configmap-reload
-      tag: ${configmap_reload_tag}
-
+      repository: "${aws_htc_ecr}/quay/prometheus-operator/prometheus-config-reloader"

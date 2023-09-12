@@ -1,4 +1,4 @@
-# Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
@@ -11,16 +11,16 @@ alertmanager:
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
   ##
   tolerations:
-    - key: "grid/type"
+    - key: "htc/node-type"
       operator: "Equal"
-      value: "Operator"
+      value: "core"
       effect: "NoSchedule"
 
   ## Node labels for alertmanager pod assignment
   ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
   ##
   nodeSelector:
-    grid/type: "Operator"
+    htc/node-type: "core"
 
 pushgateway:
   ## Alertmanager Deployment Strategy type
@@ -31,16 +31,16 @@ pushgateway:
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
   ##
   tolerations:
-    - key: "grid/type"
+    - key: "htc/node-type"
       operator: "Equal"
-      value: "Operator"
+      value: "core"
       effect: "NoSchedule"
 
   ## Node labels for alertmanager pod assignment
   ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
   ##
   nodeSelector:
-    grid/type: "Operator"
+    htc/node-type: "core"
 server:
   ## Alertmanager Deployment Strategy type
   # strategy:
@@ -50,16 +50,16 @@ server:
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
   ##
   tolerations:
-    - key: "grid/type"
+    - key: "htc/node-type"
       operator: "Equal"
-      value: "Operator"
+      value: "core"
       effect: "NoSchedule"
 
   ## Node labels for alertmanager pod assignment
   ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
   ##
   nodeSelector:
-    grid/type: "Operator"
+    htc/node-type: "core"
 
 configmapReload:
   ## Alertmanager Deployment Strategy type
@@ -70,16 +70,16 @@ configmapReload:
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
   ##
   tolerations:
-    - key: "grid/type"
+    - key: "htc/node-type"
       operator: "Equal"
-      value: "Operator"
+      value: "core"
       effect: "NoSchedule"
 
   ## Node labels for alertmanager pod assignment
   ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
   ##
   nodeSelector:
-    grid/type: "Operator"
+    htc/node-type: "core"
 kube-state-metrics:
   ## Alertmanager Deployment Strategy type
   # strategy:
@@ -89,22 +89,22 @@ kube-state-metrics:
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
   ##
   tolerations:
-    - key: "grid/type"
+    - key: "htc/node-type"
       operator: "Equal"
-      value: "Operator"
+      value: "core"
       effect: "NoSchedule"
 
   ## Node labels for alertmanager pod assignment
   ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
   ##
   nodeSelector:
-    grid/type: "Operator"
+    htc/node-type: "core"
 
 nodeExporter:
   tolerations:
-    - key: "grid/type"
+    - key: "htc/node-type"
       operator: "Equal"
-      value: "Operator"
+      value: "core"
       effect: "NoSchedule"
   nodeSelector:
-    grid/type: "Operator"
+    htc/node-type: "core"

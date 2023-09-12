@@ -5,14 +5,14 @@ weight = 20
 
 
 {{% notice note %}}
-We refer to Lambda as a unit of compute instead of **[AWS Lambda](https://aws.amazon.com/lambda/)** , the service that allows you to run lambdas. In this section we explain how HTC-Grid integrates the environment to execute units of compute that look to all effects like a lambda, but that allow to select which compute plane you want to execute them on, with the current implementation done for EKS. 
+We refer to Lambda as a unit of compute instead of **[AWS Lambda](https://aws.amazon.com/lambda/)**, the service that allows you to run lambdas. In this section we explain how HTC-Grid integrates the environment to execute units of compute that look to all effects like a lambda, but that allow to select which compute plane you want to execute them on, with the current implementation done for EKS. 
 {{% /notice %}}
 
 One of the main Tenets as we described earlier on is making the system modular. When looking at how the worker side of the architecture would invoke the execution we had to consider:
 
 * The worker could invoke the execution of different programs, in different programming languages
 * The interface for execution of the library on the agent should be simple, and provide a level of familiarity to Grid users.
-* The deployment mechanism should be able to run in multiple Compute Planes, as different users may want different compute planes such as: [Amazon Elastic Kubernetes Service (EKS)](https://aws.amazon.com/eks), [Amazon Elastic Container Servie (ECS)](https://aws.amazon.com/ecs/), [AWS Lambda](https://aws.amazon.com/lambda/), [Amazon EC2 Instances (EC2)](https://aws.amazon.com/ec2/), [AWS Batch](https://aws.amazon.com/batch/), etc)
+* The deployment mechanism should be able to run in multiple Compute Planes, as different users may want different compute planes such as: [Amazon Elastic Kubernetes Service (EKS)](https://aws.amazon.com/eks), [Amazon Elastic Container Servie (ECS)](https://aws.amazon.com/ecs/), [AWS Lambda](https://aws.amazon.com/lambda/), [Amazon EC2 Instances (EC2)](https://aws.amazon.com/ec2/), [AWS Batch](https://aws.amazon.com/batch/), etc.)
 
 {{< img "Lambda-as-a-compute-unit.png" "Lambda as a compute unit" >}}
 
