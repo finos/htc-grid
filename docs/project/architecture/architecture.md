@@ -90,4 +90,3 @@ HTC-Grid utilizes Amazon Elastic Kubernetes Service (Amazon EKS) as a computatio
 * Clients can be called from Step functions to automate complex application dependencies.
 
 * Multiple instances of the HTC-Grid can be deployed across multiple on the same account and same region or in multiple regions with the client application running either on AWS or on the cloud.
-

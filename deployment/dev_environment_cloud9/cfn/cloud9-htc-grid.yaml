@@ -50,7 +50,7 @@ Parameters:
   HTCGridVersion:
     Description: HTC Grid Version to install on Cloud9
     Type: String
-    Default: 0.4.0
+    Default: latest
     ConstraintDescription: Must be a valid HTC Grid version
   #Used only by Event Engine, if you are self-deploying the stack leave the default value to NONE
   EETeamRoleArn:
@@ -472,6 +472,13 @@ Resources:
                   echo -e "========================================================"
                   echo -e "                   Downloading HTC-Grid"
                   echo -e "========================================================"
+                  export HTC_GRID_REPO="https://github.com/awslabs/aws-htc-grid"
+
+                  if [ "${HTCGRID_VERSION}" == "latest" ]; then
+                    export HTCGRID_VERSION="$(curl -Ls -o /dev/null -w %{url_effective} ${HTC_GRID_REPO}/releases/latest | awk -F '/v' '{ print $NF }')";
+                    echo -e "[INFO] The value for HTCGRID_VERSION is 'latest'. Discovered the latest release as: ${HTCGRID_VERSION}"
+                  fi
+
                   if [ "${HTCGRID_VERSION}" == "main" ]; then 
                     export HTCGRID_URI_REF="heads/main";
                   else
@@ -480,7 +487,7 @@ Resources:
 
                   curl --silent --location \
                         -o "/home/ec2-user/environment/aws-htc-grid.tar.gz" \
-                        "https://github.com/awslabs/aws-htc-grid/archive/refs/${HTCGRID_URI_REF}.tar.gz"
+                        "${HTC_GRID_REPO}/archive/refs/${HTCGRID_URI_REF}.tar.gz"
 
                   cd /home/ec2-user/environment; tar -zxf aws-htc-grid.tar.gz
                   if [ ! -e "aws-htc-grid" ]; then

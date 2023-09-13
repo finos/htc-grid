@@ -38,6 +38,10 @@ resource "aws_api_gateway_deployment" "htc_grid_private_deployment" {
   lifecycle {
     create_before_destroy = true
   }
+
+  depends_on = [
+    aws_api_gateway_rest_api_policy.private_api_policy,
+  ]
 }
 
 
@@ -123,7 +127,7 @@ resource "aws_api_gateway_rest_api_policy" "private_api_policy" {
             ],
             "Condition" : {
                 "StringNotEquals": {
-                   "aws:SourceVpc": "${var.vpc_id}"
+                    "aws:SourceVpc": "${var.vpc_id}"
                 }
             }
         }

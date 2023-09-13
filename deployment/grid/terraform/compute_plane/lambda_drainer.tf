@@ -76,7 +76,9 @@ resource "aws_cloudwatch_event_target" "terminate_instance_event" {
   target_id = "lambda"
   arn       = module.lambda_drainer.lambda_function_arn
 
-  depends_on = [aws_cloudwatch_event_rule.lifecycle_hook_event_rule]
+  depends_on = [
+    aws_cloudwatch_event_rule.lifecycle_hook_event_rule,
+  ]
 }
 
 
@@ -186,7 +188,9 @@ resource "kubernetes_cluster_role" "lambda_cluster_access" {
     resources  = ["pods", "pods/eviction", "nodes"]
   }
 
-  depends_on = [module.eks]
+  depends_on = [
+    module.eks,
+  ]
 }
 
 
@@ -206,5 +210,7 @@ resource "kubernetes_cluster_role_binding" "lambda_user_cluster_role_binding" {
     name      = "lambda-cluster-access"
   }
 
-  depends_on = [module.eks]
+  depends_on = [
+    module.eks,
+  ]
 }

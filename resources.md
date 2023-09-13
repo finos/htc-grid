@@ -4,7 +4,7 @@
 https://aws.amazon.com/blogs/industries/how-cloud-increases-flexibility-of-trading-risk-infrastructure-for-frtb-compliance/
 
 ### FSI HPC White Paper
-https://d1.awsstatic.com/whitepapers/aws-financial-services-grid-computing.pdf
+https://docs.aws.amazon.com/pdfs/whitepapers/latest/financial-services-grid-computing/financial-services-grid-computing.pdf#financial-services-grid-computing
 
 ### HTC-Grid Blog - 1
 https://aws.amazon.com/blogs/hpc/cloud-native-high-throughput-computing-with-aws-htc-grid/

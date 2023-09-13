@@ -30,12 +30,10 @@ export USERNAME=<my_cognito_user>
 export PASSWORD=<my_grafana_admin_password>
 ```
 
-Running the following commands will create and confirm the above user in Cognito:
+Running the following commands will create the above user in Cognito, with the value of `PASSWORD` as an initial password:
 ```bash
-clientid=$(make get-client-id  TAG=$TAG REGION=$HTCGRID_REGION)
-userpoolid=$(make get-userpool-id  TAG=$TAG REGION=$HTCGRID_REGION)
-aws cognito-idp sign-up --region $HTCGRID_REGION --client-id $clientid --username $USERNAME --password $PASSWORD
-aws cognito-idp admin-confirm-sign-up --region $HTCGRID_REGION --user-pool-id $userpoolid --username $USERNAME
+userpoolid=$(make get-userpool-id TAG=$TAG REGION=$HTCGRID_REGION)
+aws cognito-idp admin-create-user --user-pool-id $userpoolid --username $USERNAME --temporary-password $PASSWORD
 ```
 
 ## Grafana

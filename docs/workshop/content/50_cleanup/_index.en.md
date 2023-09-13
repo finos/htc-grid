@@ -22,7 +22,7 @@ make reset-grid-deployment TAG=$TAG REGION=$HTCGRID_REGION
 ```
 
 {{% notice warning %}}
-The destruction of some of the resources may take some time. If for whatever reason there are errors due to timeouts, just re-run the command above. Terraform will track down which resources are still up and remove the resources.
+The destruction of some of the resources may take some time. If for whatever reason there are errors due to timeouts, just re-run the command above. Terraform will track the resources that still exist and remove them.
 {{% /notice %}}
 
 
@@ -38,11 +38,11 @@ make reset-images-deployment TAG=$TAG REGION=$HTCGRID_REGION
 ### Cleanup of the S3 buckets
 
 {{% notice warning %}}
-You should leave this for the very end once that all the other cleanup processes above have concluded successfully. Terraform state buckets contain the state of your terraform deployments, removing the buckets will mean your terraform will loose track of the state.
+You should leave this step for the very end, once that all the other cleanup processes above have concluded successfully. These buckets contain the state of your Terraform deployments, thus, removing them before destroying the relevant Terraform resources will mean that you will be left with orphaned resources which you will need to clean up manually.
 {{% /notice %}}
 
 
-Finally, this will leave the 3 only resources that you can clean manually, the S3 buckets. You can remove the folders using the following command.
+Finally, we will delete CloudFormation stack which manages the S3 buckets that contain our Terraform state, by running the following command:
 
 ```
 make delete-grid-state TAG=$TAG REGION=$HTCGRID_REGION

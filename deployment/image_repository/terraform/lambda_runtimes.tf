@@ -24,6 +24,7 @@ resource "null_resource" "build_and_push_runtimes" {
     lambda_entrypoint = each.key == "provided" ? "lambda_entry_point_provided.sh" : "lambda_entry_point.sh"
     architecture      = local.architecture
     rebuild_runtimes  = var.rebuild_runtimes
+    region            = var.region
     always_run        = timestamp()
   }
 
@@ -43,7 +44,7 @@ resource "null_resource" "build_and_push_runtimes" {
     command    = <<-EOT
       if [ "${self.triggers.rebuild_runtimes}" == "true" ]; then
         docker rmi ${self.triggers.aws_htc_ecr}/lambda:${each.key}
-        aws ecr batch-delete-image --repository-name lambda --image-ids imageTag=${each.key} --region ${var.region}
+        aws ecr batch-delete-image --repository-name lambda --image-ids imageTag=${each.key} --region ${self.triggers.region}
       fi
     EOT
     on_failure = continue

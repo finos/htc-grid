@@ -38,7 +38,7 @@ This operation fetches images from external repositories and creates a copy into
 The following command will list the repositories You can check which repositories have been created in the ECR console or by executing the command :
 
 ```
-aws ecr describe-repositories --query "repositories[*].repositoryUri"
+aws ecr describe-repositories --region $HTCGRID_REGION --query "repositories[*].repositoryUri"
 ```
 
 {{% notice note %}}
