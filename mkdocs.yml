@@ -15,7 +15,6 @@ theme:
     - navigation.tracking
     - navigation.sections
 
-
 # Repository
 repo_name: 'awslabs/aws-htc-grid'
 repo_url: 'https://github.com/awslabs/aws-htc-grid'
@@ -42,4 +41,4 @@ markdown_extensions:
       permalink: true
   - attr_list
 
-copyright: 'Copyright &copy; 2021 Amazon'
+copyright: 'Copyright &copy; 2023 Amazon'

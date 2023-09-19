@@ -18,7 +18,9 @@ resource "aws_elasticache_cluster" "stdin-stdout-cache" {
   security_group_ids   = [aws_security_group.allow_incoming_redis.id]
   subnet_group_name    = "stdin-stdout-cache-subnet-${lower(local.suffix)}"
 
-  depends_on = [aws_elasticache_subnet_group.io_redis_subnet_group]
+  depends_on = [
+    aws_elasticache_subnet_group.io_redis_subnet_group,
+  ]
 }
 
 

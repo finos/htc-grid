@@ -159,152 +159,22 @@ module "eks_blueprints_addons" {
     })]
   }
 
-  # Helm Release Addons
-  helm_releases = {
-    keda = {
-      description      = "A Helm chart for KEDA"
-      namespace        = "keda"
-      create_namespace = true
-      chart            = "keda"
-      chart_version    = local.chart_version.keda
-      repository       = "https://kedacore.github.io/charts"
-      values = [templatefile("${path.module}/../../charts/values/keda.yaml", {
-        aws_htc_ecr = var.aws_htc_ecr
-      })]
-    }
-
-    influxdb = {
-      description      = "A Helm chart for InfluxDB"
-      namespace        = "influxdb"
-      create_namespace = true
-      chart            = "influxdb"
-      chart_version    = local.chart_version.influxdb
-      repository       = "https://helm.influxdata.com/"
-      values = [templatefile("${path.module}/../../charts/values/influxdb.yaml", {
-        aws_htc_ecr = var.aws_htc_ecr
-      })]
-    }
-
-    prometheus = {
-      description      = "A Helm chart for Prometheus"
-      namespace        = "prometheus"
-      create_namespace = true
-      chart            = "prometheus"
-      chart_version    = local.chart_version.prometheus
-      repository       = "https://prometheus-community.github.io/helm-charts"
-      values = [templatefile("${path.module}/../../charts/values/prometheus.yaml", {
-        aws_htc_ecr = var.aws_htc_ecr
-        region      = var.region
-      })]
-    }
-
-    grafana = {
-      description      = "A Helm chart for Grafana"
-      namespace        = "grafana"
-      create_namespace = true
-      chart            = "grafana"
-      chart_version    = local.chart_version.grafana
-      repository       = "https://grafana.github.io/helm-charts"
-      values = [templatefile("${path.module}/../../charts/values/grafana.yaml", {
-        aws_htc_ecr                       = var.aws_htc_ecr
-        grafana_admin_password            = var.grafana_admin_password
-        alb_certificate_arn               = aws_acm_certificate.alb_certificate.arn
-        vpc_public_subnets                = join(",", var.vpc_public_subnet_ids)
-        htc_metrics_dashboard_json        = indent(8, file("${path.module}/files/htc-dashboard.json"))
-        kubernetes_metrics_dashboard_json = indent(8, file("${path.module}/files/kubernetes-dashboard.json"))
-      })]
-    }
-  }
-}
-
-
-# Due to the fact that EKS Blueprint Addons don't declare a dependency between Helm and ie AWS LoadBalancer Controller, there can be an edge case where on
-# destroy, the LB Controller may be removed before it has cleaned up the AWS resources that it created, ie ALBs and SGs. This results in orphaned resources
-# that then block the end-to-end destroy of ie the VPC. The resource below are used to create an implicit dependency between the Helm addons and the external
-# AWS resources created by the AWS LoadBalancer Controller and ensuring they are cleaned up in order. Once this is fixed in the upstream modules or components
-# (via a TF dependency or a finalizer), these will be removed and all of the chart resources will be managed via Helm.
-
-
-# These resource are used to create an implicit dependency between the EKS Addons and the AWS External resources
-resource "time_sleep" "influxdb_service_dependency" {
-  # Giving EKS some time to create the Helm resources
-  create_duration = "10s"
-
-  triggers = {
-    influxdb_namespace    = module.eks_blueprints_addons.helm_releases["influxdb"].namespace
-    influxdb_release_name = module.eks_blueprints_addons.helm_releases["influxdb"].name
-  }
-
   depends_on = [
+    # Wait for EKS to be deployed first
     module.eks,
-    module.eks_blueprints_addons,
-    null_resource.update_kubeconfig
   ]
 }
 
 
-resource "time_sleep" "grafana_ingress_dependency" {
-  # Giving EKS some time to create the Helm resources
-  create_duration = "10s"
+resource "time_sleep" "eks_blueprints_addons_dependency" {
+  # Giving TF some time to create the  EKS Blueprints Addons, ie the AWS Load Balancer Controller
+  # and CoreDns and also allowing ie AWS LB Controller to delete resources before it is destroyed
+  create_duration  = "30s"
+  destroy_duration = "60s"
 
   triggers = {
-    grafana_namespace    = module.eks_blueprints_addons.helm_releases["grafana"].namespace
-    grafana_release_name = module.eks_blueprints_addons.helm_releases["grafana"].name
-  }
-
-  depends_on = [
-    module.eks,
-    module.eks_blueprints_addons,
-    null_resource.update_kubeconfig
-  ]
-}
-
-
-# These null_resoures are used to ensure the external resources are deleted, by ie removing the annotations/resources, and allowing the LB Controller to
-# cleanup the external resources before the EKS Addons are destroyed.
-resource "null_resource" "destroy_external_influxdb_lb" {
-  triggers = {
-    influxdb_namespace    = time_sleep.influxdb_service_dependency.triggers["influxdb_namespace"]
-    influxdb_release_name = time_sleep.influxdb_service_dependency.triggers["influxdb_release_name"]
-  }
-
-  provisioner "local-exec" {
-    when    = destroy
-    command = <<-EOT
-      # Change the service type to ClusterIP which should cause LB Controller to remove external resources
-      if kubectl -n ${self.triggers.influxdb_namespace} get service ${self.triggers.influxdb_release_name} > /dev/null 2>&1; then
-        kubectl -n ${self.triggers.influxdb_namespace} patch service ${self.triggers.influxdb_release_name} \
-          --type='json' -p '[{"op":"replace","path":"/spec/type","value":"ClusterIP"}]'
-      fi
-
-      # Give some time to the AWS LB Controller to reconcile and delete the external resources
-      sleep 10
-    EOT
-  }
-}
-
-
-resource "null_resource" "destroy_external_grafana_lb" {
-  triggers = {
-    grafana_namespace    = time_sleep.grafana_ingress_dependency.triggers["grafana_namespace"]
-    grafana_release_name = time_sleep.grafana_ingress_dependency.triggers["grafana_release_name"]
-  }
-
-  provisioner "local-exec" {
-    when    = destroy
-    command = <<-EOT
-      # Delete the ingress annotations which should cause LB Controller to remove external resources
-      if kubectl -n ${self.triggers.grafana_namespace} get ingress ${self.triggers.grafana_release_name}  > /dev/null 2>&1; then
-        kubectl -n ${self.triggers.grafana_namespace} annotate ingress ${self.triggers.grafana_release_name} \
-          kubernetes.io/ingress.class- \
-          alb.ingress.kubernetes.io/scheme- alb.ingress.kubernetes.io/listen-ports- \
-          alb.ingress.kubernetes.io/certificate-arn- alb.ingress.kubernetes.io/subnets- \
-          alb.ingress.kubernetes.io/actions.ssl-redirect-
-      fi
-
-      # Give some time to the AWS LB Controller to reconcile and delete the external resources
-      sleep 10
-    EOT
+    aws_load_balancer_controller = module.eks_blueprints_addons.aws_load_balancer_controller.name
+    coredns_arn                  = module.eks_blueprints_addons.eks_addons["coredns"].arn
   }
 }
 

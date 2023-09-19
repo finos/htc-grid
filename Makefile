@@ -35,9 +35,10 @@ else ifeq ($(origin with-terraform), 'command line')
 IAS:=terraform
 endif
 
-###############################################
-#### Log to the different docker registry #####
-###############################################
+
+##################################################
+#### Log in to the different docker registry #####
+##################################################
 ecr-login:
 	aws ecr get-login-password --region $(REGION) | docker login --username AWS --password-stdin $(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com
 
@@ -46,8 +47,9 @@ public-ecr-login:
 
 docker-registry-login: ecr-login public-ecr-login
 
+
 ###############################################
-#######     Manage HTC grid states     ########
+#######     Manage HTC Grid states     ########
 ###############################################
 init-grid-state: init-grid-state-$(IAS)
 delete-grid-state: delete-grid-state-$(IAS)
@@ -84,10 +86,10 @@ transfer-images-%: ./deployment/image_repository/%
 destroy-images-%: ./deployment/image_repository/%
 	@$(MAKE) -C $< destroy
 
-###############################################
-#### Manage HTC grid terraform deployment  ####
-###############################################
 
+###############################################
+#### Manage HTC Grid Terraform deployment  ####
+###############################################
 init-grid-deployment: init-grid-deployment-$(IAS)
 reset-grid-deployment: reset-grid-deployment-$(IAS)
 
@@ -97,8 +99,10 @@ reset-grid-deployment-%: ./deployment/grid/%
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/grid_config.json reset
 
 
-#################################
-# Custom runtime (C++) with redis
+###########################################
+##### Custom runtime (C++) with Redis #####
+###########################################
+
 # deploy runtime with confirmation
 apply-custom-runtime: apply-custom-runtime-$(IAS)
 # deploy runtime without confirmation
@@ -108,10 +112,9 @@ destroy-custom-runtime: destroy-custom-runtime-$(IAS)
 # destroy runtime without confirmation
 auto-destroy-custom-runtime: auto-destroy-custom-runtime-$(IAS)
 
-
+# deploy runtime with confirmation
 apply-custom-runtime-% : ./deployment/grid/%
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/grid_config.json apply
-
 # deploy runtime without confirmation
 auto-apply-custom-runtime-%: ./deployment/grid/%
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/grid_config.json auto-apply
@@ -121,10 +124,13 @@ destroy-custom-runtime-%: ./deployment/grid/%
 # destroy runtime without confirmation
 auto-destroy-custom-runtime-%: ./deployment/grid/%
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/grid_config.json auto-destroy
-#################################
 
-# Custom runtime (C++) with S3
-#################################
+
+########################################
+##### Custom runtime (C++) with S3 #####
+########################################
+
+# deploy runtime with confirmation
 apply-custom-runtime-s3: apply-custom-runtime-s3-$(IAS)
 # deploy runtime without confirmation
 auto-apply-custom-runtime-s3: auto-apply-custom-runtime-s3-$(IAS)
@@ -146,10 +152,12 @@ destroy-custom-runtime-s3-%: ./deployment/grid/%
 # destroy runtime without confirmation
 auto-destroy-custom-runtime-s3-%: ./deployment/grid/%
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/custom_runtime_s3_grid_config.json auto-destroy
-#################################
 
-# Python runtime targets (Python, Redis)
-#################################
+
+##################################################
+##### Python runtime targets (Python, Redis) #####
+##################################################
+
 # deploy runtime with confirmation
 apply-python-runtime: apply-python-runtime-$(IAS)
 # deploy runtime without confirmation
@@ -172,17 +180,17 @@ destroy-python-runtime-%: ./deployment/grid/%
 # destroy runtime without confirmation
 auto-destroy-python-runtime-%: ./deployment/grid/%
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/python_runtime_grid_config.json auto-destroy
-#################################
+
 
 ##########################################################
-#### retrieve output value from terraform deployment ####
+#### Retrieve output value from terraform deployment #####
 ##########################################################
 get-grafana-password: get-grafana-password-$(IAS)
-# deploy runtime without confirmation
+
 get-userpool-id: get-userpool-id-$(IAS)
-# destroy runtime with confirmation
+
 get-client-id: get-client-id-$(IAS)
-# destroy runtime without confirmation
+
 get-agent-configuration: get-agent-configuration-$(IAS)
 
 get-grafana-password-%: ./deployment/grid/%
@@ -201,8 +209,9 @@ get-agent-configuration-%: ./deployment/grid/%
 get-eks-connection:
 	@$(MAKE) --no-print-directory -C ./deployment/grid/cdk get-eks-connection
 
+
 #############################
-##### building source #######
+##### Building source #######
 #############################
 http-apis:
 	$(MAKE) -C ./source/control_plane/openapi/ all
@@ -231,8 +240,9 @@ test-packages: test-api test-utils
 
 test: test-agent test-packages
 
+
 #############################
-##### building images #######
+##### Building images #######
 #############################
 lambda: utils api
 	$(MAKE) -C ./source/compute_plane/python/agent
@@ -245,9 +255,8 @@ python-submitter: utils api
 
 
 ####################################
-##### building documentation #######
+##### Building documentation #######
 ####################################
-
 doc: import
 	mkdocs build
 
@@ -257,8 +266,9 @@ serve: import
 import: packages $(PACKAGES)
 	pip install --force-reinstall $(PACKAGES)
 
+
 ######################################
-##### upload workload binaries #######
+##### Upload workload binaries #######
 ######################################
 upload-c++: config-c++
 	$(MAKE) -C ./examples/workloads/c++/mock_computation upload
@@ -281,16 +291,17 @@ config-python-ql:
 config-s3-c++:
 	@$(MAKE) -C ./examples/configurations generated-s3-c++
 
+
 ###############################
-##### generate k8s jobs #######
+##### Generate k8s jobs #######
 ###############################
 k8s-jobs:
 	@$(MAKE) -C ./examples/submissions/k8s_jobs
 
-#############################
-##### path per example ######
-#############################
 
+#############################
+##### Path per example ######
+#############################
 happy-path: ecr-login all upload-c++ config-c++
 
 python-happy-path: ecr-login all upload-python config-python

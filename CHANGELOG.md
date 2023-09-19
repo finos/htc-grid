@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.4.1](https://github.com/awslabs/aws-htc-grid/compare/v0.4.0...v0.4.1)
+
+> 14 September 2023
+
+- Move the deployment of the Helm charts outside of the `EKS Blueprints Addons` module to native TF Resource(s) to better handle the resource dependencies to those addons and simplify code.
+- Switch Grafana ingress to use the new `ingressClassName` spec format instead of the deprecated `kubernetes.io/ingress.class` annotation.
+- Switch to using the `kubernetes_annotations` TF Resource to manage the Cognito annotations for Grafana Ingress.
+- Adjust workshop notes on creation of Cognito user for the user-pool with sign-up disabled.
+- Add ability to always use the `latest` released tag in the Cloud9 instance deployment.
+- Fix the Private API Gateway and Resource Policy race-condition/dependency.
+- Fix `image_repository` destroy issues since adding explicit region flags to ECR commands.
+- Fix missing comma in `state_table_dynamodb.py`.
+- Add explicit region flag when listing ECR repos in the workshop.
+- Clean up and adjust workshop notes, code, comments and other docs (ie the FSI Whitepaper link).
+
+
 #### [v0.4.0](https://github.com/awslabs/aws-htc-grid/compare/v0.3.6...v0.4.0)
 
 > 11 September 2023
@@ -120,11 +136,13 @@ All notable changes to this project will be documented in this file. Dates are d
 - feat: migration tentative to EKS blueprint [`d65abca`](https://github.com/awslabs/aws-htc-grid/commit/d65abca29594e4af0c82f1bb4b55da85f378acd7)
 - Adding Java runtime for Worker Lambdas + QuantLib example [`9444a17`](https://github.com/awslabs/aws-htc-grid/commit/9444a17150737bcc977283c97710eb1b9a23e774)
 
+
 #### [v0.3.5](https://github.com/awslabs/aws-htc-grid/compare/v0.3.4...v0.3.5)
 
 > 27 February 2022
 
 - fixed issue in cloud9 environment [`#38`](https://github.com/awslabs/aws-htc-grid/pull/38)
+
 
 #### [v0.3.4](https://github.com/awslabs/aws-htc-grid/compare/v0.3.3...v0.3.4)
 
@@ -133,11 +151,13 @@ All notable changes to this project will be documented in this file. Dates are d
 - Fixing entry in quantlib example [`#37`](https://github.com/awslabs/aws-htc-grid/pull/37)
 - adding the right args to quantlib [`d204446`](https://github.com/awslabs/aws-htc-grid/commit/d204446c3dabae9f133ecf7d0d243e563ec5fe96)
 
+
 #### [v0.3.3](https://github.com/awslabs/aws-htc-grid/compare/v0.3.2...v0.3.3)
 
 > 25 February 2022
 
 - fix:  python example for through pull cache [`310301d`](https://github.com/awslabs/aws-htc-grid/commit/310301d9e4987c14e48a759c740f4b4027fb68d5)
+
 
 #### [v0.3.2](https://github.com/awslabs/aws-htc-grid/compare/v0.3.1...v0.3.2)
 
@@ -150,12 +170,14 @@ All notable changes to this project will be documented in this file. Dates are d
 - Refactoring [`1f86e28`](https://github.com/awslabs/aws-htc-grid/commit/1f86e281c07e57befcc2124f98ae74996fbe77ed)
 - Added cancellation of  tasks in processing state [`b22ce80`](https://github.com/awslabs/aws-htc-grid/commit/b22ce80475a3cfdcb5912237d2fcd62827934468)
 
+
 #### [v0.3.1](https://github.com/awslabs/aws-htc-grid/compare/v0.3.0...v0.3.1)
 
 > 15 September 2021
 
 - fix:(issue 28) improving documentation, makefile and image transfer [`a8569d5`](https://github.com/awslabs/aws-htc-grid/commit/a8569d55bff158eb4c13ae206df0c65981f418a7)
 - fix: migrating to versin 0.3.1 [`9f1af13`](https://github.com/awslabs/aws-htc-grid/commit/9f1af131b2c94744b785b3149a1c20846bc57b47)
+
 
 #### [v0.3.0](https://github.com/awslabs/aws-htc-grid/compare/v0.2.0...v0.3.0)
 
@@ -171,6 +193,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - initial commit [`0f6bfa9`](https://github.com/awslabs/aws-htc-grid/commit/0f6bfa9f4bfa1f507c955907f982516fc913952d)
 - initial commit [`c38747b`](https://github.com/awslabs/aws-htc-grid/commit/c38747bc80704e16a85c62b1137d8531b3a87de6)
 - main sections completed [`572bee2`](https://github.com/awslabs/aws-htc-grid/commit/572bee2730bd1f96ec3ad7b8f9f9bf474bd85e82)
+
 
 #### [v0.2.0](https://github.com/awslabs/aws-htc-grid/compare/v0.1.0...v0.2.0)
 
@@ -195,6 +218,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - Add python client/worker portfolio eval. using QuantLib [`0d299df`](https://github.com/awslabs/aws-htc-grid/commit/0d299df7622ba637bbf36e90c69530637a30e8b9)
 - fix: updating version associated to the grid and the cloud9 environment [`98b6b17`](https://github.com/awslabs/aws-htc-grid/commit/98b6b17071de0fd8bfc68bf55b816132e305c74e)
 - fix: fix indentation [`a20cca8`](https://github.com/awslabs/aws-htc-grid/commit/a20cca8a24cbe92eac450c4f989a537a7ced396a)
+
 
 #### v0.1.0
 

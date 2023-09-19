@@ -200,7 +200,9 @@ module "control_plane" {
   cognito_userpool_arn                          = module.compute_plane.cognito_userpool_arn
   api_gateway_version                           = var.api_gateway_version
 
-  depends_on = [module.vpc]
+  depends_on = [
+    module.vpc,
+  ]
 }
 
 

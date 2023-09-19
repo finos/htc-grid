@@ -10,9 +10,12 @@ resource "aws_s3_bucket" "htc-stdout-bucket" {
 
 
 resource "aws_s3_bucket_acl" "htc-stdout-bucket" {
-  bucket     = aws_s3_bucket.htc-stdout-bucket.id
-  acl        = "private"
-  depends_on = [aws_s3_bucket_ownership_controls.htc-stdout-bucket]
+  bucket = aws_s3_bucket.htc-stdout-bucket.id
+  acl    = "private"
+
+  depends_on = [
+    aws_s3_bucket_ownership_controls.htc-stdout-bucket,
+  ]
 }
 
 

@@ -40,8 +40,8 @@ resource "aws_cognito_user_pool_client" "user_data_client" {
 }
 
 
-resource "aws_cognito_user_pool_client" "client" {
-  name                                 = "client"
+resource "aws_cognito_user_pool_client" "grafana" {
+  name                                 = "grafana"
   user_pool_id                         = aws_cognito_user_pool.htc_pool.id
   allowed_oauth_flows_user_pool_client = true
   generate_secret                      = true
@@ -68,44 +68,21 @@ resource "aws_cognito_user" "grafana_admin" {
 }
 
 
-resource "null_resource" "grafana_ingress_auth" {
-  triggers = {
-    user_pool_arn          = aws_cognito_user_pool.htc_pool.arn
-    client_id              = aws_cognito_user_pool_client.client.id
-    cognito_domain         = local.cognito_domain_name
-    grafana_domain_name    = data.kubernetes_ingress_v1.grafana_ingress.status.0.load_balancer.0.ingress.0.hostname
+resource "kubernetes_annotations" "grafana_ingress_auth" {
+  api_version = "networking.k8s.io/v1"
+  kind        = "Ingress"
+
+  metadata {
+    name      = helm_release.this["grafana"].name
+    namespace = helm_release.this["grafana"].namespace
   }
 
-  provisioner "local-exec" {
-    command = <<-EOT
-      kubectl -n grafana annotate ingress grafana --overwrite \
-        alb.ingress.kubernetes.io/auth-idp-cognito="{\"UserPoolArn\": \"${self.triggers.user_pool_arn}\",\"UserPoolClientId\":\"${self.triggers.client_id}\",\"UserPoolDomain\":\"${self.triggers.cognito_domain}\"}" \
-        alb.ingress.kubernetes.io/auth-on-unauthenticated-request=authenticate \
-        alb.ingress.kubernetes.io/auth-scope=openid \
-        alb.ingress.kubernetes.io/auth-session-cookie=AWSELBAuthSessionCookie \
-        alb.ingress.kubernetes.io/auth-session-timeout="3600" \
-        alb.ingress.kubernetes.io/auth-type=cognito
-    EOT
+  annotations = {
+    "alb.ingress.kubernetes.io/auth-idp-cognito"                = "{\"UserPoolArn\": \"${aws_cognito_user_pool.htc_pool.arn}\",\"UserPoolClientId\":\"${aws_cognito_user_pool_client.grafana.id}\",\"UserPoolDomain\":\"${local.cognito_domain_name}\"}"
+    "alb.ingress.kubernetes.io/auth-on-unauthenticated-request" = "authenticate"
+    "alb.ingress.kubernetes.io/auth-scope"                      = "openid"
+    "alb.ingress.kubernetes.io/auth-session-cookie"             = "AWSELBAuthSessionCookie"
+    "alb.ingress.kubernetes.io/auth-session-timeout"            = "3600"
+    "alb.ingress.kubernetes.io/auth-type"                       = "cognito"
   }
-
-  provisioner "local-exec" {
-    when       = destroy
-    command    = <<-EOT
-      kubectl -n grafana annotate ingress grafana \
-        alb.ingress.kubernetes.io/auth-idp-cognito- \
-        alb.ingress.kubernetes.io/auth-on-unauthenticated-request- \
-        alb.ingress.kubernetes.io/auth-scope- \
-        alb.ingress.kubernetes.io/auth-session-cookie- \
-        alb.ingress.kubernetes.io/auth-session-timeout- \
-        alb.ingress.kubernetes.io/auth-type-
-    EOT
-    on_failure = continue
-  }
-
-  depends_on = [
-    module.eks,
-    module.eks_blueprints_addons,
-    data.kubernetes_ingress_v1.grafana_ingress,
-    null_resource.update_kubeconfig
-  ]
 }

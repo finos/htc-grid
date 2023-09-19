@@ -54,12 +54,16 @@ resource "aws_ecr_pull_through_cache_rule" "registry_k8s_io" {
 resource "null_resource" "delete_pull_through_cache_repos" {
   for_each = toset(["ecr-public", "quay", "registry-k8s-io"])
 
+  triggers = {
+    region = var.region
+  }
+
   provisioner "local-exec" {
     when    = destroy
     command = <<-EOT
-      for repo in $(aws ecr describe-repositories --region ${var.region} | \
+      for repo in $(aws ecr describe-repositories --region ${self.triggers.region} | \
         jq -r -c '.repositories[].repositoryName | select(. | contains("${each.key}"))'); do
-          aws ecr delete-repository --force --repository-name $repo --region ${var.region};
+          aws ecr delete-repository --force --repository-name $repo --region ${self.triggers.region};
         done
     EOT
   }
