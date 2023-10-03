@@ -1,3 +1,2 @@
 influxdb
 requests
-urllib3==1.26.15

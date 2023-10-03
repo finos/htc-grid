@@ -7,9 +7,7 @@ BUILD_DIR:=.build
 export TAG
 export REGION?=eu-west-1
 
-export IAC_TOOL?=terraform
-
-YAML_SRC:=grid_state_$(IAC_TOOL).yaml
+YAML_SRC:=grid_state.yaml
 
 all: $(BUILD_DIR)/grid_init/init-grid-$(TAG)
 
@@ -41,12 +39,9 @@ clean-image-state:
 clean-lambda-storage:
 	aws --region $(REGION) s3 rm --recursive s3://$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[0].OutputValue' --output text) || true
 
-clean-terraform: clean-image-state clean-grid-state clean-lambda-storage
-clean-cdk: clean-lambda-storage
-
-clean:
+clean: clean-image-state clean-grid-state clean-lambda-storage
 	rm -rf $(BUILD_DIR)/grid_init/tag.*
 
-delete: clean-$(IAC_TOOL) clean
+delete: clean
 	aws cloudformation delete-stack --stack-name $(TAG) --region $(REGION) && \
 	aws cloudformation wait stack-delete-complete --stack-name $(shell aws cloudformation describe-stacks --region $(REGION) --stack-name $(TAG) --query 'Stacks[0].StackId' --output text) --region $(REGION) || true

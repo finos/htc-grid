@@ -16,7 +16,6 @@ export DIST_DIR=$(shell pwd)/dist
 export REBUILD_RUNTIMES
 export GRAFANA_ADMIN_PASSWORD
 export BUILD_DIR:=(shell pwd)/.build
-export IAS?=terraform
 
 
 BUILD_TYPE?=Release
@@ -28,12 +27,6 @@ PACKAGES    := $(wildcard $(PYTHON_PACKAGE_DIR)/*.whl)
 
 all: utils api lambda submitter lambda-init k8s-jobs
 
-
-ifeq ($(origin with-cdk), 'command line')
-IAS:=cdk
-else ifeq ($(origin with-terraform), 'command line')
-IAS:=terraform
-endif
 
 
 ##################################################
@@ -51,51 +44,41 @@ docker-registry-login: ecr-login public-ecr-login
 ###############################################
 #######     Manage HTC Grid states     ########
 ###############################################
-init-grid-state: init-grid-state-$(IAS)
-delete-grid-state: delete-grid-state-$(IAS)
-clean-grid-state: clean-grid-state-$(IAS)
 
-init-grid-state-%: ./deployment/init_grid/cloudformation
-	$(MAKE) -C $< init IAC_TOOL=$*
-	$(MAKE) -C $< IAC_TOOL=$*
+init-grid-state: ./deployment/init_grid/cloudformation
+	$(MAKE) -C $< init
+	$(MAKE) -C $<
 
-delete-grid-state-%: ./deployment/init_grid/cloudformation
-	$(MAKE) -C $< delete IAC_TOOL=$*
+delete-grid-state: ./deployment/init_grid/cloudformation
+	$(MAKE) -C $< delete
 
-clean-grid-state-%: ./deployment/init_grid/cloudformation
-	$(MAKE) -C $< clean IAC_TOOL=$*
+clean-grid-state: ./deployment/init_grid/cloudformation
+	$(MAKE) -C $< clean
 
 
 ###########################################################################################
 #### Manage CDK/Terraform images transfer from third parties to given docker registry  ####
 ###########################################################################################
-init-images : init-images-$(IAS)
-reset-images-deployment: reset-images-deployment-$(IAS)
-transfer-images: transfer-images-$(IAS)
-destroy-images: destroy-images-$(IAS)
 
-init-images-% : ./deployment/image_repository/%
+init-images : ./deployment/image_repository/terraform
 	@$(MAKE) -C $< init
 
-reset-images-deployment-%: ./deployment/image_repository/%
+reset-images-deployment: ./deployment/image_repository/terraform
 	@$(MAKE) -C $< reset
 
-transfer-images-%: ./deployment/image_repository/%
+transfer-images: ./deployment/image_repository/terraform
 	@$(MAKE) -C $< apply
 
-destroy-images-%: ./deployment/image_repository/%
+destroy-images: ./deployment/image_repository/terraform
 	@$(MAKE) -C $< destroy
 
 
 ###############################################
 #### Manage HTC Grid Terraform deployment  ####
 ###############################################
-init-grid-deployment: init-grid-deployment-$(IAS)
-reset-grid-deployment: reset-grid-deployment-$(IAS)
-
-init-grid-deployment-%: ./deployment/grid/%
+init-grid-deployment: ./deployment/grid/terraform
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/grid_config.json init
-reset-grid-deployment-%: ./deployment/grid/%
+reset-grid-deployment: ./deployment/grid/terraform
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/grid_config.json reset
 
 
@@ -104,25 +87,16 @@ reset-grid-deployment-%: ./deployment/grid/%
 ###########################################
 
 # deploy runtime with confirmation
-apply-custom-runtime: apply-custom-runtime-$(IAS)
-# deploy runtime without confirmation
-auto-apply-custom-runtime: auto-apply-custom-runtime-$(IAS)
-# destroy runtime with confirmation
-destroy-custom-runtime: destroy-custom-runtime-$(IAS)
-# destroy runtime without confirmation
-auto-destroy-custom-runtime: auto-destroy-custom-runtime-$(IAS)
-
-# deploy runtime with confirmation
-apply-custom-runtime-% : ./deployment/grid/%
+apply-custom-runtime: ./deployment/grid/terraform
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/grid_config.json apply
 # deploy runtime without confirmation
-auto-apply-custom-runtime-%: ./deployment/grid/%
+auto-apply-custom-runtime: ./deployment/grid/terraform
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/grid_config.json auto-apply
 # destroy runtime with confirmation
-destroy-custom-runtime-%: ./deployment/grid/%
+destroy-custom-runtime: ./deployment/grid/terraform
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/grid_config.json destroy
 # destroy runtime without confirmation
-auto-destroy-custom-runtime-%: ./deployment/grid/%
+auto-destroy-custom-runtime: ./deployment/grid/terraform
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/grid_config.json auto-destroy
 
 
@@ -131,26 +105,16 @@ auto-destroy-custom-runtime-%: ./deployment/grid/%
 ########################################
 
 # deploy runtime with confirmation
-apply-custom-runtime-s3: apply-custom-runtime-s3-$(IAS)
-# deploy runtime without confirmation
-auto-apply-custom-runtime-s3: auto-apply-custom-runtime-s3-$(IAS)
-# destroy runtime with confirmation
-destroy-custom-runtime-s3: destroy-custom-runtime-s3-$(IAS)
-# destroy runtime without confirmation
-auto-destroy-custom-runtime-s3: auto-destroy-custom-runtime-s3-$(IAS)
-
-
-# deploy runtime with confirmation
-apply-custom-runtime-s3-%: ./deployment/grid/%
+apply-custom-runtime-s3: ./deployment/grid/terraform
 	@$(MAKE) -C $< ./deployment/grid/terraform GRID_CONFIG=$(GENERATED)/custom_runtime_s3_grid_config.json apply
 # deploy runtime without confirmation
-auto-apply-custom-runtime-s3-%: ./deployment/grid/%
+auto-apply-custom-runtime-s3: ./deployment/grid/terraform
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/custom_runtime_s3_grid_config.json auto-apply
 # destroy runtime with confirmation
-destroy-custom-runtime-s3-%: ./deployment/grid/%
+destroy-custom-runtime-s3: ./deployment/grid/terraform
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/custom_runtime_s3_grid_config.json destroy
 # destroy runtime without confirmation
-auto-destroy-custom-runtime-s3-%: ./deployment/grid/%
+auto-destroy-custom-runtime-s3: ./deployment/grid/terraform
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/custom_runtime_s3_grid_config.json auto-destroy
 
 
@@ -159,55 +123,34 @@ auto-destroy-custom-runtime-s3-%: ./deployment/grid/%
 ##################################################
 
 # deploy runtime with confirmation
-apply-python-runtime: apply-python-runtime-$(IAS)
-# deploy runtime without confirmation
-auto-apply-python-runtime: auto-apply-python-runtime-$(IAS)
-# destroy runtime with confirmation
-destroy-python-runtime: destroy-python-runtime-$(IAS)
-# destroy runtime without confirmation
-auto-destroy-python-runtime: auto-destroy-python-runtime-$(IAS)
-
-
-# deploy runtime with confirmation
-apply-python-runtime-%: ./deployment/grid/%
+apply-python-runtime: ./deployment/grid/terraform
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/python_runtime_grid_config.json apply
 # deploy runtime without confirmation
-auto-apply-python-runtime-%: ./deployment/grid/%
+auto-apply-python-runtime: ./deployment/grid/terraform
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/python_runtime_grid_config.json auto-apply
 # destroy runtime with confirmation
-destroy-python-runtime-%: ./deployment/grid/%
+destroy-python-runtime: ./deployment/grid/terraform
 	@$(MAKE) -C $<  GRID_CONFIG=$(GENERATED)/python_runtime_grid_config.json destroy
 # destroy runtime without confirmation
-auto-destroy-python-runtime-%: ./deployment/grid/%
+auto-destroy-python-runtime: ./deployment/grid/terraform
 	@$(MAKE) -C $< GRID_CONFIG=$(GENERATED)/python_runtime_grid_config.json auto-destroy
 
 
 ##########################################################
 #### Retrieve output value from terraform deployment #####
 ##########################################################
-get-grafana-password: get-grafana-password-$(IAS)
 
-get-userpool-id: get-userpool-id-$(IAS)
-
-get-client-id: get-client-id-$(IAS)
-
-get-agent-configuration: get-agent-configuration-$(IAS)
-
-get-grafana-password-%: ./deployment/grid/%
+get-grafana-password: ./deployment/grid/terraform
 	@$(MAKE) --no-print-directory -C $< get-grafana-password
 
-get-userpool-id-%: ./deployment/grid/%
+get-userpool-id: ./deployment/grid/terraform
 	@$(MAKE) --no-print-directory -C $< get-userpool-id
 
-get-client-id-%: ./deployment/grid/%
+get-client-id: ./deployment/grid/terraform
 	@$(MAKE) --no-print-directory -C $< get-client-id
 
-get-agent-configuration-%: ./deployment/grid/%
+get-agent-configuration: ./deployment/grid/terraform
 	@$(MAKE) --no-print-directory -C $< get-agent-configuration
-
-# only to be used for CDK deployment
-get-eks-connection:
-	@$(MAKE) --no-print-directory -C ./deployment/grid/cdk get-eks-connection
 
 
 #############################
