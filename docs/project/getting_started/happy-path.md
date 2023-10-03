@@ -26,14 +26,6 @@ For first time users or Windows users, we do recommend the use of Cloud9 as the 
     - `ap-southeast-1`
 
 
-3. Define the infrastructure as code tool used for deployment
-   ```bash
-   export IAS=<tool>
-   ```
-   `<tool>` can take two values:
-   - `cdk`
-   - `terraform`
-
 
 ## Create the infrastructure for storing the state of the HTC Grid
 The following step creates 3 S3 buckets that will be needed during the installation:
@@ -63,7 +55,7 @@ The HTC-Grid project has external software dependencies that are deployed as con
     make ecr-login REGION=$HTCGRID_REGION
     ```
 
-2. The following command will go to the `~/environment/aws-htc-grid/deployment/image_repository/{cdk or terraform}` and initialize the  project:
+2. The following command will go to the `~/environment/aws-htc-grid/deployment/image_repository/terraform` and initialize the  project:
     ```bash
     make init-images TAG=$TAG REGION=$HTCGRID_REGION
     ```
@@ -125,15 +117,11 @@ The deployment of HTC-Grid takes about 20 Mins.
    make apply-custom-runtime TAG=$TAG REGION=$HTCGRID_REGION GRAFANA_ADMIN_PASSWORD='<my_grafana_admin_password>'
    ```
 
-For terraform based deployment, if `make apply-custom-runtime` is successful then in the `deployment/grid/terraform` folder two files are created:
+If `make apply-custom-runtime` is successful then in the `deployment/grid/terraform` folder two files are created:
 
     * `kubeconfig_htc_$TAG`: this file give access to the EKS cluster through kubectl (example: kubeconfig_htc_aws_my_project)
     * `Agent_config.json`: this file contains all the parameters, so the agent can run in the infrastructure
 
-For CDK based deployment, if `make apply-custom-runtime` is successful then please run
-```bash
-$(make get-eks-connection TAG=$TAG REGION=$HTCGRID_REGION)
-```
 
 
 ## Testing the deployment
@@ -233,45 +221,10 @@ The destruction time is about 15 min.
    make destroy-custom-runtime TAG=$TAG REGION=$HTCGRID_REGION
    ```
 
-   1. To remove the images from the ECR repository execute
-      1. For cdk based deployment please run the following command:
-      ```bash
-      image_list="
-      node-exporter
-      amazonlinux
-      k8s-cloudwatch-adapter
-      amazon/cloudwatch-agent
-      prometheus
-      aws-for-fluent-bit
-      lambda-build
-      kube-state-metrics
-      influxdb
-      grafana
-      k8s-sidecar
-      lambda
-      configmap-reload
-      busybox
-      curl
-      pushgateway
-      amazon/aws-node-termination-handler
-      alertmanager
-      cluster-autoscaler
-      aws-xray-daemon
-      awshpc-lambda
-      lambda-init
-      submitter
-      "
-      ```
-
-      2. And then
-      ```bash
-      echo $image_list | tr ' ' '\n'  |  xargs -L1  aws ecr delete-repository --region $HTCGRID_REGION --force --repository-name
-      ```
-
-   2. For all deployments
-      ```bash
-      make destroy-images TAG=$TAG REGION=$HTCGRID_REGION
-      ```
+2. For all deployments
+   ```bash
+   make destroy-images TAG=$TAG REGION=$HTCGRID_REGION
+   ```
 3. Finally, we will delete CloudFormation stack which manages the S3 buckets that contain our Terraform state, by running the following command:
 
 **Warning:**
