@@ -20,6 +20,6 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    install_requires=["redis", "requests", "warrant-lite", "apscheduler", "urllib3==1.26.15"],
+    install_requires=["redis", "requests", "warrant-lite", "apscheduler", "urllib3==1.26.17"],
     python_requires='>=3.6',
 )
