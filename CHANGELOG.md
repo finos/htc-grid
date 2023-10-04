@@ -2,7 +2,14 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
-#### [v0.4.1](https://github.com/awslabs/aws-htc-grid/compare/v0.4.0...v0.4.1)
+#### [v0.4.2](https://github.com/awslabs/aws-htc-grid/compare/v0.4.1...v0.4.2)
+
+> 4 October 2023
+
+- Remove `CDK` as IaC for deploying HTC Grid
+- Remove any hardcoded dependency to `urllib3`
+- Migrate lambda function runtime  from python 3.7 to python 3.11
+
 
 > 14 September 2023
 
@@ -17,6 +24,21 @@ All notable changes to this project will be documented in this file. Dates are d
 - Add explicit region flag when listing ECR repos in the workshop.
 - Clean up and adjust workshop notes, code, comments and other docs (ie the FSI Whitepaper link).
 
+
+#### [v0.4.1](https://github.com/awslabs/aws-htc-grid/compare/v0.4.0...v0.4.1)
+
+> 14 September 2023
+
+- Move the deployment of the Helm charts outside of the `EKS Blueprints Addons` module to native TF Resource(s) to better handle the resource dependencies to those addons and simplify code.
+- Switch Grafana ingress to use the new `ingressClassName` spec format instead of the deprecated `kubernetes.io/ingress.class` annotation.
+- Switch to using the `kubernetes_annotations` TF Resource to manage the Cognito annotations for Grafana Ingress.
+- Adjust workshop notes on creation of Cognito user for the user-pool with sign-up disabled.
+- Add ability to always use the `latest` released tag in the Cloud9 instance deployment.
+- Fix the Private API Gateway and Resource Policy race-condition/dependency.
+- Fix `image_repository` destroy issues since adding explicit region flags to ECR commands.
+- Fix missing comma in `state_table_dynamodb.py`.
+- Add explicit region flag when listing ECR repos in the workshop.
+- Clean up and adjust workshop notes, code, comments and other docs (ie the FSI Whitepaper link).
 
 #### [v0.4.0](https://github.com/awslabs/aws-htc-grid/compare/v0.3.6...v0.4.0)
 
