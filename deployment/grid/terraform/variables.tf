@@ -29,7 +29,7 @@ variable "config_name" {
 
 variable "lambda_runtime" {
   description = "Lambda runtine"
-  default     = "python3.7"
+  default     = "python3.11"
 }
 
 variable "kubernetes_version" {
