@@ -12,13 +12,6 @@ ACCOUNT_ID?=$(shell aws sts get-caller-identity | jq -r '.Account')
 BUCKET_NAME=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[0].OutputValue' --output text)
 
 
-ifeq ($(IAS),cdk)
-ENABLE_PRIVATE_SUBNET:=false
-else
-ENABLE_PRIVATE_SUBNET:=true
-endif
-
-
 generated-c++: grid_config.json.tpl
 	mkdir -p $(GENERATED) && cat grid_config.json.tpl | sed "s/{{region}}/$(REGION)/;s/{{workload_bucket_name}}/$(BUCKET_NAME)/;s/{{image_tag}}/$(TAG)/;s/{{account_id}}/${ACCOUNT_ID}/;s/{{enable_private_subnet}}/${ENABLE_PRIVATE_SUBNET}/" > $(GENERATED)/grid_config.json
 	mkdir -p $(GENERATED) && cat full_run_grid_config.json.tpl | sed "s/{{region}}/$(REGION)/;s/{{workload_bucket_name}}/$(BUCKET_NAME)/;s/{{image_tag}}/$(TAG)/;s/{{account_id}}/${ACCOUNT_ID}/;s/{{enable_private_subnet}}/${ENABLE_PRIVATE_SUBNET}/" > $(GENERATED)/full_run_grid_config.json
