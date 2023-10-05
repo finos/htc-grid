@@ -13,17 +13,17 @@ BUCKET_NAME=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --reg
 
 
 generated-c++: grid_config.json.tpl
-	mkdir -p $(GENERATED) && cat grid_config.json.tpl | sed "s/{{region}}/$(REGION)/;s/{{workload_bucket_name}}/$(BUCKET_NAME)/;s/{{image_tag}}/$(TAG)/;s/{{account_id}}/${ACCOUNT_ID}/;s/{{enable_private_subnet}}/${ENABLE_PRIVATE_SUBNET}/" > $(GENERATED)/grid_config.json
-	mkdir -p $(GENERATED) && cat full_run_grid_config.json.tpl | sed "s/{{region}}/$(REGION)/;s/{{workload_bucket_name}}/$(BUCKET_NAME)/;s/{{image_tag}}/$(TAG)/;s/{{account_id}}/${ACCOUNT_ID}/;s/{{enable_private_subnet}}/${ENABLE_PRIVATE_SUBNET}/" > $(GENERATED)/full_run_grid_config.json
+	mkdir -p $(GENERATED) && cat grid_config.json.tpl | sed "s/{{region}}/$(REGION)/;s/{{workload_bucket_name}}/$(BUCKET_NAME)/;s/{{image_tag}}/$(TAG)/;s/{{account_id}}/${ACCOUNT_ID}/" > $(GENERATED)/grid_config.json
+	mkdir -p $(GENERATED) && cat full_run_grid_config.json.tpl | sed "s/{{region}}/$(REGION)/;s/{{workload_bucket_name}}/$(BUCKET_NAME)/;s/{{image_tag}}/$(TAG)/;s/{{account_id}}/${ACCOUNT_ID}/" > $(GENERATED)/full_run_grid_config.json
 
 generated-s3-c++: custom_runtime_s3_grid_config.json.tpl
-	mkdir -p $(GENERATED) && cat custom_runtime_s3_grid_config.json.tpl | sed "s/{{region}}/$(REGION)/;s/{{workload_bucket_name}}/$(BUCKET_NAME)/;s/{{image_tag}}/$(TAG)/;s/{{account_id}}/${ACCOUNT_ID}/;s/{{enable_private_subnet}}/${ENABLE_PRIVATE_SUBNET}/" > $(GENERATED)/custom_runtime_s3_grid_config.json
+	mkdir -p $(GENERATED) && cat custom_runtime_s3_grid_config.json.tpl | sed "s/{{region}}/$(REGION)/;s/{{workload_bucket_name}}/$(BUCKET_NAME)/;s/{{image_tag}}/$(TAG)/;s/{{account_id}}/${ACCOUNT_ID}/" > $(GENERATED)/custom_runtime_s3_grid_config.json
 
 generated-python: python_runtime_grid_config.json.tpl
-	mkdir -p $(GENERATED) && cat python_runtime_grid_config.json.tpl | sed "s/{{python_file_handler}}/$(FILE_HANDLER)/;s/{{python_function_handler}}/$(FUNCTION_HANDLER)/;s/{{region}}/$(REGION)/;s/{{workload_bucket_name}}/$(BUCKET_NAME)/;s/{{image_tag}}/$(TAG)/;s/{{account_id}}/${ACCOUNT_ID}/;s/{{enable_private_subnet}}/${ENABLE_PRIVATE_SUBNET}/" > $(GENERATED)/python_runtime_grid_config.json
+	mkdir -p $(GENERATED) && cat python_runtime_grid_config.json.tpl | sed "s/{{python_file_handler}}/$(FILE_HANDLER)/;s/{{python_function_handler}}/$(FUNCTION_HANDLER)/;s/{{region}}/$(REGION)/;s/{{workload_bucket_name}}/$(BUCKET_NAME)/;s/{{image_tag}}/$(TAG)/;s/{{account_id}}/${ACCOUNT_ID}/" > $(GENERATED)/python_runtime_grid_config.json
 
 generated-java: java_runtime_grid_config.json.tpl
-	mkdir -p $(GENERATED) && cat java_runtime_grid_config.json.tpl | sed "s/{{java_file_handler}}/$(FILE_HANDLER)/;s/{{java_function_handler}}/$(FUNCTION_HANDLER)/;s/{{region}}/$(REGION)/;s/{{workload_bucket_name}}/$(BUCKET_NAME)/;s/{{image_tag}}/$(TAG)/;s/{{account_id}}/${ACCOUNT_ID}/;s/{{enable_private_subnet}}/${ENABLE_PRIVATE_SUBNET}/" > $(GENERATED)/java_runtime_grid_config.json
+	mkdir -p $(GENERATED) && cat java_runtime_grid_config.json.tpl | sed "s/{{java_file_handler}}/$(FILE_HANDLER)/;s/{{java_function_handler}}/$(FUNCTION_HANDLER)/;s/{{region}}/$(REGION)/;s/{{workload_bucket_name}}/$(BUCKET_NAME)/;s/{{image_tag}}/$(TAG)/;s/{{account_id}}/${ACCOUNT_ID}/" > $(GENERATED)/java_runtime_grid_config.json
 
 clean:
 	rm -rf $(GENERATED)

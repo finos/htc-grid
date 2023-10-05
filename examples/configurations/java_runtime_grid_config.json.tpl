@@ -44,7 +44,7 @@
       "lambda_handler_function_name": "{{java_function_handler}}"
     }
   },
-  "enable_private_subnet" : {{enable_private_subnet}},
+  "enable_private_subnet" : true,
   "vpc_cidr_block_public" : 24,
   "vpc_cidr_block_private": 18,
   "input_role": [
