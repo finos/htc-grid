@@ -1,0 +1,1316 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://docs.d12sqmpa4c7emq.amplifyapp.com/getting_started/happy-path/">
+      
+      
+        <link rel="prev" href="../configurations/">
+      
+      
+        <link rel="next" href="../portfolio_example/">
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.6">
+    
+    
+      
+        <title>Happy Path - Cloud Native HTC-Grid</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.558e4712.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.2505c338.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="deep-orange">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#happy-path" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Cloud Native HTC-Grid" class="md-header__button md-logo" aria-label="Cloud Native HTC-Grid" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Cloud Native HTC-Grid
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Happy Path
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/awslabs/aws-htc-grid" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    awslabs/aws-htc-grid
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+    
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../prerequisite/" class="md-tabs__link md-tabs__link--active">
+        Getting started
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../architecture/architecture/" class="md-tabs__link">
+        Architecture
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../user_guide/configuring_priority_queues/" class="md-tabs__link">
+        User guide
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../api/" class="md-tabs__link">
+        Developer Guide
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Cloud Native HTC-Grid" class="md-nav__button md-logo" aria-label="Cloud Native HTC-Grid" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Cloud Native HTC-Grid
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/awslabs/aws-htc-grid" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    awslabs/aws-htc-grid
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_1" type="checkbox" id="__nav_1" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1" tabindex="0" aria-expanded="true">
+          Getting started
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Getting started" data-md-level="1">
+        <label class="md-nav__title" for="__nav_1">
+          <span class="md-nav__icon md-icon"></span>
+          Getting started
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prerequisite/" class="md-nav__link">
+        Software Prerequisites
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configurations/" class="md-nav__link">
+        Configuring Local Environment
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Happy Path
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Happy Path
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installing-the-htc-grid-software" class="md-nav__link">
+    Installing the HTC-Grid software
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-variables-for-deploying-the-infrastructure" class="md-nav__link">
+    Define variables for deploying the infrastructure
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-the-infrastructure-for-storing-the-state-of-the-htc-grid" class="md-nav__link">
+    Create the infrastructure for storing the state of the HTC Grid
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-and-deploy-htc-grid-images" class="md-nav__link">
+    Create and deploy HTC-Grid images
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-htc-artifacts" class="md-nav__link">
+    Build HTC artifacts
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-the-htc-grid-runtime" class="md-nav__link">
+    Configuring the HTC-Grid runtime
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deploying-htc-grid" class="md-nav__link">
+    Deploying HTC-Grid
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-the-deployment" class="md-nav__link">
+    Testing the deployment
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-example-workload" class="md-nav__link">
+    Running the example workload
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-cognito-user-cli" class="md-nav__link">
+    Create a Cognito user (CLI)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accessing-grafana" class="md-nav__link">
+    Accessing Grafana
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#uninstalling-and-destroying-htc-grid" class="md-nav__link">
+    Uninstalling and destroying HTC grid
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-the-documentation" class="md-nav__link">
+    Build the documentation
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../portfolio_example/" class="md-nav__link">
+        Portfolio example
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2" tabindex="0" aria-expanded="false">
+          Architecture
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Architecture" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Architecture
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/architecture/" class="md-nav__link">
+        HTC-Grid Architecture
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3" tabindex="0" aria-expanded="false">
+          User guide
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="User guide" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          User guide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/configuring_priority_queues/" class="md-nav__link">
+        Configuring Priority Queues
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/creating_your_a_client/" class="md-nav__link">
+        Configuring Client and Sending Tasks to the HTC Grid
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/htcgrid_management/" class="md-nav__link">
+        Managing HTC-Grid after deployment
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/troubleshooting/" class="md-nav__link">
+        Troubleshooting
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4" tabindex="0" aria-expanded="false">
+          Developer Guide
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Developer Guide" data-md-level="1">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Developer Guide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        API documentation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_2" type="checkbox" id="__nav_4_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_2" tabindex="0" aria-expanded="false">
+          Client
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Client" data-md-level="2">
+        <label class="md-nav__title" for="__nav_4_2">
+          <span class="md-nav__icon md-icon"></span>
+          Client
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/client/" class="md-nav__link">
+        Client API (between application and HTC-Grid)
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_2_2" type="checkbox" id="__nav_4_2_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_2_2" tabindex="0" aria-expanded="false">
+          Python
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Python" data-md-level="3">
+        <label class="md-nav__title" for="__nav_4_2_2">
+          <span class="md-nav__icon md-icon"></span>
+          Python
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/client/python/reference/" class="md-nav__link">
+        HTC-Grid API Reference
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/client/python/usage/" class="md-nav__link">
+        How to use API in your application
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_3" type="checkbox" id="__nav_4_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_3" tabindex="0" aria-expanded="false">
+          Worker
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Worker" data-md-level="2">
+        <label class="md-nav__title" for="__nav_4_3">
+          <span class="md-nav__icon md-icon"></span>
+          Worker
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_3_1" type="checkbox" id="__nav_4_3_1" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_3_1" tabindex="0" aria-expanded="false">
+          Python
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Python" data-md-level="3">
+        <label class="md-nav__title" for="__nav_4_3_1">
+          <span class="md-nav__icon md-icon"></span>
+          Python
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/worker/python/development/" class="md-nav__link">
+        Developing Python3 Worker Function
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_4_3_2" type="checkbox" id="__nav_4_3_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4_3_2" tabindex="0" aria-expanded="false">
+          C++
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="C++" data-md-level="3">
+        <label class="md-nav__title" for="__nav_4_3_2">
+          <span class="md-nav__icon md-icon"></span>
+          C++
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/worker/c%2B%2B/development/" class="md-nav__link">
+        Developing C++ Worker Function
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installing-the-htc-grid-software" class="md-nav__link">
+    Installing the HTC-Grid software
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-variables-for-deploying-the-infrastructure" class="md-nav__link">
+    Define variables for deploying the infrastructure
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-the-infrastructure-for-storing-the-state-of-the-htc-grid" class="md-nav__link">
+    Create the infrastructure for storing the state of the HTC Grid
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-and-deploy-htc-grid-images" class="md-nav__link">
+    Create and deploy HTC-Grid images
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-htc-artifacts" class="md-nav__link">
+    Build HTC artifacts
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-the-htc-grid-runtime" class="md-nav__link">
+    Configuring the HTC-Grid runtime
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deploying-htc-grid" class="md-nav__link">
+    Deploying HTC-Grid
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-the-deployment" class="md-nav__link">
+    Testing the deployment
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-example-workload" class="md-nav__link">
+    Running the example workload
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-cognito-user-cli" class="md-nav__link">
+    Create a Cognito user (CLI)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accessing-grafana" class="md-nav__link">
+    Accessing Grafana
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#uninstalling-and-destroying-htc-grid" class="md-nav__link">
+    Uninstalling and destroying HTC grid
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-the-documentation" class="md-nav__link">
+    Build the documentation
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+
+<h1 id="happy-path">Happy Path<a class="headerlink" href="#happy-path" title="Permanent link">&para;</a></h1>
+<h2 id="installing-the-htc-grid-software">Installing the HTC-Grid software<a class="headerlink" href="#installing-the-htc-grid-software" title="Permanent link">&para;</a></h2>
+<p>Unpack the provided HTC-Grid software ZIP (i.e: <code>htc-grid-0.4.0.tar.gz</code>)  or clone the repository into a local directory of your choice; this directory referred in this documentation as <code>&lt;project_root&gt;</code>. Unless stated otherwise, all paths referenced in this documentation are relative to <code>&lt;project_root&gt;</code>.</p>
+<p>For first time users or Windows users, we do recommend the use of Cloud9 as the platform to deploy HTC-Grid. The installation process uses Terraform and also make to build up artifacts and environment. This project provides a CloudFormation Stack that creates a Cloud9 instance with all the prerequisites listed above installed and ready to deploy and develop HTC-Grid. Just follow the standard process in your account and deploy the <strong><a href="/deployment/dev_environment_cloud9/cfn/cloud9-htc-grid.yaml">Cloud9 CloudFormation Stack</a></strong>. Once the CloudFormation Stack has been created, either open the <strong>Output</strong> section in CloudFormation and find the relevant link or go to <strong>Cloud9</strong> in your AWS console from where you can access the newly created Cloud9 environment.</p>
+<h2 id="define-variables-for-deploying-the-infrastructure">Define variables for deploying the infrastructure<a class="headerlink" href="#define-variables-for-deploying-the-infrastructure" title="Permanent link">&para;</a></h2>
+<ol>
+<li>To simplify this installation we suggest that a unique <TAG> name (to be used later) is also used to prefix the different required resources. TAG needs to follow <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html">S3 naming rules</a>.
+   <div class="highlight"><pre><span></span><code><span class="w">   </span><span class="nb">export</span><span class="w"> </span><span class="nv">TAG</span><span class="o">=</span>&lt;YourTag&gt;
+</code></pre></div></li>
+<li>Define the region where HTC-Grid will be deployed:
+   <div class="highlight"><pre><span></span><code><span class="w">   </span><span class="nb">export</span><span class="w"> </span><span class="nv">HTCGRID_REGION</span><span class="o">=</span>&lt;YourRegion&gt;
+</code></pre></div>
+   <code>&lt;YourRegion&gt;</code> can be any AWS Region (the list below is not exhaustive):<ul>
+<li><code>eu-west-1</code></li>
+<li><code>eu-west-2</code></li>
+<li><code>eu-central-1</code></li>
+<li><code>us-east-1</code></li>
+<li><code>us-west-2</code></li>
+<li><code>ap-northeast-1</code></li>
+<li><code>ap-southeast-1</code></li>
+</ul>
+</li>
+</ol>
+<h2 id="create-the-infrastructure-for-storing-the-state-of-the-htc-grid">Create the infrastructure for storing the state of the HTC Grid<a class="headerlink" href="#create-the-infrastructure-for-storing-the-state-of-the-htc-grid" title="Permanent link">&para;</a></h2>
+<p>The following step creates 3 S3 buckets that will be needed during the installation:
+* 2 buckets will store the state of the different Terraform deployments (if <code>terraform</code> based deployment)
+* 1 bucket will store the HTC artifacts (the lambda to be executed by the agent)</p>
+<div class="highlight"><pre><span></span><code>make<span class="w"> </span>init-grid-state<span class="w"> </span><span class="nv">TAG</span><span class="o">=</span><span class="nv">$TAG</span><span class="w"> </span><span class="nv">REGION</span><span class="o">=</span><span class="nv">$HTCGRID_REGION</span>
+</code></pre></div>
+<p>To validate the creation of the S3 buckets, you can run</p>
+<div class="highlight"><pre><span></span><code>aws<span class="w"> </span>cloudformation<span class="w"> </span>describe-stacks<span class="w"> </span>--stack-name<span class="w"> </span><span class="nv">$TAG</span><span class="w"> </span>--region<span class="w"> </span><span class="nv">$HTCGRID_REGION</span><span class="w"> </span>--query<span class="w"> </span><span class="s1">&#39;Stacks[0]&#39;</span>
+</code></pre></div>
+<p>That will list the three S3 Buckets that were just created.</p>
+<h2 id="create-and-deploy-htc-grid-images">Create and deploy HTC-Grid images<a class="headerlink" href="#create-and-deploy-htc-grid-images" title="Permanent link">&para;</a></h2>
+<p>The HTC-Grid project has external software dependencies that are deployed as container images. Instead of downloading each time from the public DockerHub repository, this step will pull those dependencies and upload into the your <a href="https://aws.amazon.com/ecr/">Amazon Elastic Container Registry (ECR)</a>.</p>
+<p><strong>Important Note:</strong> HTC-Grid uses a few open source project with container images stored at <a href="https://hub.docker.com/">DockerHub</a>. DockerHub has a <a href="https://docs.docker.com/docker-hub/download-rate-limit/">download rate limit policy</a>. This may impact you when running this step as an anonymous user as you can get errors when running the commands below. To overcome those errors, you can re-run the <code>make transfer-images  TAG=$TAG REGION=$HTCGRID_REGION</code> command and wait until the throttling limit is lifted, or optionally you can create an account in <a href="https://hub.docker.com/">hub.docker.com</a> and then use the credentials of the account using <code>docker login</code> locally to avoid anonymous throttling limitations.</p>
+<ol>
+<li>
+<p>As you'll be uploading images to ECR, to avoid timeouts, refresh your ECR authentication token:
+    <div class="highlight"><pre><span></span><code>make<span class="w"> </span>ecr-login<span class="w"> </span><span class="nv">REGION</span><span class="o">=</span><span class="nv">$HTCGRID_REGION</span>
+</code></pre></div></p>
+</li>
+<li>
+<p>The following command will go to the <code>~/environment/aws-htc-grid/deployment/image_repository/terraform</code> and initialize the  project:
+    <div class="highlight"><pre><span></span><code>make<span class="w"> </span>init-images<span class="w"> </span><span class="nv">TAG</span><span class="o">=</span><span class="nv">$TAG</span><span class="w"> </span><span class="nv">REGION</span><span class="o">=</span><span class="nv">$HTCGRID_REGION</span>
+</code></pre></div></p>
+</li>
+<li>
+<p>If successful, you can now start the transfer of the images. This can take between 10 and 15 minutes depending on the Internet connection.</p>
+<p><div class="highlight"><pre><span></span><code>make<span class="w"> </span>transfer-images<span class="w"> </span><span class="nv">TAG</span><span class="o">=</span><span class="nv">$TAG</span><span class="w"> </span><span class="nv">REGION</span><span class="o">=</span><span class="nv">$HTCGRID_REGION</span>
+</code></pre></div>
+The following command will list the repositories You can check which repositories have been created in the ECR console or by executing the command :</p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><code>aws<span class="w"> </span>ecr<span class="w"> </span>describe-repositories<span class="w"> </span>--region<span class="w"> </span><span class="nv">$HTCGRID_REGION</span><span class="w"> </span>--query<span class="w"> </span><span class="s2">&quot;repositories[*].repositoryUri&quot;</span>
+</code></pre></div>
+<p>NB: This operation fetches images from external repositories and creates a copy into your ECR account, sometimes the fetch to external repositories may have temporary failures due to the state of the external repositories, If the <code>make transfer-images  TAG=$TAG REGION=$HTCGRID_REGION</code> fails with errors such as the ones below, re-run the command until <code>make transfer-images  TAG=$TAG REGION=$HTCGRID_REGION</code> successfully completes.</p>
+<div class="highlight"><pre><span></span><code>name<span class="w"> </span>unknown:<span class="w"> </span>The<span class="w"> </span>repository<span class="w"> </span>with<span class="w"> </span>name<span class="w"> </span><span class="s1">&#39;xxxxxxxxx&#39;</span><span class="w"> </span>does<span class="w"> </span>not<span class="w"> </span>exist<span class="w"> </span><span class="k">in</span><span class="w"> </span>the<span class="w"> </span>registry<span class="w"> </span>with<span class="w"> </span>id
+</code></pre></div>
+<h2 id="build-htc-artifacts">Build HTC artifacts<a class="headerlink" href="#build-htc-artifacts" title="Permanent link">&para;</a></h2>
+<p>HTC artifacts include: python packages, docker images, configuration files for HTC and Kubernetes. To build and install these:</p>
+<ol>
+<li>Now build the images for the HTC agent. Return to <code>&lt;project_root&gt;</code> and run the command:</li>
+</ol>
+<div class="highlight"><pre><span></span><code>make<span class="w"> </span>happy-path<span class="w"> </span><span class="nv">TAG</span><span class="o">=</span><span class="nv">$TAG</span><span class="w"> </span><span class="nv">REGION</span><span class="o">=</span><span class="nv">$HTCGRID_REGION</span>
+</code></pre></div>
+<div class="codehilite"><pre><span></span><code><span class="o">*</span><span class="w"> </span><span class="k">If</span><span class="w"> </span><span class="n n-Quoted">`TAG`</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">omitted</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="n n-Quoted">`mainline`</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">chosen</span><span class="w"> </span><span class="n">has</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">value</span><span class="p">.</span>
+<span class="o">*</span><span class="w"> </span><span class="k">If</span><span class="w"> </span><span class="n n-Quoted">`REGION`</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">omitted</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="n n-Quoted">`eu-west-1`</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">used</span><span class="p">.</span>
+</code></pre></div>
+
+<p>A folder name <code>generated</code> will be created at  <code>&lt;project_root&gt;</code>. This folder should contain the following two files:
+    * <code>grid_config.json</code> a configuration file for the grid with basic setting
+    * <code>single-task-test.yaml</code>  the Kubernetes configuration for running a single tasks on the grid.</p>
+<h2 id="configuring-the-htc-grid-runtime">Configuring the HTC-Grid runtime<a class="headerlink" href="#configuring-the-htc-grid-runtime" title="Permanent link">&para;</a></h2>
+<p>The <code>grid_config.json</code> is ready to deploy, but you can tune it before deployment. Some important parameters are:</p>
+<ul>
+<li><code>region</code>: the AWS region where all resources are going to be created.</li>
+<li><code>grid_storage_service</code>: the type of storage used for tasks payloads, configurable between [S3 or Redis]</li>
+<li><code>eks_worker_groups</code>: an array describing the autoscaling  group used by EKS</li>
+</ul>
+<h2 id="deploying-htc-grid">Deploying HTC-Grid<a class="headerlink" href="#deploying-htc-grid" title="Permanent link">&para;</a></h2>
+<p>The deployment of HTC-Grid takes about 20 Mins.</p>
+<ol>
+<li>Initialize state for HTC Grid:
+   <div class="highlight"><pre><span></span><code>make<span class="w"> </span>init-grid-deployment<span class="w"> </span><span class="nv">TAG</span><span class="o">=</span><span class="nv">$TAG</span><span class="w"> </span><span class="nv">REGION</span><span class="o">=</span><span class="nv">$HTCGRID_REGION</span>
+</code></pre></div></li>
+<li>All the dependencies have been created and are now ready. We are now ready to deploy the HTC-Grid project. There is one last thing to note. HTC-Grid deploys a Grafana version behind <a href="https://aws.amazon.com/cognito/">Amazon Cognito</a>. While you can modify and select which passwords to use in Cognito, the Grafana internal deployment still requires an admin password. Select a memorable password change the value in the placeholder <code>&lt;my_grafana_admin_password&gt;</code> below (make this password follows <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html">Cognito default policy</a>):
+   <div class="highlight"><pre><span></span><code>make<span class="w"> </span>apply-custom-runtime<span class="w"> </span><span class="nv">TAG</span><span class="o">=</span><span class="nv">$TAG</span><span class="w"> </span><span class="nv">REGION</span><span class="o">=</span><span class="nv">$HTCGRID_REGION</span><span class="w"> </span><span class="nv">GRAFANA_ADMIN_PASSWORD</span><span class="o">=</span><span class="s1">&#39;&lt;my_grafana_admin_password&gt;&#39;</span>
+</code></pre></div></li>
+</ol>
+<p>If <code>make apply-custom-runtime</code> is successful then in the <code>deployment/grid/terraform</code> folder two files are created:</p>
+<div class="codehilite"><pre><span></span><code>* `kubeconfig_htc_$TAG`: this file give access to the EKS cluster through kubectl (example: kubeconfig_htc_aws_my_project)
+* `Agent_config.json`: this file contains all the parameters, so the agent can run in the infrastructure
+</code></pre></div>
+
+<h2 id="testing-the-deployment">Testing the deployment<a class="headerlink" href="#testing-the-deployment" title="Permanent link">&para;</a></h2>
+<p>In order to verify our deployment, we can run the following commands:
+    1. Get the number of nodes in the cluster using the command below. Note: You should have one or more nodes. If not please the review the configuration files and particularly the variable <code>eks_worker</code>
+       <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>get<span class="w"> </span>nodes
+</code></pre></div>
+    2. Check is system pods are running using the command below. Note: You should have all pods in running state (this might one minute but no more).
+       <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>-n<span class="w"> </span>kube-system<span class="w"> </span>get<span class="w"> </span>po
+</code></pre></div>
+    3. Check if logging and monitoring is deployed using the command below. Note: You should have all pods in running state (this might one minute but no more).
+       <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>-n<span class="w"> </span>amazon-cloudwatch<span class="w"> </span>get<span class="w"> </span>po
+</code></pre></div>
+    4. Check if metric server is deployed using the command below. Note: You should have all pods in running state (this might one minute but no more).
+       <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>-n<span class="w"> </span>custom-metrics<span class="w"> </span>get<span class="w"> </span>po
+</code></pre></div></p>
+<h2 id="running-the-example-workload">Running the example workload<a class="headerlink" href="#running-the-example-workload" title="Permanent link">&para;</a></h2>
+<p>In the folder <a href="./examples/workloads/c++/mock_computation">mock_computation</a>, you will find the code of the C++ program mocking computation. This program can sleep for a given duration or emulate CPU/memory consumption based on the input parameters.
+We will use a Kubernetes Jobs to submit  one execution of 1 second of this C++ program. The communication between the job and the grid are implemented by a client in folder <a href="./examples/client/python">./examples/client/python</a>.</p>
+<ol>
+<li>Make sure the connection with HTC-Grid is established:
+   <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>get<span class="w"> </span>nodes
+</code></pre></div></li>
+<li>Change directory to <code>&lt;project_root&gt;</code></li>
+<li>Run the test:
+   <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>./generated/single-task-test.yaml
+</code></pre></div></li>
+<li>
+<p>look at the log of the submission:
+   <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>logs<span class="w"> </span>job/single-task<span class="w"> </span>-f
+</code></pre></div>
+   The test should take about 3 second to execute.
+   If you see a successful message without exceptions raised, then the test has been successfully executed.</p>
+</li>
+<li>
+<p>Clean the job submission instance:
+   <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>delete<span class="w"> </span>-f<span class="w"> </span>./generated/single-task-test.yaml
+</code></pre></div></p>
+</li>
+</ol>
+<h2 id="create-a-cognito-user-cli">Create a Cognito user (CLI)<a class="headerlink" href="#create-a-cognito-user-cli" title="Permanent link">&para;</a></h2>
+<p>All the services accessible via a public URL require authentication via Amazon Cognito. In the case of Grafana, a default user called <code>admin</code> is created as part of the deployment.
+The initial password for the user will be the value for <code>GRAFANA_ADMIN_PASSWORD</code>, as used in the section <a href="{{&lt; ref &quot;20_deploy_htc/70_deploying_htc/_index.en.md&quot; &gt;}}">Deploy HTC-Grid</a>. However, you will be required to change this upon your first login.</p>
+<p>In addition to the already setup <code>admin</code> user, more users can be created as below:</p>
+<p><strong>Warning:</strong>
+Replace <code>&lt;my_cognito_user&gt;</code> and <code>&lt;my_cognito_password&gt;</code> with your own username and password.</p>
+<ol>
+<li>Choose a Cognito username and password, making sure they follow the <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html">Amazon Cognito Default Policy</a>:
+   <div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>&lt;project_root&gt;
+<span class="nb">export</span><span class="w"> </span><span class="nv">USERNAME</span><span class="o">=</span>&lt;my_cognito_user&gt;
+<span class="nb">export</span><span class="w"> </span><span class="nv">PASSWORD</span><span class="o">=</span>&lt;my_grafana_admin_password&gt;
+</code></pre></div></li>
+<li>Get the userpool id:
+   <div class="highlight"><pre><span></span><code><span class="nv">userpoolid</span><span class="o">=</span><span class="k">$(</span>make<span class="w"> </span>get-userpool-id<span class="w"> </span><span class="nv">TAG</span><span class="o">=</span><span class="nv">$TAG</span><span class="w"> </span><span class="nv">REGION</span><span class="o">=</span><span class="nv">$HTCGRID_REGION</span><span class="k">)</span>
+</code></pre></div></li>
+<li>Create the user
+   <div class="highlight"><pre><span></span><code>aws<span class="w"> </span>cognito-idp<span class="w"> </span>admin-create-user<span class="w"> </span>--user-pool-id<span class="w"> </span><span class="nv">$userpoolid</span><span class="w"> </span>--username<span class="w"> </span><span class="nv">$USERNAME</span><span class="w"> </span>--temporary-password<span class="w"> </span><span class="nv">$PASSWORD</span>
+</code></pre></div></li>
+</ol>
+<h2 id="accessing-grafana">Accessing Grafana<a class="headerlink" href="#accessing-grafana" title="Permanent link">&para;</a></h2>
+<p>The HTC-Grid project captures metrics into InfluxDB and exposes those metrics through Grafana. To access Grafana:</p>
+<ol>
+<li>To find out the HTTPS endpoint where Grafana has been deployed type:
+   <div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>-n<span class="w"> </span>grafana<span class="w"> </span>get<span class="w"> </span>ingress<span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">&#39;{ print &quot;Grafana URL  -&gt; https://&quot;$4 }&#39;</span>
+</code></pre></div>
+   It should output something like:
+   <div class="highlight"><pre><span></span><code>Grafana<span class="w"> </span>URL<span class="w">  </span>-&gt;<span class="w"> </span>https://k8s-grafana-grafanai-XXXXXXXXXXXX-YYYYYYYYYYY.eu-west-2.elb.amazonaws.com
+</code></pre></div></li>
+<li>Copy the URL and paste that in the address bar of your browser. <strong>Note</strong>: Accessing the website may generate a warning due to the fact that we are using a self-signed certificate. It is safe to just accept the warning and proceed, and you should be redirected to the Cognito sign-in page. </li>
+<li>Enter the username and password created in the previous section, and you will be required to change your initial password.</li>
+<li>If you don't remember or didn't explicitely set your initial Cognito pasword for the Grafana <code>admin</code> user, you can retrieve it using the following command:
+    <div class="highlight"><pre><span></span><code>make<span class="w"> </span>get-grafana-password<span class="w"> </span><span class="nv">TAG</span><span class="o">=</span><span class="nv">$TAG</span><span class="w"> </span><span class="nv">REGION</span><span class="o">=</span><span class="nv">$HTCGRID_REGION</span>
+</code></pre></div></li>
+<li>Once you are signed into Cognito, you will be redirected to Grafana.</li>
+</ol>
+<h2 id="uninstalling-and-destroying-htc-grid">Uninstalling and destroying HTC grid<a class="headerlink" href="#uninstalling-and-destroying-htc-grid" title="Permanent link">&para;</a></h2>
+<p>The destruction time is about 15 min.</p>
+<ol>
+<li>
+<p>To remove the grid resources run the following command:
+   <div class="highlight"><pre><span></span><code>make<span class="w"> </span>destroy-custom-runtime<span class="w"> </span><span class="nv">TAG</span><span class="o">=</span><span class="nv">$TAG</span><span class="w"> </span><span class="nv">REGION</span><span class="o">=</span><span class="nv">$HTCGRID_REGION</span>
+</code></pre></div></p>
+</li>
+<li>
+<p>For all deployments
+   <div class="highlight"><pre><span></span><code>make<span class="w"> </span>destroy-images<span class="w"> </span><span class="nv">TAG</span><span class="o">=</span><span class="nv">$TAG</span><span class="w"> </span><span class="nv">REGION</span><span class="o">=</span><span class="nv">$HTCGRID_REGION</span>
+</code></pre></div></p>
+</li>
+<li>Finally, we will delete CloudFormation stack which manages the S3 buckets that contain our Terraform state, by running the following command:</li>
+</ol>
+<p><strong>Warning:</strong>
+You should leave this step for the very end, once that all the other cleanup processes above have concluded successfully. These buckets contain the state of your Terraform deployments, thus, removing them before destroying the relevant Terraform resources will mean that you will be left with orphaned resources which you will need to clean up manually. </p>
+<div class="highlight"><pre><span></span><code>make<span class="w"> </span>delete-grid-state<span class="w"> </span><span class="nv">TAG</span><span class="o">=</span><span class="nv">$TAG</span><span class="w"> </span><span class="nv">REGION</span><span class="o">=</span><span class="nv">$HTCGRID_REGION</span>
+</code></pre></div>
+<h2 id="build-the-documentation">Build the documentation<a class="headerlink" href="#build-the-documentation" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Go at the root of the git repository</li>
+<li>run the following command
+    <div class="highlight"><pre><span></span><code>make<span class="w"> </span>doc
+</code></pre></div>
+   or for deploying the server :
+    <div class="highlight"><pre><span></span><code>make<span class="w"> </span>serve
+</code></pre></div></li>
+</ol>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2023 Amazon
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.tracking", "navigation.sections"], "search": "../../assets/javascripts/workers/search.e5c33ebb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.51d95adb.min.js"></script>
+      
+    
+  </body>
+</html>
