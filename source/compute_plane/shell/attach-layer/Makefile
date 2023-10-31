@@ -6,7 +6,7 @@ LAMBDA_INIT_IMAGE_NAME=lambda-init
 TAG=mainline
 ACCOUNT_ID?=$(shell aws sts get-caller-identity | jq -r '.Account')
 REGION=eu-west-1
-DOCKER_REGISTRY=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com
+HTCGRID_ECR_REPO=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com
 CONTEXT_DIR=.
 LAMBDA_INIT_IMAGE_NAME=lambda-init
 
@@ -17,8 +17,8 @@ lambda-init: build-lambda-init push-lambda-init
 
 
 build-lambda-init: Dockerfile
-	docker build  --platform linux/amd64 $(CONTEXT_DIR) -t $(DOCKER_REGISTRY)/$(LAMBDA_INIT_IMAGE_NAME):$(TAG) -f ./Dockerfile
+	docker build  --platform linux/amd64 $(CONTEXT_DIR) --build-arg HTCGRID_ECR_REPO=$(HTCGRID_ECR_REPO) --build-arg REGION=$(REGION) -t $(HTCGRID_ECR_REPO)/$(LAMBDA_INIT_IMAGE_NAME):$(TAG) -f ./Dockerfile
 
 push-lambda-init: build-lambda-init
-	docker push $(DOCKER_REGISTRY)/$(LAMBDA_INIT_IMAGE_NAME):$(TAG)
+	docker push $(HTCGRID_ECR_REPO)/$(LAMBDA_INIT_IMAGE_NAME):$(TAG)
 
