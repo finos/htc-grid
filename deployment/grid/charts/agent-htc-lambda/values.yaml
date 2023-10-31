@@ -47,8 +47,11 @@ securityContext:
     drop:
     - SYS_PTRACE
   # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
   # runAsUser: 1000
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  seccompProfile:
+    type: RuntimeDefault
 
 lambda:
   protocolEndpoint: http

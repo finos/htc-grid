@@ -8,7 +8,10 @@ spec:
       containers:
       - name: generator
         securityContext:
-            {}
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          seccompProfile:
+            type: RuntimeDefault
         image: {{account_id}}.dkr.ecr.{{region}}.amazonaws.com/{{image_name}}:{{image_tag}}
         imagePullPolicy: Always
         resources:
