@@ -147,7 +147,9 @@ resource "aws_iam_policy" "scaling_metrics_data_policy" {
         "cloudwatch:PutMetricData",
         "ec2:CreateNetworkInterface",
         "ec2:DeleteNetworkInterface",
-        "ec2:DescribeNetworkInterfaces"
+        "ec2:DescribeNetworkInterfaces",
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
       ],
       "Resource": "*",
       "Effect": "Allow"

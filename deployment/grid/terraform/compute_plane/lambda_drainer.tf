@@ -152,7 +152,9 @@ resource "aws_iam_policy" "lambda_drainer_data_policy" {
         "autoscaling:CompleteLifecycleAction",
         "ec2:DescribeInstances",
         "eks:DescribeCluster",
-        "sts:GetCallerIdentity"
+        "sts:GetCallerIdentity",
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
       ],
       "Resource": "*",
       "Effect": "Allow",

@@ -20,7 +20,9 @@ data "aws_iam_policy_document" "agent_permissions" {
       "cloudwatch:GetMetricData",
       "cloudwatch:GetMetricStatistics",
       "cloudwatch:ListMetrics",
-      "route53:AssociateVPCWithHostedZone"
+      "route53:AssociateVPCWithHostedZone",
+      "kms:Decrypt",
+      "kms:GenerateDataKey"
     ]
 
     resources = ["*"]
