@@ -27,6 +27,8 @@ locals {
           ebs = {
             volume_size           = 50
             volume_type           = "gp3"
+            encrypted             = true
+            kms_key_id            = module.eks_ebs_kms_key.key_arn
             delete_on_termination = true
           }
         }
@@ -64,6 +66,8 @@ locals {
             ebs = {
               volume_size           = 20
               volume_type           = "gp3"
+              encrypted             = true
+              kms_key_id            = module.eks_ebs_kms_key.key_arn
               delete_on_termination = true
             }
           }
@@ -90,6 +94,29 @@ locals {
   ]
 
   eks_worker_group_map = zipmap(local.eks_worker_group_name, local.eks_worker_group)
+}
+
+
+module "eks_ebs_kms_key" {
+  source  = "terraform-aws-modules/kms/aws"
+  version = "~> 2.0"
+
+  description             = "CMK to encrypt EKS Managed Node Group volumes"
+  deletion_window_in_days = 10
+
+  key_administrators = [
+    data.aws_caller_identity.current.arn,
+    "arn:${local.partition}:iam::${local.account_id}:root"
+  ]
+
+  key_service_roles_for_autoscaling = [
+    # Required for the ASG to manage encrypted volumes for nodes
+    "arn:${local.partition}:iam::${local.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling",
+    # Required for the Cluster / persistentvolume-controller to create encrypted PVCs
+    module.eks.cluster_iam_role_arn,
+  ]
+
+  aliases = ["eks/${var.cluster_name}/ebs"]
 }
 
 
