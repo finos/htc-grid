@@ -190,7 +190,7 @@ Replace `<my_cognito_user>` and `<my_cognito_password>` with your own username a
    ```
 3. Create the user
    ```bash
-   aws cognito-idp admin-create-user --user-pool-id $userpoolid --username $USERNAME --temporary-password $PASSWORD
+   aws cognito-idp admin-create-user --user-pool-id $userpoolid --username $USERNAME --temporary-password $PASSWORD --region $HTCGRID_REGION
    ```
 
 ## Accessing Grafana
