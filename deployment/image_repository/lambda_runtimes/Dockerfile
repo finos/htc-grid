@@ -10,6 +10,7 @@ COPY ${HTCGRID_LAMBDA_ENTRYPOINT} /lambda_entrypoint_signal.sh
 
 RUN yum update -y && \
     yum install -y \
+      jq \
       procps && \
     yum clean all && \
     rm -rf /var/cache/yum && \
