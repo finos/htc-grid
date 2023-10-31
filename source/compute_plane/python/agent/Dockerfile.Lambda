@@ -1,21 +1,26 @@
-FROM python:3.7.7-slim-buster
+ARG HTCGRID_ECR_REPO
+FROM ${HTCGRID_ECR_REPO}/ecr-public/docker/library/python:3.8-slim
 
-RUN apt-get update ; apt-get install -y binutils ; apt-get install -y procps gcc
+# Run as user nobody:nogroup
+ARG USER=65534 #nobody
+ARG GROUP=65534 #nogroup
 
-RUN mkdir -p /dist
-RUN mkdir -p /app/agent
+RUN apt-get update && \
+    apt-get install -y \
+      --no-install-recommends \
+      binutils \
+      procps \
+      gcc && \
+    mkdir -p /dist /app/agent
 
 COPY ./dist/* /dist/
-COPY ./source/compute_plane/python/agent/requirements.txt /app/agent/
+COPY ./source/compute_plane/python/agent/requirements.txt ./source/compute_plane/python/agent/agent.py /app/agent/
 
 WORKDIR /app/agent
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    chown -R $USER:$GROUP /app /dist
 
-WORKDIR /app/agent
-ADD ./source/compute_plane/python/agent/agent.py .
+USER ${USER}:${GROUP}
 
-
-CMD [ "python" , "./agent.py"]
-
-
+ENTRYPOINT [ "python" , "./agent.py"]

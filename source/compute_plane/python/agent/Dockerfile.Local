@@ -1,41 +1,54 @@
-FROM python:3.7.7-slim-buster
+#Builder Container
+ARG HTCGRID_ECR_REPO
+FROM ${HTCGRID_ECR_REPO}/ecr-public/docker/library/python:3.8-slim
 
+# Run as user nobody:nogroup
+ARG USER=65534 #nobody
+ARG GROUP=65534 #nogroup
 
-RUN pip install setuptools==45.0.0
-RUN pip install pyinstaller
+RUN apt-get update && \
+    apt-get install -y \
+      --no-install-recommends \
+      binutils \
+      procps \
+      gcc && \
+    pip install --no-cache-dir setuptools==45.0.0 pyinstaller && \
+    mkdir -p /dist /app/agent
 
-RUN apt-get update ; apt-get install -y binutils ; apt-get install -y procps
 COPY ./dist/* /dist/
-COPY ./source/compute_plane/python/agent/requirements.txt /app/agent/
+COPY ./source/compute_plane/python/agent/requirements.txt ./source/compute_plane/python/agent/agent.py /app/agent/
 
 WORKDIR /app/agent
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pyinstaller --hidden-import=pkg_resources.py2_warn -F agent.py && \
+    cp ./dist/agent ./agent && \
+    chown -R $USER:$GROUP /app
 
-RUN pip install -r requirements.txt
+USER ${USER}:${GROUP}
 
-WORKDIR /app/agent
-ADD ./source/compute_plane/python/agent/agent.py .
+################################################################################
 
+# Main Container
+ARG HTCGRID_ECR_REPO
+FROM ${HTCGRID_ECR_REPO}/ecr-public/docker/library/python:3.8-slim
 
+# Run as user nobody:nogroup
+ARG USER=65534 #nobody
+ARG GROUP=65534 #nogroup
 
-RUN pyinstaller --hidden-import=pkg_resources.py2_warn -F agent.py
+RUN apt-get update && \
+    apt-get install -y \
+      --no-install-recommends \
+      build-essential \
+      procps && \
+      mkdir -p /app
+ 
+COPY /examples/workloads/c++/mock_computation/mock_compute_engine.cpp ./examples/workloads/c++/mock_computation/Makefile /app/
+RUN make && \
+    chown -R $USER:$GROUP /app
+COPY --from=0 /app/agent /app/agent
 
-RUN cp ./dist/agent ./agent
+USER ${USER}:${GROUP}
 
-
-FROM python:3.7.7-slim-buster
-
-RUN apt-get update ; apt-get install -y build-essential
-RUN mkdir -p /app
 WORKDIR /app
-RUN apt-get update && apt-get install -y procps
-ADD ./examples/workloads/c++/mock_computation/mock_compute_engine.cpp .
-ADD ./examples/workloads/c++/mock_computation/Makefile .
-RUN make
-
-
-
-COPY --from=0 /app/agent ./agent
-CMD [ "./agent" ]
-#CMD [ "python" , "./agent.py"]
-
-
+ENTRYPOINT ["python" , "./agent.py"]
