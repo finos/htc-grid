@@ -9,7 +9,7 @@ output "redis_url" {
 
 output "s3_bucket_name" {
   description = "Name of the bucket"
-  value       = aws_s3_bucket.htc-stdout-bucket.id
+  value       = aws_s3_bucket.htc_stdout_bucket.id
 }
 
 output "public_api_gateway_url" {

@@ -102,7 +102,7 @@ module "eks_ebs_kms_key" {
   version = "~> 2.0"
 
   description             = "CMK to encrypt EKS Managed Node Group volumes"
-  deletion_window_in_days = 10
+  deletion_window_in_days = 7
 
   key_administrators = [
     data.aws_caller_identity.current.arn,

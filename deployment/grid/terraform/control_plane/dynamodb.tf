@@ -3,6 +3,21 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
+module "dynamodb_table_kms_key" {
+  source  = "terraform-aws-modules/kms/aws"
+  version = "~> 2.0"
+
+  description             = "CMK to encrypt DynamoDB tables"
+  deletion_window_in_days = 7
+
+  key_administrators = [
+    data.aws_caller_identity.current.arn
+  ]
+
+  aliases = ["dynamodb/${local.suffix}"]
+}
+
+
 module "dynamodb_table" {
   source  = "terraform-aws-modules/dynamodb-table/aws"
   version = "~> 3.0"
@@ -13,6 +28,11 @@ module "dynamodb_table" {
   billing_mode        = var.dynamodb_billing_mode
   read_capacity       = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_read_capacity : null
   write_capacity      = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_write_capacity : null
+
+  point_in_time_recovery_enabled = true
+
+  server_side_encryption_enabled     = true
+  server_side_encryption_kms_key_arn = module.dynamodb_table_kms_key.key_arn
 
   hash_key = "task_id"
   attributes = [

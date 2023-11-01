@@ -51,7 +51,7 @@ module "get_results" {
     STATE_TABLE_SERVICE                          = var.state_table_service,
     STATE_TABLE_CONFIG                           = var.state_table_config,
     TASKS_QUEUE_NAME                             = aws_sqs_queue.htc_task_queue["__0"].name,
-    S3_BUCKET                                    = aws_s3_bucket.htc-stdout-bucket.id,
+    S3_BUCKET                                    = aws_s3_bucket.htc_stdout_bucket.id,
     REDIS_URL                                    = aws_elasticache_cluster.stdin-stdout-cache.cache_nodes.0.address,
     GRID_STORAGE_SERVICE                         = var.grid_storage_service,
     TASK_QUEUE_SERVICE                           = var.task_queue_service,
