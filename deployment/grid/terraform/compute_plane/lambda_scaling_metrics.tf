@@ -2,6 +2,52 @@
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
+module "scaling_metrics_cloudwatch_kms_key" {
+  source  = "terraform-aws-modules/kms/aws"
+  version = "~> 2.0"
+
+  description             = "CMK to encrypt scaling_metrics CloudWatch Logs"
+  deletion_window_in_days = 7
+
+  key_administrators = [
+    "arn:${local.partition}:iam::${local.account_id}:root",
+    data.aws_caller_identity.current.arn
+  ]
+
+  key_statements = [
+    {
+      sid = "Allow Lambda functions to encrypt/decrypt CloudWatch Logs"
+      actions = [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey",
+        "kms:Decrypt",
+      ]
+      effect = "Allow"
+      principals = [
+        {
+          type = "Service"
+          identifiers = [
+            "logs.${var.region}.amazonaws.com"
+          ]
+        }
+      ]
+      resources = ["*"]
+      condition = [
+        {
+          test     = "ArnLike"
+          variable = "kms:EncryptionContext:aws:logs:arn"
+          values   = ["arn:${local.partition}:logs:${var.region}:${local.account_id}:*"]
+        }
+      ]
+    }
+  ]
+
+  aliases = ["cloudwatch/lambda/scaling_metrics-${local.suffix}"]
+}
+
 
 module "scaling_metrics" {
   source  = "terraform-aws-modules/lambda/aws"
@@ -40,9 +86,19 @@ module "scaling_metrics" {
   memory_size                       = 1024
   timeout                           = 60
   runtime                           = var.lambda_runtime
-  create_role                       = false
-  lambda_role                       = aws_iam_role.role_scaling_metrics.arn
-  use_existing_cloudwatch_log_group = false
+
+  role_name = "role_scaling_metrics_${local.suffix}"
+  role_description = "Lambda role for scaling_metrics-${local.suffix}"
+  attach_network_policy = true
+
+  attach_policies = true
+  number_of_policies = 1
+  policies = [
+    aws_iam_policy.scaling_metrics_data_policy.arn
+  ]
+
+  attach_cloudwatch_logs_policy = true
+  cloudwatch_logs_kms_key_id = module.scaling_metrics_cloudwatch_kms_key.key_arn
 
   environment_variables = {
     STATE_TABLE_CONFIG   = var.ddb_state_table,
@@ -89,49 +145,6 @@ resource "aws_lambda_permission" "allow_cloudwatch_to_call_check_scaling_metrics
 }
 
 
-# Lambda Scaling Metrics IAM Role & Permissions
-resource "aws_iam_role" "role_scaling_metrics" {
-  name               = "role_scaling_metrics-${local.suffix}"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
-}
-EOF
-}
-
-
-resource "aws_iam_policy" "scaling_metrics_logging_policy" {
-  name        = "scaling_metrics_logging_policy-${local.suffix}"
-  path        = "/"
-  description = "IAM policy for logging from the scaling_metrics lambda"
-  policy      = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": [
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
-      ],
-      "Resource": "arn:${local.partition}:logs:*:*:*",
-      "Effect": "Allow"
-    }
-  ]
-}
-EOF
-}
-
-
 resource "aws_iam_policy" "scaling_metrics_data_policy" {
   name        = "scaling_metrics_data_policy-${local.suffix}"
   path        = "/"
@@ -157,16 +170,4 @@ resource "aws_iam_policy" "scaling_metrics_data_policy" {
   ]
 }
 EOF
-}
-
-
-resource "aws_iam_role_policy_attachment" "scaling_metrics_logs_attachment" {
-  role       = aws_iam_role.role_scaling_metrics.name
-  policy_arn = aws_iam_policy.scaling_metrics_logging_policy.arn
-}
-
-
-resource "aws_iam_role_policy_attachment" "scaling_metrics_data_attachment" {
-  role       = aws_iam_role.role_scaling_metrics.name
-  policy_arn = aws_iam_policy.scaling_metrics_data_policy.arn
 }

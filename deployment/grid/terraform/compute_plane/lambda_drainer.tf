@@ -3,6 +3,53 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
+module "lambda_drainer_cloudwatch_kms_key" {
+  source  = "terraform-aws-modules/kms/aws"
+  version = "~> 2.0"
+
+  description             = "CMK to encrypt lambda_drainer CloudWatch Logs"
+  deletion_window_in_days = 7
+
+  key_administrators = [
+    "arn:${local.partition}:iam::${local.account_id}:root",
+    data.aws_caller_identity.current.arn
+  ]
+
+  key_statements = [
+    {
+      sid = "Allow Lambda functions to encrypt/decrypt CloudWatch Logs"
+      actions = [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey",
+        "kms:Decrypt",
+      ]
+      effect = "Allow"
+      principals = [
+        {
+          type = "Service"
+          identifiers = [
+            "logs.${var.region}.amazonaws.com"
+          ]
+        }
+      ]
+      resources = ["*"]
+      condition = [
+        {
+          test     = "ArnLike"
+          variable = "kms:EncryptionContext:aws:logs:arn"
+          values   = ["arn:${local.partition}:logs:${var.region}:${local.account_id}:*"]
+        }
+      ]
+    }
+  ]
+
+  aliases = ["cloudwatch/lambda/lambda_drainer-${local.suffix}"]
+}
+
+
 # Create zip-archive of a single directory where "pip install" will also be executed (default for python runtime)
 module "lambda_drainer" {
   source  = "terraform-aws-modules/lambda/aws"
@@ -19,8 +66,19 @@ module "lambda_drainer" {
   memory_size = 1024
   timeout     = 900
   runtime     = var.lambda_runtime
-  create_role = false
-  lambda_role = aws_iam_role.role_lambda_drainer.arn
+
+  role_name = "role_lambda_drainer_${local.suffix}"
+  role_description = "Lambda role for lambda_drainer-${local.suffix}"
+  attach_network_policy = true
+
+  attach_policies = true
+  number_of_policies = 1
+  policies = [
+    aws_iam_policy.lambda_drainer_data_policy.arn
+  ]
+
+  attach_cloudwatch_logs_policy = true
+  cloudwatch_logs_kms_key_id = module.lambda_drainer_cloudwatch_kms_key.key_arn
 
   vpc_subnet_ids         = var.vpc_private_subnet_ids
   vpc_security_group_ids = [var.vpc_default_security_group_id]
@@ -93,51 +151,8 @@ resource "aws_lambda_permission" "allow_cloudwatch_to_call_lambda_drainer" {
 }
 
 
-#Lambda Drainer IAM Role & Permissions
-resource "aws_iam_role" "role_lambda_drainer" {
-  name               = "role_lambda_drainer-${local.suffix}"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
-}
-EOF
-}
-
-
-resource "aws_iam_policy" "lambda_drainer_logging_policy" {
-  name        = "lambda_drainer_logging_policy-${local.suffix}"
-  path        = "/"
-  description = "IAM policy for logging from the lambda_drainer lambda"
-  policy      = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": [
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
-      ],
-      "Resource": "arn:${local.partition}:logs:*:*:*",
-      "Effect": "Allow"
-    }
-  ]
-}
-EOF
-}
-
-
 resource "aws_iam_policy" "lambda_drainer_data_policy" {
-  name        = "lambda-drainer-policy-${local.suffix}"
+  name        = "lambda-drainer-${local.suffix}-data"
   path        = "/"
   description = "Policy for draining nodes of an EKS cluster"
   policy      = <<EOF
@@ -146,15 +161,13 @@ resource "aws_iam_policy" "lambda_drainer_data_policy" {
   "Statement": [
     {
       "Action": [
-        "ec2:CreateNetworkInterface",
-        "ec2:DeleteNetworkInterface",
-        "ec2:DescribeNetworkInterfaces",
         "autoscaling:CompleteLifecycleAction",
         "ec2:DescribeInstances",
         "eks:DescribeCluster",
-        "sts:GetCallerIdentity",
         "kms:Decrypt",
-        "kms:GenerateDataKey"
+        "kms:GenerateDataKey",
+        "kms:DescribeKey",
+        "sts:GetCallerIdentity"
       ],
       "Resource": "*",
       "Effect": "Allow",
@@ -163,18 +176,6 @@ resource "aws_iam_policy" "lambda_drainer_data_policy" {
   ]
 }
 EOF
-}
-
-
-resource "aws_iam_role_policy_attachment" "lambda_drainer_logs_attachment" {
-  role       = aws_iam_role.role_lambda_drainer.name
-  policy_arn = aws_iam_policy.lambda_drainer_logging_policy.arn
-}
-
-
-resource "aws_iam_role_policy_attachment" "lambda_drainer_data_attachment" {
-  role       = aws_iam_role.role_lambda_drainer.name
-  policy_arn = aws_iam_policy.lambda_drainer_data_policy.arn
 }
 
 

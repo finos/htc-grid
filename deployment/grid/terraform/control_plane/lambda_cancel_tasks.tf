@@ -3,6 +3,53 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
+module "cancel_tasks_cloudwatch_kms_key" {
+  source  = "terraform-aws-modules/kms/aws"
+  version = "~> 2.0"
+
+  description             = "CMK to encrypt Lambda Drainer CloudWatch Logs"
+  deletion_window_in_days = 7
+
+  key_administrators = [
+    "arn:${local.partition}:iam::${local.account_id}:root",
+    data.aws_caller_identity.current.arn
+  ]
+
+  key_statements = [
+    {
+      sid = "Allow Lambda functions to encrypt/decrypt CloudWatch Logs"
+      actions = [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey",
+        "kms:Decrypt",
+      ]
+      effect = "Allow"
+      principals = [
+        {
+          type = "Service"
+          identifiers = [
+            "logs.${var.region}.amazonaws.com"
+          ]
+        }
+      ]
+      resources = ["*"]
+      condition = [
+        {
+          test     = "ArnLike"
+          variable = "kms:EncryptionContext:aws:logs:arn"
+          values   = ["arn:${local.partition}:logs:${var.region}:${local.account_id}:*"]
+        }
+      ]
+    }
+  ]
+
+  aliases = ["cloudwatch/lambda/cancel_tasks-${local.suffix}"]
+}
+
+
 module "cancel_tasks" {
   source  = "terraform-aws-modules/lambda/aws"
   version = "~> 5.0"
@@ -40,8 +87,19 @@ module "cancel_tasks" {
   memory_size = 1024
   timeout     = 300
   runtime     = var.lambda_runtime
-  create_role = false
-  lambda_role = aws_iam_role.role_lambda_cancel_tasks.arn
+
+  role_name = "role_lambda_cancel_tasks_${local.suffix}"
+  role_description = "Lambda role for cancel_tasks-${local.suffix}"
+  attach_network_policy = true
+
+  attach_policies = true
+  number_of_policies = 1
+  policies = [
+    aws_iam_policy.lambda_data_policy.arn
+  ]
+
+  attach_cloudwatch_logs_policy = true
+  cloudwatch_logs_kms_key_id = module.cancel_tasks_cloudwatch_kms_key.key_arn
 
   vpc_subnet_ids         = var.vpc_private_subnet_ids
   vpc_security_group_ids = [var.vpc_default_security_group_id]
@@ -69,38 +127,4 @@ module "cancel_tasks" {
   tags = {
     service = "htc-grid"
   }
-}
-
-
-#Lambda Cancel Tasks IAM Role & Permissions
-resource "aws_iam_role" "role_lambda_cancel_tasks" {
-  name               = "role_lambda_cancel_tasks-${local.suffix}"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
-}
-EOF
-}
-
-
-
-resource "aws_iam_role_policy_attachment" "cancel_tasks_lambda_logs_attachment" {
-  role       = aws_iam_role.role_lambda_cancel_tasks.name
-  policy_arn = aws_iam_policy.lambda_logging_policy.arn
-}
-
-
-resource "aws_iam_role_policy_attachment" "cancel_tasks_lambda_data_attachment" {
-  role       = aws_iam_role.role_lambda_cancel_tasks.name
-  policy_arn = aws_iam_policy.lambda_data_policy.arn
 }
