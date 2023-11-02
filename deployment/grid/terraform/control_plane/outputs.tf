@@ -4,7 +4,7 @@
 
 output "redis_url" {
   description = "Redis URL"
-  value       = aws_elasticache_cluster.stdin-stdout-cache.cache_nodes.0.address
+  value       = aws_elasticache_cluster.stdin_stdout_cache.cache_nodes.0.address
 }
 
 output "s3_bucket_name" {

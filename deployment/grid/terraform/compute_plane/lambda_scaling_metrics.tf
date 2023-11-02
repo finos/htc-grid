@@ -100,6 +100,9 @@ module "scaling_metrics" {
   attach_cloudwatch_logs_policy = true
   cloudwatch_logs_kms_key_id = module.scaling_metrics_cloudwatch_kms_key.key_arn
 
+  attach_tracing_policy = true
+  tracing_mode          = "Active"
+
   environment_variables = {
     STATE_TABLE_CONFIG   = var.ddb_state_table,
     NAMESPACE            = var.namespace_metrics,

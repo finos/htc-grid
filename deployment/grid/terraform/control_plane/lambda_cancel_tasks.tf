@@ -101,6 +101,9 @@ module "cancel_tasks" {
   attach_cloudwatch_logs_policy = true
   cloudwatch_logs_kms_key_id = module.cancel_tasks_cloudwatch_kms_key.key_arn
 
+  attach_tracing_policy = true
+  tracing_mode          = "Active"
+
   vpc_subnet_ids         = var.vpc_private_subnet_ids
   vpc_security_group_ids = [var.vpc_default_security_group_id]
 
@@ -119,7 +122,7 @@ module "cancel_tasks" {
     TASK_QUEUE_SERVICE                            = var.task_queue_service,
     TASK_QUEUE_CONFIG                             = var.task_queue_config,
     S3_BUCKET                                     = aws_s3_bucket.htc_stdout_bucket.id,
-    REDIS_URL                                     = aws_elasticache_cluster.stdin-stdout-cache.cache_nodes.0.address,
+    REDIS_URL                                     = aws_elasticache_cluster.stdin_stdout_cache.cache_nodes.0.address,
     METRICS_GRAFANA_PRIVATE_IP                    = var.nlb_influxdb,
     REGION                                        = var.region
   }

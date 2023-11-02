@@ -7,16 +7,19 @@ locals {
   redis_engine_version = "7.0"
 }
 
-resource "aws_elasticache_cluster" "stdin-stdout-cache" {
+resource "aws_elasticache_cluster" "stdin_stdout_cache" {
   cluster_id           = "stdin-stdout-cache-${lower(local.suffix)}"
   engine               = "redis"
   node_type            = "cache.r7g.large"
   num_cache_nodes      = 1
-  parameter_group_name = aws_elasticache_parameter_group.cache-config.name
+  parameter_group_name = aws_elasticache_parameter_group.cache_config.name
   engine_version       = "7.0"
   port                 = 6379
   security_group_ids   = [aws_security_group.allow_incoming_redis.id]
   subnet_group_name    = "stdin-stdout-cache-subnet-${lower(local.suffix)}"
+
+  # snapshot_window          = "06:00-08:00"
+  snapshot_retention_limit = 1
 
   depends_on = [
     aws_elasticache_subnet_group.io_redis_subnet_group,
@@ -32,11 +35,11 @@ resource "aws_elasticache_subnet_group" "io_redis_subnet_group" {
 
 resource "aws_security_group" "allow_incoming_redis" {
   name        = "redis-io-cache-${lower(local.suffix)}"
-  description = "Allow Redis inbound traffic on port 6379"
+  description = "Allow inbound Redis traffic on tcp/6379"
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "tcp from VPC"
+    description = "Allow inbound Redis traffic on tcp/6379 from within VPC"
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
@@ -44,6 +47,7 @@ resource "aws_security_group" "allow_incoming_redis" {
   }
 
   egress {
+    description = "Allow outbound Redis traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -52,7 +56,7 @@ resource "aws_security_group" "allow_incoming_redis" {
 }
 
 
-resource "aws_elasticache_parameter_group" "cache-config" {
+resource "aws_elasticache_parameter_group" "cache_config" {
   name   = "cache-config-${lower(local.suffix)}-${replace(local.redis_engine_version, ".", "-")}"
   family = "redis7"
 

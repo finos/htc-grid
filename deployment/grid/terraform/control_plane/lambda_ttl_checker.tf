@@ -101,6 +101,9 @@ module "ttl_checker" {
   attach_cloudwatch_logs_policy = true
   cloudwatch_logs_kms_key_id = module.get_results_cloudwatch_kms_key.key_arn
 
+  attach_tracing_policy = true
+  tracing_mode          = "Active"
+
   vpc_subnet_ids         = var.vpc_private_subnet_ids
   vpc_security_group_ids = [var.vpc_default_security_group_id]
 
