@@ -4,8 +4,8 @@
 
 
 locals {
-  htc_task_queue_names     = [ for k, v in aws_sqs_queue.htc_task_queue : v.name ]
-  htc_task_queue_dlq_names = [ for k, v in aws_sqs_queue.htc_task_queue_dlq : v.name ]
+  htc_task_queue_names     = [for k, v in aws_sqs_queue.htc_task_queue : v.name]
+  htc_task_queue_dlq_names = [for k, v in aws_sqs_queue.htc_task_queue_dlq : v.name]
 }
 
 
@@ -13,7 +13,7 @@ module "htc_task_queue_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"
 
-  description             = "CMK to encrypt SQS queues"
+  description             = "CMK KMS Key to encrypt SQS Queues"
   deletion_window_in_days = 7
 
   key_administrators = [
@@ -27,10 +27,10 @@ module "htc_task_queue_kms_key" {
 resource "aws_sqs_queue" "htc_task_queue" {
   for_each = var.priorities
 
-  name                       = format("%s%s", var.sqs_queue, each.key)
-  message_retention_seconds  = 1209600 # max 14 days
-  visibility_timeout_seconds = 40      # once acquired we should update visibility timeout during processing
-  kms_master_key_id          = module.htc_task_queue_kms_key.key_arn
+  name                              = format("%s%s", var.sqs_queue, each.key)
+  message_retention_seconds         = 1209600 # max 14 days
+  visibility_timeout_seconds        = 40      # once acquired we should update visibility timeout during processing
+  kms_master_key_id                 = module.htc_task_queue_kms_key.key_arn
   kms_data_key_reuse_period_seconds = 300
 
   redrive_policy = jsonencode({
@@ -45,7 +45,7 @@ resource "aws_sqs_queue" "htc_task_queue" {
 
 
 resource "aws_sqs_queue_policy" "htc_task_queue_policy" {
-  for_each = var.priorities
+  for_each  = var.priorities
   queue_url = aws_sqs_queue.htc_task_queue[each.key].id
 
   policy = <<EOF
@@ -75,7 +75,7 @@ module "htc_task_queue_dlq_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"
 
-  description             = "CMK to encrypt SQS queues"
+  description             = "CMK KMS Key to encrypt SQS DLQ Queues"
   deletion_window_in_days = 7
 
   key_administrators = [
@@ -89,9 +89,9 @@ module "htc_task_queue_dlq_kms_key" {
 resource "aws_sqs_queue" "htc_task_queue_dlq" {
   for_each = var.priorities
 
-  name = format("%s%s",var.sqs_dlq, each.key)
-  message_retention_seconds = 1209600 # max 14 days
-  kms_master_key_id         = module.htc_task_queue_dlq_kms_key.key_arn
+  name                              = format("%s%s", var.sqs_dlq, each.key)
+  message_retention_seconds         = 1209600 # max 14 days
+  kms_master_key_id                 = module.htc_task_queue_dlq_kms_key.key_arn
   kms_data_key_reuse_period_seconds = 300
 
   tags = {
@@ -101,7 +101,7 @@ resource "aws_sqs_queue" "htc_task_queue_dlq" {
 
 
 resource "aws_sqs_queue_policy" "htc_task_queue_dlq_policy" {
-  for_each = var.priorities
+  for_each  = var.priorities
   queue_url = aws_sqs_queue.htc_task_queue_dlq[each.key].id
 
   policy = <<EOF

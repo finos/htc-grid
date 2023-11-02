@@ -20,7 +20,7 @@ module "eks_cloudwatch_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"
 
-  description             = "CMK to encrypt EKS Cluster CloudWatch Logs"
+  description             = "CMK KMS Key used to encrypt EKS Cluster CloudWatch Logs"
   deletion_window_in_days = 7
 
   key_administrators = [
@@ -30,7 +30,7 @@ module "eks_cloudwatch_kms_key" {
 
   key_statements = [
     {
-      sid = "Allow Lambda functions to encrypt/decrypt CloudWatch Logs"
+      sid = "Allow EKS to encrypt/decrypt CloudWatch Logs"
       actions = [
         "kms:Encrypt",
         "kms:Decrypt",
@@ -72,10 +72,10 @@ module "eks" {
   cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = var.enable_private_subnet
 
-  create_kms_key = true
-  enable_kms_key_rotation = true
-  kms_key_enable_default_policy = true
-  kms_key_description = "CMK KMS Key for EKS Cluster"
+  create_kms_key                  = true
+  enable_kms_key_rotation         = true
+  kms_key_enable_default_policy   = true
+  kms_key_description             = "CMK KMS Key used to encrypt/decrypt EKS Secrets"
   kms_key_deletion_window_in_days = 7
   kms_key_administrators = [
     data.aws_caller_identity.current.arn
@@ -84,7 +84,7 @@ module "eks" {
     data.aws_caller_identity.current.arn
   ]
 
-  create_cloudwatch_log_group = true
+  create_cloudwatch_log_group     = true
   cloudwatch_log_group_kms_key_id = module.eks_cloudwatch_kms_key.key_arn
   cluster_enabled_log_types       = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 
@@ -107,7 +107,7 @@ module "eks" {
   manage_aws_auth_configmap = true
   aws_auth_roles = concat(var.input_role, [
     {
-      rolearn  = module.lambda_drainer.lambda_role_arn #aws_iam_role.role_lambda_drainer.arn
+      rolearn  = module.node_drainer.lambda_role_arn
       username = "lambda"
       groups   = ["system:masters"]
     }

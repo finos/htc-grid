@@ -6,7 +6,7 @@ module "scaling_metrics_cloudwatch_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"
 
-  description             = "CMK to encrypt scaling_metrics CloudWatch Logs"
+  description             = "CMK KMS Key used to encrypt scaling_metrics CloudWatch Logs"
   deletion_window_in_days = 7
 
   key_administrators = [
@@ -45,7 +45,7 @@ module "scaling_metrics_cloudwatch_kms_key" {
     }
   ]
 
-  aliases = ["cloudwatch/lambda/scaling_metrics-${local.suffix}"]
+  aliases = ["cloudwatch/lambda/${var.lambda_name_scaling_metrics}"]
 }
 
 
@@ -82,23 +82,23 @@ module "scaling_metrics" {
   docker_additional_options = [
     "--platform", "linux/amd64",
   ]
-  handler                           = "scaling_metrics.lambda_handler"
-  memory_size                       = 1024
-  timeout                           = 60
-  runtime                           = var.lambda_runtime
+  handler     = "scaling_metrics.lambda_handler"
+  memory_size = 1024
+  timeout     = 60
+  runtime     = var.lambda_runtime
 
-  role_name = "role_scaling_metrics_${local.suffix}"
-  role_description = "Lambda role for scaling_metrics-${local.suffix}"
+  role_name             = "role_scaling_metrics_${local.suffix}"
+  role_description      = "Lambda role for scaling_metrics-${local.suffix}"
   attach_network_policy = true
 
-  attach_policies = true
+  attach_policies    = true
   number_of_policies = 1
   policies = [
     aws_iam_policy.scaling_metrics_data_policy.arn
   ]
 
   attach_cloudwatch_logs_policy = true
-  cloudwatch_logs_kms_key_id = module.scaling_metrics_cloudwatch_kms_key.key_arn
+  cloudwatch_logs_kms_key_id    = module.scaling_metrics_cloudwatch_kms_key.key_arn
 
   attach_tracing_policy = true
   tracing_mode          = "Active"

@@ -110,12 +110,12 @@ variable "sqs_dlq" {
 
 variable "s3_bucket" {
   description = "S3 bucket name"
-  default     = "htc-stdout-bucket"
+  default     = "htc-data-bucket"
 }
 
 variable "grid_storage_service" {
   description = "Configuration string for internal results storage system"
-  default     = "S3 htc-stdout-bucket-1"
+  default     = "S3 htc-data-bucket-1"
 }
 
 variable "state_table_service" {
@@ -218,9 +218,14 @@ variable "htc_path_logs" {
   default     = "logs/"
 }
 
-variable "lambda_name_scaling_metric" {
+variable "lambda_name_scaling_metrics" {
   description = "Lambda function name for metrics"
-  default     = "lambda_scaling_metrics"
+  default     = "scaling_metrics"
+}
+
+variable "lambda_name_node_drainer" {
+  description = "Lambda function name for metrics"
+  default     = "node_drainer"
 }
 
 variable "period_metrics" {

@@ -3,11 +3,11 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
-module "lambda_drainer_cloudwatch_kms_key" {
+module "node_drainer_cloudwatch_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"
 
-  description             = "CMK to encrypt lambda_drainer CloudWatch Logs"
+  description             = "CMK KMS Key used to encrypt node_drainer CloudWatch Logs"
   deletion_window_in_days = 7
 
   key_administrators = [
@@ -46,17 +46,17 @@ module "lambda_drainer_cloudwatch_kms_key" {
     }
   ]
 
-  aliases = ["cloudwatch/lambda/lambda_drainer-${local.suffix}"]
+  aliases = ["cloudwatch/lambda/${var.lambda_name_node_drainer}"]
 }
 
 
 # Create zip-archive of a single directory where "pip install" will also be executed (default for python runtime)
-module "lambda_drainer" {
+module "node_drainer" {
   source  = "terraform-aws-modules/lambda/aws"
   version = "~> 5.0"
 
   source_path     = "../../../source/compute_plane/python/lambda/drainer"
-  function_name   = "lambda_drainer-${local.suffix}"
+  function_name   = var.lambda_name_node_drainer
   build_in_docker = true
   docker_image    = local.lambda_build_runtime
   docker_additional_options = [
@@ -67,18 +67,18 @@ module "lambda_drainer" {
   timeout     = 900
   runtime     = var.lambda_runtime
 
-  role_name = "role_lambda_drainer_${local.suffix}"
-  role_description = "Lambda role for lambda_drainer-${local.suffix}"
+  role_name             = "role_node_drainer_${local.suffix}"
+  role_description      = "Lambda role for node_drainer-${local.suffix}"
   attach_network_policy = true
 
-  attach_policies = true
+  attach_policies    = true
   number_of_policies = 1
   policies = [
-    aws_iam_policy.lambda_drainer_data_policy.arn
+    aws_iam_policy.node_drainer_data_policy.arn
   ]
 
   attach_cloudwatch_logs_policy = true
-  cloudwatch_logs_kms_key_id = module.lambda_drainer_cloudwatch_kms_key.key_arn
+  cloudwatch_logs_kms_key_id    = module.node_drainer_cloudwatch_kms_key.key_arn
 
   attach_tracing_policy = true
   tracing_mode          = "Active"
@@ -135,7 +135,7 @@ resource "aws_cloudwatch_event_target" "terminate_instance_event" {
 
   rule      = "event-lifecyclehook-${count.index}-${local.suffix}"
   target_id = "lambda"
-  arn       = module.lambda_drainer.lambda_function_arn
+  arn       = module.node_drainer.lambda_function_arn
 
   depends_on = [
     aws_cloudwatch_event_rule.lifecycle_hook_event_rule,
@@ -143,18 +143,18 @@ resource "aws_cloudwatch_event_target" "terminate_instance_event" {
 }
 
 
-resource "aws_lambda_permission" "allow_cloudwatch_to_call_lambda_drainer" {
+resource "aws_lambda_permission" "allow_cloudwatch_to_call_node_drainer" {
   count = length(aws_cloudwatch_event_rule.lifecycle_hook_event_rule)
 
   statement_id  = "AllowDrainerExecutionFromCloudWatch-${count.index}"
   action        = "lambda:InvokeFunction"
-  function_name = module.lambda_drainer.lambda_function_name
+  function_name = module.node_drainer.lambda_function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.lifecycle_hook_event_rule[count.index].arn
 }
 
 
-resource "aws_iam_policy" "lambda_drainer_data_policy" {
+resource "aws_iam_policy" "node_drainer_data_policy" {
   name        = "lambda-drainer-${local.suffix}-data"
   path        = "/"
   description = "Policy for draining nodes of an EKS cluster"

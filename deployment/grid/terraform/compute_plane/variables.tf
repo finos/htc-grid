@@ -87,7 +87,11 @@ variable "task_queue_config" {
 # }
 
 variable "lambda_name_scaling_metrics" {
-  description = "Lambda function name for metrics"
+  description = "Lambda function name for scaling_metrics"
+}
+
+variable "lambda_name_node_drainer" {
+  description = "Lambda function name for node_drainer"
 }
 
 variable "namespace_metrics" {

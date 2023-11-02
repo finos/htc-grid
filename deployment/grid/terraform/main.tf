@@ -4,27 +4,28 @@
 
 
 locals {
-  account_id                 = data.aws_caller_identity.current.account_id
-  dns_suffix                 = data.aws_partition.current.dns_suffix
-  partition                  = data.aws_partition.current.partition
-  aws_htc_ecr                = var.aws_htc_ecr != "" ? var.aws_htc_ecr : "${local.account_id}.dkr.ecr.${var.region}.${local.dns_suffix}"
-  project_name               = var.project_name != "" ? var.project_name : random_string.random_resources.result
-  grafana_admin_password     = var.grafana_admin_password != "" ? var.grafana_admin_password : random_password.password.result
-  cluster_name               = "${var.cluster_name}-${local.project_name}"
-  ddb_state_table            = "${var.ddb_state_table}-${local.project_name}"
-  sqs_queue                  = "${var.sqs_queue}-${local.project_name}"
-  tasks_queue_name           = "${var.sqs_queue}-${local.project_name}__0"
-  sqs_dlq                    = "${var.sqs_dlq}-${local.project_name}"
-  lambda_name_get_results    = "${var.lambda_name_get_results}-${local.project_name}"
-  lambda_name_submit_tasks   = "${var.lambda_name_submit_tasks}-${local.project_name}"
-  lambda_name_cancel_tasks   = "${var.lambda_name_cancel_tasks}-${local.project_name}"
-  lambda_name_ttl_checker    = "${var.lambda_name_ttl_checker}-${local.project_name}"
-  lambda_name_scaling_metric = "${var.lambda_name_scaling_metric}-${local.project_name}"
-  metrics_name               = "${var.metrics_name}-${local.project_name}"
-  config_name                = "${var.config_name}-${local.project_name}"
-  s3_bucket                  = "${var.s3_bucket}-${local.project_name}"
-  error_log_group            = "${var.error_log_group}-${local.project_name}"
-  error_logging_stream       = "${var.error_logging_stream}-${local.project_name}"
+  account_id                  = data.aws_caller_identity.current.account_id
+  dns_suffix                  = data.aws_partition.current.dns_suffix
+  partition                   = data.aws_partition.current.partition
+  aws_htc_ecr                 = var.aws_htc_ecr != "" ? var.aws_htc_ecr : "${local.account_id}.dkr.ecr.${var.region}.${local.dns_suffix}"
+  project_name                = var.project_name != "" ? var.project_name : random_string.random_resources.result
+  grafana_admin_password      = var.grafana_admin_password != "" ? var.grafana_admin_password : random_password.password.result
+  cluster_name                = "${var.cluster_name}-${local.project_name}"
+  ddb_state_table             = "${var.ddb_state_table}-${local.project_name}"
+  sqs_queue                   = "${var.sqs_queue}-${local.project_name}"
+  tasks_queue_name            = "${var.sqs_queue}-${local.project_name}__0"
+  sqs_dlq                     = "${var.sqs_dlq}-${local.project_name}"
+  lambda_name_get_results     = "${var.lambda_name_get_results}-${local.project_name}"
+  lambda_name_submit_tasks    = "${var.lambda_name_submit_tasks}-${local.project_name}"
+  lambda_name_cancel_tasks    = "${var.lambda_name_cancel_tasks}-${local.project_name}"
+  lambda_name_ttl_checker     = "${var.lambda_name_ttl_checker}-${local.project_name}"
+  lambda_name_scaling_metrics = "${var.lambda_name_scaling_metrics}-${local.project_name}"
+  lambda_name_node_drainer    = "${var.lambda_name_node_drainer}-${local.project_name}"
+  metrics_name                = "${var.metrics_name}-${local.project_name}"
+  config_name                 = "${var.config_name}-${local.project_name}"
+  s3_bucket                   = "${var.s3_bucket}-${local.project_name}"
+  error_log_group             = "${var.error_log_group}-${local.project_name}"
+  error_logging_stream        = "${var.error_logging_stream}-${local.project_name}"
 
   default_agent_configuration = {
     agent_chart_url = "../charts"
@@ -139,7 +140,8 @@ module "compute_plane" {
   tasks_queue_name                     = local.tasks_queue_name
   namespace_metrics                    = var.namespace_metrics
   dimension_name_metrics               = var.dimension_name_metrics
-  lambda_name_scaling_metrics          = local.lambda_name_scaling_metric
+  lambda_name_scaling_metrics          = local.lambda_name_scaling_metrics
+  lambda_name_node_drainer             = local.lambda_name_node_drainer
   period_metrics                       = var.period_metrics
   metric_name                          = local.metrics_name
   metrics_event_rule_time              = var.metrics_event_rule_time

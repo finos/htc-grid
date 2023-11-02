@@ -33,7 +33,7 @@ module "global_error_cloudwatch_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"
 
-  description             = "CMK to encrypt global_error CloudWatch Logs"
+  description             = "CMK KMS Key used to encrypt global_error CloudWatch Logs"
   deletion_window_in_days = 7
 
   key_administrators = [
@@ -79,7 +79,7 @@ module "global_error_cloudwatch_kms_key" {
 resource "aws_cloudwatch_log_group" "global_error_group" {
   name              = var.error_log_group
   retention_in_days = 14
-  kms_key_id = module.global_error_cloudwatch_kms_key.key_arn
+  kms_key_id        = module.global_error_cloudwatch_kms_key.key_arn
 }
 
 

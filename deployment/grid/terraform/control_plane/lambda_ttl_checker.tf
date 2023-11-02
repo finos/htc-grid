@@ -7,7 +7,7 @@ module "ttl_checker_cloudwatch_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"
 
-  description             = "CMK to encrypt Lambda Drainer CloudWatch Logs"
+  description             = "CMK KMS Key used to encrypt ttl_checker CloudWatch Logs"
   deletion_window_in_days = 7
 
   key_administrators = [
@@ -46,7 +46,7 @@ module "ttl_checker_cloudwatch_kms_key" {
     }
   ]
 
-  aliases = ["cloudwatch/lambda/ttl_checker-${local.suffix}"]
+  aliases = ["cloudwatch/lambda/${var.lambda_name_ttl_checker}"]
 }
 
 
@@ -87,11 +87,11 @@ module "ttl_checker" {
   timeout     = 55
   runtime     = var.lambda_runtime
 
-  role_name = "role_lambda_ttl_checker_${local.suffix}"
-  role_description = "Lambda role for ttl_checker-${local.suffix}"
+  role_name             = "role_lambda_ttl_checker_${local.suffix}"
+  role_description      = "Lambda role for ttl_checker-${local.suffix}"
   attach_network_policy = true
 
-  attach_policies = true
+  attach_policies    = true
   number_of_policies = 2
   policies = [
     aws_iam_policy.lambda_data_policy.arn,
@@ -99,7 +99,7 @@ module "ttl_checker" {
   ]
 
   attach_cloudwatch_logs_policy = true
-  cloudwatch_logs_kms_key_id = module.get_results_cloudwatch_kms_key.key_arn
+  cloudwatch_logs_kms_key_id    = module.get_results_cloudwatch_kms_key.key_arn
 
   attach_tracing_policy = true
   tracing_mode          = "Active"

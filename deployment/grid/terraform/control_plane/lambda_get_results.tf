@@ -7,7 +7,7 @@ module "get_results_cloudwatch_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"
 
-  description             = "CMK to encrypt Lambda Drainer CloudWatch Logs"
+  description             = "CMK KMS Key used to encrypt get_results CloudWatch Logs"
   deletion_window_in_days = 7
 
   key_administrators = [
@@ -46,7 +46,7 @@ module "get_results_cloudwatch_kms_key" {
     }
   ]
 
-  aliases = ["cloudwatch/lambda/get_results-${local.suffix}"]
+  aliases = ["cloudwatch/lambda/${var.lambda_name_get_results}"]
 }
 
 
@@ -88,18 +88,18 @@ module "get_results" {
   timeout     = 300
   runtime     = var.lambda_runtime
 
-  role_name = "role_lambda_get_results_${local.suffix}"
-  role_description = "Lambda role for get_results-${local.suffix}"
+  role_name             = "role_lambda_get_results_${local.suffix}"
+  role_description      = "Lambda role for get_results-${local.suffix}"
   attach_network_policy = true
 
-  attach_policies = true
+  attach_policies    = true
   number_of_policies = 1
   policies = [
     aws_iam_policy.lambda_data_policy.arn
   ]
 
   attach_cloudwatch_logs_policy = true
-  cloudwatch_logs_kms_key_id = module.get_results_cloudwatch_kms_key.key_arn
+  cloudwatch_logs_kms_key_id    = module.get_results_cloudwatch_kms_key.key_arn
 
   attach_tracing_policy = true
   tracing_mode          = "Active"
@@ -113,8 +113,8 @@ module "get_results" {
     STATE_TABLE_CONFIG                           = var.state_table_config,
     TASKS_QUEUE_NAME                             = element(local.htc_task_queue_names, 0),
     TASKS_QUEUE_DLQ_NAME                         = element(local.htc_task_queue_dlq_names, 0),
-    S3_BUCKET                                    = aws_s3_bucket.htc_stdout_bucket.id,
-    REDIS_URL                                    = aws_elasticache_replication_group.stdin_stdout_cache.primary_endpoint_address,
+    S3_BUCKET                                    = aws_s3_bucket.htc_data_bucket.id,
+    REDIS_URL                                    = aws_elasticache_replication_group.htc_data_cache.primary_endpoint_address,
     GRID_STORAGE_SERVICE                         = var.grid_storage_service,
     TASK_QUEUE_SERVICE                           = var.task_queue_service,
     TASK_QUEUE_CONFIG                            = var.task_queue_config,
