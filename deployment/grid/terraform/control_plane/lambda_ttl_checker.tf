@@ -111,8 +111,8 @@ module "ttl_checker" {
     STATE_TABLE_NAME                             = var.ddb_state_table,
     STATE_TABLE_SERVICE                          = var.state_table_service,
     STATE_TABLE_CONFIG                           = var.state_table_config,
-    TASKS_QUEUE_NAME                             = aws_sqs_queue.htc_task_queue["__0"].name,
-    TASKS_QUEUE_DLQ_NAME                         = aws_sqs_queue.htc_task_queue_dlq.name
+    TASKS_QUEUE_NAME                             = element(local.htc_task_queue_names, 0),
+    TASKS_QUEUE_DLQ_NAME                         = element(local.htc_task_queue_dlq_names, 0),
     METRICS_ARE_ENABLED                          = var.metrics_are_enabled,
     TASK_QUEUE_SERVICE                           = var.task_queue_service,
     TASK_QUEUE_CONFIG                            = var.task_queue_config,

@@ -3,6 +3,11 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
+locals {
+  redis_engine_version = "7.0"
+}
+
+
 module "stdin_stdout_cache_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"
@@ -17,10 +22,6 @@ module "stdin_stdout_cache_kms_key" {
   aliases = ["redis/stdin-stdout-cache-${lower(local.suffix)}"]
 }
 
-
-locals {
-  redis_engine_version = "7.0"
-}
 
 resource "aws_elasticache_replication_group" "stdin_stdout_cache" {
   replication_group_id = "stdin-stdout-cache-${lower(local.suffix)}"

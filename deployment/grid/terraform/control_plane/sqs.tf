@@ -3,6 +3,12 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
+locals {
+  htc_task_queue_names     = [ for k, v in aws_sqs_queue.htc_task_queue : v.name ]
+  htc_task_queue_dlq_names = [ for k, v in aws_sqs_queue.htc_task_queue_dlq : v.name ]
+}
+
+
 module "htc_task_queue_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"
@@ -26,6 +32,11 @@ resource "aws_sqs_queue" "htc_task_queue" {
   visibility_timeout_seconds = 40      # once acquired we should update visibility timeout during processing
   kms_master_key_id          = module.htc_task_queue_kms_key.key_arn
   kms_data_key_reuse_period_seconds = 300
+
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.htc_task_queue_dlq[each.key].arn
+    maxReceiveCount     = 4
+  })
 
   tags = {
     service = "htc-aws"
