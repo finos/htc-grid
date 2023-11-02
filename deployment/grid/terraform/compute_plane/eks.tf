@@ -16,6 +16,52 @@ locals {
 }
 
 
+module "eks_cloudwatch_kms_key" {
+  source  = "terraform-aws-modules/kms/aws"
+  version = "~> 2.0"
+
+  description             = "CMK to encrypt EKS Cluster CloudWatch Logs"
+  deletion_window_in_days = 7
+
+  key_administrators = [
+    "arn:${local.partition}:iam::${local.account_id}:root",
+    data.aws_caller_identity.current.arn
+  ]
+
+  key_statements = [
+    {
+      sid = "Allow Lambda functions to encrypt/decrypt CloudWatch Logs"
+      actions = [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey",
+        "kms:Decrypt",
+      ]
+      effect = "Allow"
+      principals = [
+        {
+          type = "Service"
+          identifiers = [
+            "logs.${var.region}.amazonaws.com"
+          ]
+        }
+      ]
+      resources = ["*"]
+      condition = [
+        {
+          test     = "ArnLike"
+          variable = "kms:EncryptionContext:aws:logs:arn"
+          values   = ["arn:${local.partition}:logs:${var.region}:${local.account_id}:*"]
+        }
+      ]
+    }
+  ]
+
+  aliases = ["cloudwatch/eks/${var.cluster_name}"]
+}
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 19.0"
@@ -25,6 +71,21 @@ module "eks" {
 
   cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = var.enable_private_subnet
+
+  create_kms_key = true
+  enable_kms_key_rotation = true
+  kms_key_enable_default_policy = true
+  kms_key_description = "CMK KMS Key for EKS Cluster"
+  kms_key_deletion_window_in_days = 7
+  kms_key_administrators = [
+    data.aws_caller_identity.current.arn
+  ]
+  kms_key_owners = [
+    data.aws_caller_identity.current.arn
+  ]
+
+  create_cloudwatch_log_group = true
+  cloudwatch_log_group_kms_key_id = module.eks_cloudwatch_kms_key.key_arn
   cluster_enabled_log_types       = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 
   vpc_id     = var.vpc_id
