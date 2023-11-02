@@ -70,3 +70,36 @@ resource "aws_s3_bucket_public_access_block" "htc_stdout_bucket_public_access_bl
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
+
+data "aws_iam_policy_document" "htc_stdout_bucket_policy_document" {
+  statement {
+    sid = "HTTPSOnly"
+    principals {
+      identifiers = ["*"]
+      type        = "*"
+    }
+
+    actions = [
+      "s3:*"
+    ]
+
+    effect = "Deny"
+
+    resources = [
+      aws_s3_bucket.htc_stdout_bucket.arn,
+      "${aws_s3_bucket.htc_stdout_bucket.arn}/*",
+    ]
+
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+      values   = ["false"]
+    }
+  }
+}
+
+
+resource "aws_s3_bucket_policy" "htc_stdout_bucket_policy" {
+  bucket = aws_s3_bucket.htc_stdout_bucket.id
+  policy = data.aws_iam_policy_document.htc_stdout_bucket_policy_document.json
+}
