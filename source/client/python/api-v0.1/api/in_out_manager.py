@@ -38,7 +38,6 @@ def in_out_manager(grid_storage_service, s3_bucket, redis_url, s3_region=None, s
     Returns:
         object: a connection to the data plane
     """
-    redis_url = "redis://{}:6379".format(redis_url)
     logging.info(" storage_type {} s3 bucket {} redis_url {}".format(grid_storage_service, s3_bucket, redis_url))
     if grid_storage_service == "S3":
         return InOutS3(namespace=s3_bucket, region=s3_region)

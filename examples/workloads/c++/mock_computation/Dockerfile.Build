@@ -18,9 +18,9 @@ WORKDIR /app
 COPY mock_compute_engine.cpp Makefile /app/
 RUN make main
 
-COPY bootstrap /app/
+COPY bootstrap.sh /app/
 RUN zip -9yr lambda.zip .  && \
-    chmod +x /app/bootstrap && \
+    chmod +x /app/bootstrap.sh && \
     chown -R $USER:$GROUP /app
 
 USER ${USER}:${GROUP}

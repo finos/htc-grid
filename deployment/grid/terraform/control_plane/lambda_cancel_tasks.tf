@@ -122,7 +122,7 @@ module "cancel_tasks" {
     TASK_QUEUE_SERVICE                            = var.task_queue_service,
     TASK_QUEUE_CONFIG                             = var.task_queue_config,
     S3_BUCKET                                     = aws_s3_bucket.htc_stdout_bucket.id,
-    REDIS_URL                                     = aws_elasticache_cluster.stdin_stdout_cache.cache_nodes.0.address,
+    REDIS_URL                                     = aws_elasticache_replication_group.stdin_stdout_cache.primary_endpoint_address,
     METRICS_GRAFANA_PRIVATE_IP                    = var.nlb_influxdb,
     REGION                                        = var.region
   }
