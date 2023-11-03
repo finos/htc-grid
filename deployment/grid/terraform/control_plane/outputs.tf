@@ -13,11 +13,11 @@ output "htc_data_bucket_name" {
 }
 
 output "public_api_gateway_url" {
-  value = aws_api_gateway_deployment.htc_public_api_deployment.invoke_url
+  value = aws_api_gateway_stage.htc_public_api_stage.invoke_url
 }
 
 output "private_api_gateway_url" {
-  value = aws_api_gateway_deployment.htc_private_api_deployment.invoke_url
+  value = aws_api_gateway_stage.htc_private_api_stage.invoke_url
 }
 
 output "api_gateway_key" {

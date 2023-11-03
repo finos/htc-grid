@@ -113,3 +113,32 @@ resource "aws_iam_policy" "lambda_data_policy" {
 }
 EOF
 }
+
+
+resource "aws_iam_role" "apigateway_cloudwatch_role" {
+  name               = "role_apigw_cw_${local.suffix}"
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "apigateway.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "apigateway_cloudwatch_policy_attachment" {
+  role       = aws_iam_role.apigateway_cloudwatch_role.id
+  policy_arn = "arn:${local.partition}:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+}
+
+resource "aws_api_gateway_account" "apigateway_account" {
+  cloudwatch_role_arn = aws_iam_role.apigateway_cloudwatch_role.arn
+}

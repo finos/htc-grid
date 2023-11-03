@@ -3,8 +3,61 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
+module "htc_private_api_cloudwatch_kms_key" {
+  source  = "terraform-aws-modules/kms/aws"
+  version = "~> 2.0"
+
+  description             = "CMK KMS Key used to encrypt htc_private_api CloudWatch Logs"
+  deletion_window_in_days = 7
+
+  key_administrators = [
+    "arn:${local.partition}:iam::${local.account_id}:root",
+    data.aws_caller_identity.current.arn
+  ]
+
+  key_statements = [
+    {
+      sid = "Allow API Gateway to encrypt/decrypt CloudWatch Logs"
+      actions = [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey",
+        "kms:Decrypt",
+      ]
+      effect = "Allow"
+      principals = [
+        {
+          type = "Service"
+          identifiers = [
+            "logs.${var.region}.amazonaws.com"
+          ]
+        }
+      ]
+      resources = ["*"]
+      condition = [
+        {
+          test     = "ArnLike"
+          variable = "kms:EncryptionContext:aws:logs:arn"
+          values   = ["arn:${local.partition}:logs:${var.region}:${local.account_id}:*"]
+        }
+      ]
+    }
+  ]
+
+  aliases = ["cloudwatch/api/htc-private-api-${var.cluster_name}"]
+}
+
+
+resource "aws_cloudwatch_log_group" "htc_private_api_cloudwatch_log_group" {
+  name       = "/aws/apigateway/htc-private-api-${var.cluster_name}-${var.api_gateway_version}"
+  kms_key_id = module.htc_private_api_cloudwatch_kms_key.key_arn
+}
+
+
 resource "aws_api_gateway_rest_api" "htc_private_api" {
-  name = "openapi-${var.cluster_name}-private"
+  name = "htc-private-api-${var.cluster_name}"
 
   body = jsonencode(yamldecode(templatefile("../../../source/control_plane/openapi/private/api_definition.yaml", {
     region                  = var.region
@@ -33,8 +86,6 @@ resource "aws_api_gateway_deployment" "htc_private_api_deployment" {
     })
   }
 
-  stage_name = var.api_gateway_version
-
   lifecycle {
     create_before_destroy = true
   }
@@ -45,17 +96,48 @@ resource "aws_api_gateway_deployment" "htc_private_api_deployment" {
 }
 
 
+resource "aws_api_gateway_stage" "htc_private_api_stage" {
+  rest_api_id   = aws_api_gateway_rest_api.htc_private_api.id
+  deployment_id = aws_api_gateway_deployment.htc_private_api_deployment.id
+
+  stage_name = var.api_gateway_version
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.htc_private_api_cloudwatch_log_group.arn
+    format          = "$context.identity.sourceIp $context.identity.caller $context.identity.user $context.requestTime $context.httpMethod $context.resourcePath $context.protocol $context.status $context.responseLength $context.requestId $context.extendedRequestId"
+  }
+
+  xray_tracing_enabled = true
+
+  depends_on = [
+    aws_cloudwatch_log_group.htc_private_api_cloudwatch_log_group
+  ]
+}
+
+resource "aws_api_gateway_method_settings" "htc_private_api_method_settings" {
+  rest_api_id = aws_api_gateway_rest_api.htc_private_api.id
+  stage_name  = aws_api_gateway_stage.htc_private_api_stage.stage_name
+
+  method_path = "*/*"
+
+  settings {
+    metrics_enabled = true
+    logging_level   = "ERROR"
+  }
+}
+
+
 resource "aws_api_gateway_api_key" "htc_private_api_key" {
-  name = var.cluster_name
+  name = "htc-private-api-${var.cluster_name}"
 }
 
 
 resource "aws_api_gateway_usage_plan" "htc_private_api_usage_plan" {
-  name = var.cluster_name
+  name = "htc-private-api-${var.cluster_name}"
 
   api_stages {
     api_id = aws_api_gateway_rest_api.htc_private_api.id
-    stage  = aws_api_gateway_deployment.htc_private_api_deployment.stage_name
+    stage  = aws_api_gateway_stage.htc_private_api_stage.stage_name
   }
 }
 
