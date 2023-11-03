@@ -3,6 +3,53 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
+module "vpc_flow_logs_cloudwatch_kms_key" {
+  source  = "terraform-aws-modules/kms/aws"
+  version = "~> 2.0"
+
+  description             = "CMK KMS Key used to encrypt vpc_flow_logs CloudWatch Logs"
+  deletion_window_in_days = 7
+
+  key_administrators = [
+    "arn:${local.partition}:iam::${local.account_id}:root",
+    data.aws_caller_identity.current.arn
+  ]
+
+  key_statements = [
+    {
+      sid = "Allow Lambda functions to encrypt/decrypt CloudWatch Logs"
+      actions = [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey",
+        "kms:Decrypt",
+      ]
+      effect = "Allow"
+      principals = [
+        {
+          type = "Service"
+          identifiers = [
+            "logs.${var.region}.amazonaws.com"
+          ]
+        }
+      ]
+      resources = ["*"]
+      condition = [
+        {
+          test     = "ArnLike"
+          variable = "kms:EncryptionContext:aws:logs:arn"
+          values   = ["arn:${local.partition}:logs:${var.region}:${local.account_id}:*"]
+        }
+      ]
+    }
+  ]
+
+  aliases = ["cloudwatch/vpc/${var.cluster_name}-vpc"]
+}
+
+
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.0"
@@ -17,6 +64,16 @@ module "vpc" {
   # Required for private endpoints
   enable_dns_hostnames = true
   enable_dns_support   = true
+
+  map_public_ip_on_launch = false
+
+  enable_flow_log                           = true
+  create_flow_log_cloudwatch_iam_role       = true
+  create_flow_log_cloudwatch_log_group      = true
+  flow_log_cloudwatch_log_group_kms_key_id  = module.vpc_flow_logs_cloudwatch_kms_key.key_arn
+  flow_log_max_aggregation_interval         = 60
+  flow_log_cloudwatch_log_group_name_prefix = "/aws/vpc-flow-logs/"
+  flow_log_cloudwatch_log_group_name_suffix = "${var.cluster_name}-vpc"
 
   default_security_group_ingress = [
     {

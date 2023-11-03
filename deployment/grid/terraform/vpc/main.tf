@@ -4,6 +4,9 @@
 
 
 locals {
+  account_id            = data.aws_caller_identity.current.account_id
+  dns_suffix            = data.aws_partition.current.dns_suffix
+  partition             = data.aws_partition.current.partition
   private_subnet_range  = var.vpc_range - (32 - var.private_subnets)
   public_subnet_range   = var.vpc_range - (32 - var.public_subnets)
   private_subnet_ranges = [for cidr_block in data.aws_availability_zones.available.names : local.private_subnet_range]
@@ -20,3 +23,11 @@ locals {
 data "aws_availability_zones" "available" {
   state = "available"
 }
+
+
+# Retrieve the account ID
+data "aws_caller_identity" "current" {}
+
+
+# Retrieve AWS Partition
+data "aws_partition" "current" {}
