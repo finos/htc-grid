@@ -101,7 +101,7 @@ module "eks_ebs_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"
 
-  description             = "CMK to encrypt EKS Managed Node Group volumes"
+  description             = "CMK KMS Key used to encrypt EKS Managed Node Group volumes"
   deletion_window_in_days = 7
 
   key_administrators = [

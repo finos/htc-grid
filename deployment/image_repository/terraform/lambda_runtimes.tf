@@ -50,5 +50,8 @@ resource "null_resource" "build_and_push_runtimes" {
     on_failure = continue
   }
 
-  depends_on = [null_resource.authenticate_to_ecr_repository]
+  depends_on = [
+    aws_ecr_repository.third_party,
+    null_resource.authenticate_to_ecr_repository
+  ]
 }

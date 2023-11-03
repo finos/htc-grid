@@ -3,6 +3,22 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
+module "ecr_kms_key" {
+  source  = "terraform-aws-modules/kms/aws"
+  version = "~> 2.0"
+
+  description             = "CMK KMS Key used to encrypt ECR Repositories"
+  deletion_window_in_days = 7
+
+  key_administrators = [
+    data.aws_caller_identity.current.arn,
+    "arn:${local.partition}:iam::${local.account_id}:root"
+  ]
+
+  aliases = ["ecr/htc"]
+}
+
+
 # Create the ECR repositories
 resource "aws_ecr_repository" "third_party" {
   for_each = toset(var.repository)
@@ -12,6 +28,11 @@ resource "aws_ecr_repository" "third_party" {
 
   image_scanning_configuration {
     scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "KMS"
+    kms_key         = module.ecr_kms_key.key_arn
   }
 }
 
