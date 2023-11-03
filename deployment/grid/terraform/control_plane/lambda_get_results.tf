@@ -8,12 +8,10 @@ module "get_results_cloudwatch_kms_key" {
   version = "~> 2.0"
 
   description             = "CMK KMS Key used to encrypt get_results CloudWatch Logs"
-  deletion_window_in_days = 7
+  deletion_window_in_days = var.kms_deletion_window
+  enable_key_rotation     = true
 
-  key_administrators = [
-    "arn:${local.partition}:iam::${local.account_id}:root",
-    data.aws_caller_identity.current.arn
-  ]
+  key_administrators = local.kms_key_admin_arns
 
   key_statements = [
     {
@@ -36,11 +34,11 @@ module "get_results_cloudwatch_kms_key" {
         }
       ]
       resources = ["*"]
-      condition = [
+      conditions = [
         {
-          test     = "ArnLike"
+          test     = "ArnEquals"
           variable = "kms:EncryptionContext:aws:logs:arn"
-          values   = ["arn:${local.partition}:logs:${var.region}:${local.account_id}:*"]
+          values   = ["arn:${local.partition}:logs:${var.region}:${local.account_id}:log-group:/aws/lambda/${var.lambda_name_get_results}"]
         }
       ]
     }

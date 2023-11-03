@@ -159,7 +159,7 @@ def multiprocessing_execute_py(
         p.join()
 
     for p in procs:
-        if p.exitcode is not 0:
+        if p.exitcode != 0:
             logging.error("One process did not exit successfully {}".format(p.exitcode()))
             raise Exception("Exit code not null")
 

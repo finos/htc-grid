@@ -8,12 +8,10 @@ module "submit_task_cloudwatch_kms_key" {
   version = "~> 2.0"
 
   description             = "CMK KMS Key used to encrypt submit_task CloudWatch Logs"
-  deletion_window_in_days = 7
+  deletion_window_in_days = var.kms_deletion_window
+  enable_key_rotation     = true
 
-  key_administrators = [
-    "arn:${local.partition}:iam::${local.account_id}:root",
-    data.aws_caller_identity.current.arn
-  ]
+  key_administrators = local.kms_key_admin_arns
 
   key_statements = [
     {
@@ -36,11 +34,11 @@ module "submit_task_cloudwatch_kms_key" {
         }
       ]
       resources = ["*"]
-      condition = [
+      conditions = [
         {
-          test     = "ArnLike"
+          test     = "ArnEquals"
           variable = "kms:EncryptionContext:aws:logs:arn"
-          values   = ["arn:${local.partition}:logs:${var.region}:${local.account_id}:*"]
+          values   = ["arn:${local.partition}:logs:${var.region}:${local.account_id}:log-group:/aws/lambda/${var.lambda_name_submit_tasks}"]
         }
       ]
     }
@@ -99,7 +97,7 @@ module "submit_task" {
   ]
 
   attach_cloudwatch_logs_policy = true
-  cloudwatch_logs_kms_key_id    = module.get_results_cloudwatch_kms_key.key_arn
+  cloudwatch_logs_kms_key_id    = module.submit_task_cloudwatch_kms_key.key_arn
 
   attach_tracing_policy = true
   tracing_mode          = "Active"

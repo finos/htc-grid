@@ -10,6 +10,30 @@ locals {
   dns_suffix           = data.aws_partition.current.dns_suffix
   partition            = data.aws_partition.current.partition
   lambda_build_runtime = "${var.aws_htc_ecr}/ecr-public/sam/build-${var.lambda_runtime}:1"
+
+  default_kms_key_admin_arns = [
+    data.aws_caller_identity.current.arn,
+    "arn:${local.partition}:iam::${local.account_id}:root",
+    "arn:${local.partition}:iam::${local.account_id}:role/Admin"
+  ]
+  additional_kms_key_admin_role_arns = [ for k, v in data.aws_iam_role.additional_kms_key_admin_roles : v.arn ]
+  kms_key_admin_arns = concat(local.default_kms_key_admin_arns, local.additional_kms_key_admin_role_arns)
+
+  sqs_queue_and_dlq_arns = concat(
+    [
+      for k, v in aws_sqs_queue.htc_task_queue : v.arn
+    ],
+    [
+      for k, v in aws_sqs_queue.htc_task_queue_dlq : v.arn
+    ]
+  )
+}
+
+
+data "aws_iam_role" "additional_kms_key_admin_roles" {
+  for_each = toset(var.kms_key_admin_roles)
+  
+  name = each.key
 }
 
 
@@ -34,12 +58,10 @@ module "global_error_cloudwatch_kms_key" {
   version = "~> 2.0"
 
   description             = "CMK KMS Key used to encrypt global_error CloudWatch Logs"
-  deletion_window_in_days = 7
+  deletion_window_in_days = var.kms_deletion_window
+  enable_key_rotation     = true
 
-  key_administrators = [
-    "arn:${local.partition}:iam::${local.account_id}:root",
-    data.aws_caller_identity.current.arn
-  ]
+  key_administrators = local.kms_key_admin_arns
 
   key_statements = [
     {
@@ -62,7 +84,7 @@ module "global_error_cloudwatch_kms_key" {
         }
       ]
       resources = ["*"]
-      condition = [
+      conditions = [
         {
           test     = "ArnLike"
           variable = "kms:EncryptionContext:aws:logs:arn"
@@ -99,14 +121,56 @@ resource "aws_iam_policy" "lambda_data_policy" {
   "Statement": [
     {
       "Action": [
-        "sqs:*",
-        "dynamodb:*",
-        "firehose:*",
-        "s3:*",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:BatchGetItem",
+        "dynamodb:PutItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DescribeStream",
+        "dynamodb:DescribeTable"
+      ],
+      "Resource": [
+        "${module.htc_dynamodb_table.dynamodb_table_arn}",
+        "${module.htc_dynamodb_table.dynamodb_table_arn}/index/*"
+      ],
+      "Effect": "Allow"
+    },
+    {
+      "Action": [
+        "sqs:GetQueueUrl",
+        "sqs:GetQueueAttributes",
+        "sqs:SendMessage",
+        "sqs:ReceiveMessage",
+        "sqs:DeleteMessage",
+        "sqs:ChangeMessageVisibility"
+      ],
+      "Resource": ${jsonencode(local.sqs_queue_and_dlq_arns)},
+      "Effect": "Allow"
+    },
+    {
+      "Action": [
+        "s3:*"
+      ],
+      "Resource": "*",
+      "Effect": "Allow",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Tag": "${var.suffix}"
+        }
+      }
+    },
+    {
+      "Action": [
         "kms:Decrypt",
         "kms:GenerateDataKey"
       ],
-      "Resource": "*",
+      "Resource": [
+        "${module.htc_dynamodb_table_kms_key.key_arn}",
+        "${module.htc_task_queue_kms_key.key_arn}",
+        "${module.htc_task_queue_dlq_kms_key.key_arn}",
+        "${module.htc_data_bucket_kms_key.key_arn}"
+      ],
       "Effect": "Allow"
     }
   ]

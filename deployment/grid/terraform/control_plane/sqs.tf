@@ -14,10 +14,42 @@ module "htc_task_queue_kms_key" {
   version = "~> 2.0"
 
   description             = "CMK KMS Key to encrypt SQS Queues"
-  deletion_window_in_days = 7
+  deletion_window_in_days = var.kms_deletion_window
+  enable_key_rotation     = true
+  enable_default_policy   = false
 
-  key_administrators = [
-    data.aws_caller_identity.current.arn
+  key_administrators = local.kms_key_admin_arns
+
+  key_statements = [
+    {
+      sid       = "Allow CMK KMS Key Access via SQS Service"
+      effect    = "Allow"
+      actions   = [
+        "kms:Encrypt*",
+        "kms:Decrypt*",
+        "kms:ReEncrypt*",
+        "kms:GenerateDataKey*",
+        "kms:Describe*"
+      ]
+      resources = ["*"]
+  
+      principals = [
+        {
+          type        = "AWS"
+          identifiers = local.kms_key_admin_arns
+        }
+      ]
+      
+      conditions = [
+        {
+          test     = "StringEquals"
+          variable = "kms:ViaService"
+          values = [
+            "sqs.${var.region}.amazonaws.com"
+          ]
+        }
+      ]
+    }
   ]
 
   aliases = ["sqs/htc_task_queue_${local.suffix}"]
@@ -76,10 +108,42 @@ module "htc_task_queue_dlq_kms_key" {
   version = "~> 2.0"
 
   description             = "CMK KMS Key to encrypt SQS DLQ Queues"
-  deletion_window_in_days = 7
+  deletion_window_in_days = var.kms_deletion_window
+  enable_key_rotation     = true
+  enable_default_policy   = false
 
-  key_administrators = [
-    data.aws_caller_identity.current.arn
+  key_administrators = local.kms_key_admin_arns
+
+  key_statements = [
+    {
+      sid       = "Allow CMK KMS Key Access via SQS Service"
+      effect    = "Allow"
+      actions   = [
+        "kms:Encrypt*",
+        "kms:Decrypt*",
+        "kms:ReEncrypt*",
+        "kms:GenerateDataKey*",
+        "kms:Describe*"
+      ]
+      resources = ["*"]
+  
+      principals = [
+        {
+          type        = "AWS"
+          identifiers = local.kms_key_admin_arns
+        }
+      ]
+      
+      conditions = [
+        {
+          test     = "StringEquals"
+          variable = "kms:ViaService"
+          values = [
+            "sqs.${var.region}.amazonaws.com"
+          ]
+        }
+      ]
+    }
   ]
 
   aliases = ["sqs/htc_task_queue_dlq_${local.suffix}"]

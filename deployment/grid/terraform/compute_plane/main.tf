@@ -94,6 +94,21 @@ locals {
   ]
 
   eks_worker_group_map = zipmap(local.eks_worker_group_name, local.eks_worker_group)
+
+  default_kms_key_admin_arns = [
+    data.aws_caller_identity.current.arn,
+    "arn:${local.partition}:iam::${local.account_id}:root",
+    "arn:${local.partition}:iam::${local.account_id}:role/Admin"
+  ]
+  additional_kms_key_admin_role_arns = [ for k, v in data.aws_iam_role.additional_kms_key_admin_roles : v.arn ]
+  kms_key_admin_arns = concat(local.default_kms_key_admin_arns, local.additional_kms_key_admin_role_arns)
+}
+
+
+data "aws_iam_role" "additional_kms_key_admin_roles" {
+  for_each = toset(var.kms_key_admin_roles)
+  
+  name = each.key
 }
 
 
@@ -102,12 +117,10 @@ module "eks_ebs_kms_key" {
   version = "~> 2.0"
 
   description             = "CMK KMS Key used to encrypt EKS Managed Node Group volumes"
-  deletion_window_in_days = 7
+  deletion_window_in_days = var.kms_deletion_window
+  enable_key_rotation     = true
 
-  key_administrators = [
-    data.aws_caller_identity.current.arn,
-    "arn:${local.partition}:iam::${local.account_id}:root"
-  ]
+  key_administrators = local.kms_key_admin_arns
 
   key_service_roles_for_autoscaling = [
     # Required for the ASG to manage encrypted volumes for nodes

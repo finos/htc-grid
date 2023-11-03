@@ -33,3 +33,13 @@ variable "rebuild_runtimes" {
   type        = string
   default     = "false"
 }
+
+variable "kms_deletion_window" {
+  description = "Number of days after which KMS key will be permanently deleted"
+  default     = 7
+}
+
+variable "kms_key_admin_roles" {
+  description = "List of roles to assign KMS Key Administrator permissions"
+  default     = []
+}
