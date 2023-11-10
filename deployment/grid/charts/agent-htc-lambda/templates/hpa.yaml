@@ -1,12 +1,12 @@
-#---
-#apiVersion: keda.sh/v1alpha1
-#kind: TriggerAuthentication
-#metadata:
-#  name: htc-agent-scaler-auth
-#spec:
-#  podIdentity:
-#    provider: aws-eks # or aws-eks when using IRSA
-#---
+# ---
+# apiVersion: keda.sh/v1alpha1
+# kind: TriggerAuthentication
+# metadata:
+#   name: htc-agent-scaler-auth
+# spec:
+#   podIdentity:
+#     provider: aws-eks # Use aws-eks when using IRSA
+# ---
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
@@ -29,5 +29,5 @@ spec:
         targetMetricValue: {{ .Values.hpa.metric.targetValue | quote}}
         minMetricValue: "0"
         awsRegion: {{ .Values.hpa.metric.region }}
-#      authenticationRef:
-#        name: keda-trigger-auth-aws-credentials
+      # authenticationRef:
+      #   name: htc-agent-scaler-auth

@@ -105,7 +105,7 @@ module "eks" {
   manage_aws_auth_configmap = true
   aws_auth_roles = concat(var.input_role, [
     {
-      rolearn  = module.node_drainer.lambda_role_arn
+      rolearn  = var.node_drainer_lambda_role_arn
       username = "lambda"
       groups   = ["system:masters"]
     }

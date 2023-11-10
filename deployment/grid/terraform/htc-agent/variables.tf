@@ -24,7 +24,7 @@ variable "agent_image_tag" {
   type        = string
 }
 
-variable "agent_permissions_policy_arn" {
+variable "htc_agent_permissions_policy_arn" {
   type        = string
   description = "IAM Policy ARN for HTC Agent IRSA Permissions"
 }
@@ -158,8 +158,13 @@ variable "lambda_configuration_storage_type" {
   default     = "S3"
 }
 
-variable "lambda_configuration_location" {
-  description = "The location of the S3 bucket"
+variable "lambda_configuration_s3_source" {
+  description = "The Lambda Layer S3 bucket source"
+  type        = string
+}
+
+variable "lambda_configuration_s3_source_kms_key_arn" {
+  description = "The CMK KMS Key ARN for the Lambda Layer S3 bucket source"
   type        = string
 }
 

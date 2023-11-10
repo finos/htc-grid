@@ -38,8 +38,9 @@
       "maxCPU"   : "900",
       "minMemory": "1200",
       "maxMemory": "1900",
-      "location" : "s3://{{workload_bucket_name}}/lambda.zip",
-      "runtime"  : "provided"
+      "runtime"  : "provided",
+      "s3_source": "s3://{{workload_bucket_name}}/lambda.zip",
+      "s3_source_kms_key_arn" : "{{workload_bucket_kms_key_arn}}"
     }
   },
   "enable_private_subnet" : true,

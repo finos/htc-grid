@@ -82,7 +82,7 @@ spec:
       initContainers:
         - command: ["./download-layer.sh"]
           {{- if eq .Values.storage "S3" }}
-          args: ["-s" , {{ .Values.lambda.s3Location  | quote }} , "-r" , {{ .Values.lambda.region | quote }} ,"-d", {{ .Values.lambda.mountPoint | quote }},"--storage","S3"]
+          args: ["-s" , {{ .Values.lambda.s3Source  | quote }} , "-r" , {{ .Values.lambda.region | quote }} ,"-d", {{ .Values.lambda.mountPoint | quote }},"--storage","S3"]
           {{- else }}
           args: ["-l", {{ .Values.lambda.layerName | quote }} ,"-v", {{ .Values.lambda.layerVersion | quote }}, "-r", {{ .Values.lambda.region | quote }},"-d", {{ .Values.lambda.mountPoint | quote }} ,"--storage","Layer"]
           {{- end }}

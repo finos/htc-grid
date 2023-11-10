@@ -12,10 +12,11 @@ variable "aws_htc_ecr" {
 
 variable "lambda_runtime" {
   description = "Python version"
+  default     = "python3.7"
 }
 
 variable "ddb_state_table" {
-  description = "HTC DynamoDB state table name"
+  description = "HTC DynamoDB table name"
 }
 
 variable "dynamodb_autoscaling_enabled" {
@@ -68,6 +69,14 @@ variable "lambda_name_cancel_tasks" {
 
 variable "lambda_name_get_results" {
   description = "Lambda name for get result task"
+}
+
+variable "lambda_name_scaling_metrics" {
+  description = "Lambda function name for scaling_metrics"
+}
+
+variable "lambda_name_node_drainer" {
+  description = "Lambda function name for node_drainer"
 }
 
 variable "metrics_are_enabled" {
@@ -168,7 +177,7 @@ variable "cognito_userpool_arn" {
 }
 
 variable "cluster_name" {
-  description = "ARN of the user pool used for authentication"
+  description = "Name of EKS cluster in AWS"
 }
 
 variable "api_gateway_version" {
@@ -180,7 +189,7 @@ variable "state_table_service" {
 }
 
 variable "state_table_config" {
-  description = "State Table configuration"
+  description = "Status Table configuration"
 }
 
 variable "priorities" {
@@ -197,4 +206,69 @@ variable "kms_deletion_window" {
 variable "kms_key_admin_roles" {
   description = "List of roles to assign KMS Key Administrator permissions"
   default     = []
+}
+
+variable "create_eks_compute_plane" {
+  description = "Controls whether the EKS Compute Plane will be deployed as part of the grid"
+}
+
+
+# Lambda Node Drainer
+
+# variable "dimension_value_metrics" {
+#   default  = "[{DimensionName=cluster_name,DimensionValue=htc-aws}, {DimensionName=env,DimensionValue=dev}]"
+#   description = "Dimensions name/value for the CloudWatch metrics"
+# }
+
+variable "namespace_metrics" {
+  description = "NameSpace for metrics"
+}
+
+variable "tasks_queue_name" {
+  description = "HTC queue name"
+}
+
+variable "dimension_name_metrics" {
+  description = "Dimensions name/value for the CloudWatch metrics"
+}
+
+variable "period_metrics" {
+  description = "Period for metrics in minutes"
+}
+
+variable "metric_name" {
+  description = "Metrics name"
+}
+
+variable "metrics_event_rule_time" {
+  description = "Fires event rule to put metrics"
+}
+
+variable "graceful_termination_delay" {
+  description = "graceful termination delay for scaled in action"
+}
+
+variable "aws_xray_daemon_version" {
+  description = "version for the XRay daemon"
+  type        = string
+}
+
+variable "eks_managed_node_groups_asg_names" {
+  description = "Names of the EKS Managed Node Group ASGs"
+  type        = list(string)
+}
+
+variable "eks_managed_node_groups_asg_arns" {
+  description = "ARNs of the EKS Managed Node Group ASGs"
+  type        = list(string)
+}
+
+variable "lambda_configuration_s3_source" {
+  description = "The Lambda Layer S3 bucket source"
+  type        = string
+}
+
+variable "lambda_configuration_s3_source_kms_key_arn" {
+  description = "The CMK KMS Key ARN for the Lambda Layer S3 bucket source"
+  type        = string
 }

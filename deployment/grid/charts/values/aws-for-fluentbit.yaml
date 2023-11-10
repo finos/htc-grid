@@ -25,7 +25,6 @@ kinesis:
 elasticsearch:
   enabled: false
 
-
 tolerations:
   - key: "htc/node-type"
     operator: "Equal"

@@ -9,7 +9,8 @@ locals {
       chart_version    = local.chart_version.keda
       repository       = "https://kedacore.github.io/charts"
       values = [templatefile("${path.module}/../../charts/values/keda.yaml", {
-        aws_htc_ecr = var.aws_htc_ecr
+        aws_htc_ecr   = var.aws_htc_ecr
+        keda_role_arn = module.keda_role.iam_role_arn
       })]
     }
 

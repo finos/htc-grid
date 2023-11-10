@@ -6,6 +6,12 @@ env:
   - name : AWS_STS_REGIONAL_ENDPOINTS
     value: regional
 
+podIdentity:
+  aws:
+    irsa:
+      enabled: true
+      roleArn: "${keda_role_arn}"
+
 podSecurityContext:
   operator:
     runAsNonRoot: true
@@ -25,7 +31,6 @@ image:
 
   pullPolicy: Always
 
-
 nodeSelector:
   htc/node-type: "core"
 
@@ -34,7 +39,6 @@ tolerations:
     operator: "Equal"
     value: "core"
     effect: "NoSchedule"
-
 
 logging:
   operator:

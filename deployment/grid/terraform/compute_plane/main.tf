@@ -5,11 +5,10 @@
 
 locals {
   # check if var.suffix is empty then create a random suffix else use var.suffix
-  suffix               = var.suffix != "" ? var.suffix : random_string.random.result
-  account_id           = data.aws_caller_identity.current.account_id
-  dns_suffix           = data.aws_partition.current.dns_suffix
-  partition            = data.aws_partition.current.partition
-  lambda_build_runtime = "${var.aws_htc_ecr}/ecr-public/sam/build-${var.lambda_runtime}:1"
+  suffix     = var.suffix != "" ? var.suffix : random_string.random.result
+  account_id = data.aws_caller_identity.current.account_id
+  dns_suffix = data.aws_partition.current.dns_suffix
+  partition  = data.aws_partition.current.partition
 
   eks_worker_group = concat([
     for index in range(0, length(var.eks_worker_groups)) :
@@ -17,8 +16,7 @@ locals {
       iam_role_additional_policies = {
         AmazonEC2ContainerRegistryReadOnly = "arn:${local.partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
         CloudWatchAgentServerPolicy        = "arn:${local.partition}:iam::aws:policy/CloudWatchAgentServerPolicy",
-        eks_pull_through_cache_permission  = aws_iam_policy.eks_pull_through_cache_permission.arn,
-        agent_permissions                  = aws_iam_policy.agent_permissions.arn,
+        eks_pull_through_cache_permissions = var.ecr_pull_through_cache_permissions_policy_arn,
       }
 
       block_device_mappings = {
@@ -52,8 +50,7 @@ locals {
         iam_role_additional_policies = {
           AmazonEC2ContainerRegistryReadOnly = "arn:${local.partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
           CloudWatchAgentServerPolicy        = "arn:${local.partition}:iam::aws:policy/CloudWatchAgentServerPolicy",
-          eks_pull_through_cache_permission  = aws_iam_policy.eks_pull_through_cache_permission.arn,
-          agent_permissions                  = aws_iam_policy.agent_permissions.arn,
+          eks_pull_through_cache_permissions = var.ecr_pull_through_cache_permissions_policy_arn,
         }
 
         min_size     = 2,
@@ -100,14 +97,14 @@ locals {
     "arn:${local.partition}:iam::${local.account_id}:root",
     "arn:${local.partition}:iam::${local.account_id}:role/Admin"
   ]
-  additional_kms_key_admin_role_arns = [ for k, v in data.aws_iam_role.additional_kms_key_admin_roles : v.arn ]
-  kms_key_admin_arns = concat(local.default_kms_key_admin_arns, local.additional_kms_key_admin_role_arns)
+  additional_kms_key_admin_role_arns = [for k, v in data.aws_iam_role.additional_kms_key_admin_roles : v.arn]
+  kms_key_admin_arns                 = concat(local.default_kms_key_admin_arns, local.additional_kms_key_admin_role_arns)
 }
 
 
 data "aws_iam_role" "additional_kms_key_admin_roles" {
   for_each = toset(var.kms_key_admin_roles)
-  
+
   name = each.key
 }
 

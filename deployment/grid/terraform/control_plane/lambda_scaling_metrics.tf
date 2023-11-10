@@ -90,9 +90,10 @@ module "scaling_metrics" {
   attach_network_policy = true
 
   attach_policies    = true
-  number_of_policies = 1
+  number_of_policies = 2
   policies = [
-    aws_iam_policy.scaling_metrics_data_policy.arn
+    aws_iam_policy.lambda_data_policy.arn,
+    aws_iam_policy.scaling_metrics_cloudwatch_policy.arn
   ]
 
   attach_cloudwatch_logs_policy = true
@@ -124,7 +125,7 @@ module "scaling_metrics" {
 
 
 resource "aws_cloudwatch_event_rule" "scaling_metrics_event_rule" {
-  name                = "scaling_metrics_event_rule-${local.suffix}"
+  name                = "scaling_metrics_event_rule_${local.suffix}"
   description         = "Fires event rule to put metrics"
   schedule_expression = var.metrics_event_rule_time
 }
@@ -137,7 +138,7 @@ resource "aws_cloudwatch_event_target" "check_scaling_metrics_lambda" {
 }
 
 
-resource "aws_lambda_permission" "allow_cloudwatch_to_call_check_scaling_metrics_lambda" {
+resource "aws_lambda_permission" "allow_cloudwatch_to_call_scaling_metrics_lambda" {
   statement_id  = "AllowExecutionFromCloudWatch"
   action        = "lambda:InvokeFunction"
   function_name = module.scaling_metrics.lambda_function_name
@@ -146,24 +147,17 @@ resource "aws_lambda_permission" "allow_cloudwatch_to_call_check_scaling_metrics
 }
 
 
-resource "aws_iam_policy" "scaling_metrics_data_policy" {
-  name        = "scaling_metrics_data_policy-${local.suffix}"
+resource "aws_iam_policy" "scaling_metrics_cloudwatch_policy" {
+  name        = "scaling_metrics_data_policy_${local.suffix}"
   path        = "/"
-  description = "IAM policy for accessing DDB and SQS from a lambda"
+  description = "IAM policy for publishing CloudWatch Metrics from Scaling Metrics Lambda"
   policy      = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
     {
       "Action": [
-        "dynamodb:*",
-        "sqs:*",
-        "cloudwatch:PutMetricData",
-        "ec2:CreateNetworkInterface",
-        "ec2:DeleteNetworkInterface",
-        "ec2:DescribeNetworkInterfaces",
-        "kms:Decrypt",
-        "kms:GenerateDataKey"
+        "cloudwatch:PutMetricData"
       ],
       "Resource": "*",
       "Effect": "Allow"

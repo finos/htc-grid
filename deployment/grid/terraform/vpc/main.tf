@@ -23,14 +23,14 @@ locals {
     "arn:${local.partition}:iam::${local.account_id}:root",
     "arn:${local.partition}:iam::${local.account_id}:role/Admin"
   ]
-  additional_kms_key_admin_role_arns = [ for k, v in data.aws_iam_role.additional_kms_key_admin_roles : v.arn ]
-  kms_key_admin_arns = concat(local.default_kms_key_admin_arns, local.additional_kms_key_admin_role_arns)
+  additional_kms_key_admin_role_arns = [for k, v in data.aws_iam_role.additional_kms_key_admin_roles : v.arn]
+  kms_key_admin_arns                 = concat(local.default_kms_key_admin_arns, local.additional_kms_key_admin_role_arns)
 }
 
 
 data "aws_iam_role" "additional_kms_key_admin_roles" {
   for_each = toset(var.kms_key_admin_roles)
-  
+
   name = each.key
 }
 

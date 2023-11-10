@@ -95,10 +95,10 @@ module "node_drainer" {
 
 
 resource "aws_autoscaling_lifecycle_hook" "drainer_hook" {
-  count = length(var.eks_worker_groups)
+  count = length(var.eks_managed_node_groups_asg_names)
 
-  name                   = var.eks_worker_groups[count.index].node_group_name
-  autoscaling_group_name = module.eks.eks_managed_node_groups_autoscaling_group_names[count.index]
+  name                   = var.eks_managed_node_groups_asg_names[count.index]
+  autoscaling_group_name = var.eks_managed_node_groups_asg_names[count.index]
   default_result         = "ABANDON"
   heartbeat_timeout      = var.graceful_termination_delay
   lifecycle_transition   = "autoscaling:EC2_INSTANCE_TERMINATING"
@@ -106,7 +106,7 @@ resource "aws_autoscaling_lifecycle_hook" "drainer_hook" {
 
 
 resource "aws_cloudwatch_event_rule" "lifecycle_hook_event_rule" {
-  count = length(var.eks_worker_groups)
+  count = length(var.eks_managed_node_groups_asg_names)
 
   name          = "event-lifecyclehook-${count.index}-${local.suffix}"
   description   = "Fires event when an EC2 instance is terminated"
@@ -120,7 +120,7 @@ resource "aws_cloudwatch_event_rule" "lifecycle_hook_event_rule" {
   ],
   "detail": {
     "AutoScalingGroupName": [
-      "${module.eks.eks_managed_node_groups_autoscaling_group_names[count.index]}"
+      "${var.eks_managed_node_groups_asg_names[count.index]}"
     ]
   }
 }
@@ -129,7 +129,7 @@ EOF
 
 
 resource "aws_cloudwatch_event_target" "terminate_instance_event" {
-  count = length(var.eks_worker_groups)
+  count = length(var.eks_managed_node_groups_asg_names)
 
   rule      = "event-lifecyclehook-${count.index}-${local.suffix}"
   target_id = "lambda"
@@ -162,59 +162,29 @@ resource "aws_iam_policy" "node_drainer_data_policy" {
   "Statement": [
     {
       "Action": [
-        "autoscaling:CompleteLifecycleAction",
+        "autoscaling:CompleteLifecycleAction"
+      ],
+      "Resource": ${jsonencode(var.eks_managed_node_groups_asg_arns)},
+      "Effect": "Allow"
+    },
+    {
+      "Action": [
         "ec2:DescribeInstances",
         "eks:DescribeCluster",
-        "kms:Decrypt",
-        "kms:GenerateDataKey",
-        "kms:DescribeKey",
         "sts:GetCallerIdentity"
       ],
       "Resource": "*",
-      "Effect": "Allow",
-      "Sid": ""
+      "Effect": "Allow"
+    },
+    {
+      "Action": [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ],
+      "Resource": ${jsonencode(local.control_plane_kms_key_arns)},
+      "Effect": "Allow"
     }
   ]
 }
 EOF
-}
-
-
-#Lambda Drainer EKS Access
-resource "kubernetes_cluster_role" "lambda_cluster_access" {
-  metadata {
-    name = "lambda-cluster-access"
-  }
-
-  rule {
-    verbs      = ["create", "list", "patch"]
-    api_groups = [""]
-    resources  = ["pods", "pods/eviction", "nodes"]
-  }
-
-  depends_on = [
-    module.eks,
-  ]
-}
-
-
-resource "kubernetes_cluster_role_binding" "lambda_user_cluster_role_binding" {
-  metadata {
-    name = "lambda-user-cluster-role-binding"
-  }
-
-  subject {
-    kind = "User"
-    name = "lambda"
-  }
-
-  role_ref {
-    api_group = "rbac.authorization.k8s.io"
-    kind      = "ClusterRole"
-    name      = "lambda-cluster-access"
-  }
-
-  depends_on = [
-    module.eks,
-  ]
 }

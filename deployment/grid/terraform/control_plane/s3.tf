@@ -15,9 +15,9 @@ module "htc_data_bucket_kms_key" {
 
   key_statements = [
     {
-      sid       = "Allow CMK KMS Key Access via SQS Service"
-      effect    = "Allow"
-      actions   = [
+      sid    = "Allow CMK KMS Key Access via SQS Service"
+      effect = "Allow"
+      actions = [
         "kms:Encrypt*",
         "kms:Decrypt*",
         "kms:ReEncrypt*",
@@ -25,14 +25,14 @@ module "htc_data_bucket_kms_key" {
         "kms:Describe*"
       ]
       resources = ["*"]
-  
+
       principals = [
         {
           type        = "AWS"
           identifiers = local.kms_key_admin_arns
         }
       ]
-      
+
       conditions = [
         {
           test     = "StringEquals"

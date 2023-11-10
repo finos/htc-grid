@@ -402,3 +402,8 @@ variable "kms_key_admin_roles" {
   description = "List of roles to assign KMS Key Administrator permissions"
   default     = []
 }
+
+variable "create_eks_compute_plane" {
+  description = "Controls whether the EKS Compute Plane will be deployed as part of the grid"
+  default     = true
+}

@@ -3,12 +3,12 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 output "htc_data_cache_url" {
-  description = " URL"
+  description = "HTC Data Cache URL"
   value       = aws_elasticache_replication_group.htc_data_cache.primary_endpoint_address
 }
 
 output "htc_data_bucket_name" {
-  description = "Name of the bucket"
+  description = "HTC Data Bucket Name"
   value       = aws_s3_bucket.htc_data_bucket.id
 }
 
@@ -23,4 +23,16 @@ output "private_api_gateway_url" {
 output "api_gateway_key" {
   value     = aws_api_gateway_api_key.htc_private_api_key.value
   sensitive = true
+}
+
+output "htc_agent_permissions_policy_arn" {
+  value = aws_iam_policy.htc_agent_permissions.arn
+}
+
+output "ecr_pull_through_cache_permissions_policy_arn" {
+  value = aws_iam_policy.ecr_pull_through_cache_permissions.arn
+}
+
+output "node_drainer_lambda_role_arn" {
+  value = module.node_drainer.lambda_role_arn
 }
