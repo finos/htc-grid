@@ -94,6 +94,7 @@ This should display a similar json configuration file to this one:
   "sqs_queue": "htc_task_queue-main",
   "sqs_dlq": "htc_task_queue_dlq-main",
   "redis_url": "htc-data-cache-main.xxxxxx.0001.euw1.cache.amazonaws.com",
+  "redis_password": "123456789101112",
   "cluster_name": "htc-main",
   "ddb_state_table" : "htc_tasks_state_table-main",
   "empty_task_queue_backoff_timeout_sec" : 0.5,

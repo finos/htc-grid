@@ -121,6 +121,7 @@ def test_init_connector(mock_cognitoidp_client, mock_user_pool, ):
         "grid_storage_service": "REDIS",
         "s3_bucket": "test_bucket",
         "redis_url": "redis_url.eu-west-1.amazonaws.com",
+        "redis_password": "123456789101112",
         "public_api_gateway_url": "https://publicapi.eu-west-1.amazonaws.com",
         "private_api_gateway_url": "https://privateapi.eu-west-1.amazonaws.com",
         "api_gateway_key": "mocked_api_key_for_private_api",

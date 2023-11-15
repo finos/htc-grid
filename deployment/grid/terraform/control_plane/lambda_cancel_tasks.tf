@@ -121,6 +121,7 @@ module "cancel_tasks" {
     TASK_QUEUE_CONFIG                             = var.task_queue_config,
     S3_BUCKET                                     = aws_s3_bucket.htc_data_bucket.id,
     REDIS_URL                                     = aws_elasticache_replication_group.htc_data_cache.primary_endpoint_address,
+    REDIS_PASSWORD                                = random_password.htc_data_cache_password.result,
     METRICS_GRAFANA_PRIVATE_IP                    = var.nlb_influxdb,
     REGION                                        = var.region
   }

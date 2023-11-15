@@ -46,7 +46,7 @@ perf_tracker = performance_tracker_initializer(
     os.environ["METRICS_GRAFANA_PRIVATE_IP"])
 
 task_input_passed_via_external_storage = os.environ["TASK_INPUT_PASSED_VIA_EXTERNAL_STORAGE"]
-stdin_iom = in_out_manager(os.environ['GRID_STORAGE_SERVICE'], os.environ['S3_BUCKET'], os.environ['REDIS_URL'])
+stdin_iom = in_out_manager(os.environ['GRID_STORAGE_SERVICE'], os.environ['S3_BUCKET'], os.environ['REDIS_URL'], os.environ['REDIS_PASSWORD'])
 
 
 def write_to_dynamodb(task_json, batch):

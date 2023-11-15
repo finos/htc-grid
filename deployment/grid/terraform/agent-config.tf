@@ -11,6 +11,7 @@ locals {
   "sqs_queue": "${local.sqs_queue}",
   "sqs_dlq": "${local.sqs_dlq}",
   "redis_url": "${module.control_plane.htc_data_cache_url}",
+  "redis_password": "${module.control_plane.htc_data_cache_password}",
   "cluster_name": "${local.cluster_name}",
   "ddb_state_table" : "${local.ddb_state_table}",
   "empty_task_queue_backoff_timeout_sec" : ${var.empty_task_queue_backoff_timeout_sec},
@@ -58,12 +59,13 @@ EOF
 resource "kubernetes_config_map" "htcagentconfig" {
   metadata {
     name      = "agent-configmap"
-    namespace = "default"
+    namespace = var.htc_agent_namespace
   }
 
   data = {
     "Agent_config.tfvars.json" = local.agent_config
   }
+
   depends_on = [
     module.compute_plane,
     module.control_plane

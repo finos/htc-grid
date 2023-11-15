@@ -109,6 +109,7 @@ class AWSConnector:
             agent_config_data['grid_storage_service'],
             agent_config_data['s3_bucket'],
             agent_config_data['redis_url'],
+            agent_config_data['redis_password'],
             s3_region=agent_config_data['region'],
             s3_custom_resource=s3_custom_resource,
             redis_custom_connection=redis_custom_connection)

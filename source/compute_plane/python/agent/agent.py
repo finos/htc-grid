@@ -109,7 +109,9 @@ state_table = state_table_manager(
 
 stdout_iom = in_out_manager(
     agent_config_data['grid_storage_service'],
-    agent_config_data['s3_bucket'], agent_config_data['redis_url'],
+    agent_config_data['s3_bucket'],
+    agent_config_data['redis_url'],
+    agent_config_data['redis_password'],
     s3_region=region)
 
 perf_tracker_pre = performance_tracker_initializer(agent_config_data["metrics_are_enabled"],

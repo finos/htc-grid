@@ -113,6 +113,7 @@ module "get_results" {
     TASKS_QUEUE_DLQ_NAME                         = element(local.htc_task_queue_dlq_names, 0),
     S3_BUCKET                                    = aws_s3_bucket.htc_data_bucket.id,
     REDIS_URL                                    = aws_elasticache_replication_group.htc_data_cache.primary_endpoint_address,
+    REDIS_PASSWORD                               = random_password.htc_data_cache_password.result,
     GRID_STORAGE_SERVICE                         = var.grid_storage_service,
     TASK_QUEUE_SERVICE                           = var.task_queue_service,
     TASK_QUEUE_CONFIG                            = var.task_queue_config,

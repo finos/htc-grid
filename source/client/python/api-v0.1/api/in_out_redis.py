@@ -19,6 +19,7 @@ class InOutRedis:
     # For S3 implementation , namespace is a bucket name
     namespace = None
     cache_url = None
+    cache_password = None
 
     redis_cache = None
     redis_pubsub = None
@@ -28,6 +29,7 @@ class InOutRedis:
     def __init__(self,
                  namespace,
                  cache_url,
+                 cache_password,
                  subnamespace=None,
                  use_S3=False,
                  region=None,
@@ -38,6 +40,7 @@ class InOutRedis:
         Args:
             namespace(string): namespace of the S3 Bucket
             cache_url(string): URL of the redis cluster
+            cache_password(string): AUth password of the redis cluster
             subnamespace(string): subnamespace of the S3 bucket
             use_S3(bool): add S3  as additional backend for the dataplane
             region(string): region where the s3 bucket has been created
@@ -46,6 +49,7 @@ class InOutRedis:
         """
         self.namespace = namespace
         self.cache_url = cache_url
+        self.cache_password = cache_password
         self.subnamespace = subnamespace
 
         if use_S3:
@@ -60,7 +64,8 @@ class InOutRedis:
         if redis_custom_connection is None:
             self.redis_cache = redis.StrictRedis(
                 host = cache_url,
-                ssl=True
+                ssl=True,
+                password = cache_password
             )
         else:
             self.redis_cache = redis_custom_connection

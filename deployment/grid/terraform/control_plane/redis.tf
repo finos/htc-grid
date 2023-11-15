@@ -54,6 +54,17 @@ module "htc_data_cache_kms_key" {
 }
 
 
+resource "random_password" "htc_data_cache_password" {
+  length           = 32
+  special          = true
+  override_special = "!&#$"
+  min_lower        = 1
+  min_upper        = 1
+  min_numeric      = 1
+  min_special      = 1
+}
+
+
 resource "aws_elasticache_replication_group" "htc_data_cache" {
   replication_group_id = "htc-data-cache-${lower(local.suffix)}"
   description          = "Replication group for htc_data_cache cluster"
@@ -73,6 +84,7 @@ resource "aws_elasticache_replication_group" "htc_data_cache" {
 
   transit_encryption_enabled = true
   at_rest_encryption_enabled = true
+  auth_token                 = random_password.htc_data_cache_password.result
   kms_key_id                 = module.htc_data_cache_kms_key.key_arn
 
   depends_on = [

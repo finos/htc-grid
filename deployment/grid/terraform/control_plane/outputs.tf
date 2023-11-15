@@ -36,3 +36,8 @@ output "ecr_pull_through_cache_permissions_policy_arn" {
 output "node_drainer_lambda_role_arn" {
   value = module.node_drainer.lambda_role_arn
 }
+
+output "htc_data_cache_password" {
+  value     = random_password.htc_data_cache_password.result
+  sensitive = true
+}
