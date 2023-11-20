@@ -42,7 +42,7 @@ module "eks_cloudwatch_kms_key" {
         {
           type = "Service"
           identifiers = [
-            "logs.${var.region}.amazonaws.com"
+            "logs.${var.region}.${local.dns_suffix}"
           ]
         }
       ]
@@ -60,6 +60,7 @@ module "eks_cloudwatch_kms_key" {
   aliases = ["cloudwatch/eks/${var.cluster_name}"]
 }
 
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 19.0"
@@ -75,12 +76,7 @@ module "eks" {
   kms_key_enable_default_policy   = true
   kms_key_description             = "CMK KMS Key used to encrypt/decrypt EKS Secrets"
   kms_key_deletion_window_in_days = 7
-  kms_key_administrators = [
-    data.aws_caller_identity.current.arn
-  ]
-  kms_key_owners = [
-    data.aws_caller_identity.current.arn
-  ]
+  kms_key_administrators          = local.kms_key_admin_arns
 
   create_cloudwatch_log_group     = true
   cloudwatch_log_group_kms_key_id = module.eks_cloudwatch_kms_key.key_arn
@@ -97,6 +93,11 @@ module "eks" {
     ami_type                              = "AL2_x86_64"
     instance_types                        = ["m6i.xlarge", "m6id.xlarge", "m6a.xlarge", "m6in.xlarge", "m5.xlarge", "m5d.xlarge", "m5a.xlarge", "m5ad.xlarge", "m5n.xlarge"]
     attach_cluster_primary_security_group = false
+    iam_role_additional_policies = {
+      AmazonEC2ContainerRegistryReadOnly   = "arn:${local.partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+      CloudWatchAgentServerPolicy          = "arn:${local.partition}:iam::aws:policy/CloudWatchAgentServerPolicy",
+      EKSPullThroughCachePermissionsPolicy = var.ecr_pull_through_cache_permissions_policy_arn,
+    }
   }
 
   eks_managed_node_groups = local.eks_worker_group_map

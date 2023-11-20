@@ -38,7 +38,7 @@ module "htc_data_bucket_kms_key" {
           test     = "StringEquals"
           variable = "kms:ViaService"
           values = [
-            "s3.${var.region}.amazonaws.com"
+            "s3.${var.region}.${local.dns_suffix}"
           ]
         }
       ]
@@ -49,92 +49,55 @@ module "htc_data_bucket_kms_key" {
 }
 
 
-resource "aws_s3_bucket" "htc_data_bucket" {
+module "htc_data_bucket" {
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "~> 3.0"
+
   bucket_prefix = var.s3_bucket
   force_destroy = true
 
-  tags = {
-    Tag = "${var.suffix}"
-  }
-}
+  attach_deny_insecure_transport_policy    = true
+  attach_require_latest_tls_policy         = true
+  attach_deny_incorrect_encryption_headers = true
+  attach_deny_incorrect_kms_key_sse        = true
+  attach_deny_unencrypted_object_uploads   = true
+  allowed_kms_key_arn                      = module.htc_data_bucket_kms_key.key_arn
 
-
-resource "aws_s3_bucket_versioning" "htc_data_bucket" {
-  bucket = aws_s3_bucket.htc_data_bucket.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "htc_data_bucket_kms_encryption" {
-  bucket = aws_s3_bucket.htc_data_bucket.id
-
-  rule {
-    apply_server_side_encryption_by_default {
-      kms_master_key_id = module.htc_data_bucket_kms_key.key_arn
-      sse_algorithm     = "aws:kms"
-    }
-  }
-}
-
-
-resource "aws_s3_bucket_ownership_controls" "htc_data_bucket" {
-  bucket = aws_s3_bucket.htc_data_bucket.id
-  rule {
-    object_ownership = "BucketOwnerPreferred"
-  }
-}
-
-
-resource "aws_s3_bucket_acl" "htc_data_bucket" {
-  bucket = aws_s3_bucket.htc_data_bucket.id
-  acl    = "private"
-
-  depends_on = [
-    aws_s3_bucket_ownership_controls.htc_data_bucket,
-  ]
-}
-
-
-resource "aws_s3_bucket_public_access_block" "htc_data_bucket_public_access_block" {
-  bucket = aws_s3_bucket.htc_data_bucket.id
-
+  # S3 bucket-level Public Access Block configuration (by default now AWS has made this default as true for S3 bucket-level block public access)
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
-}
 
-data "aws_iam_policy_document" "htc_data_bucket_policy_document" {
-  statement {
-    sid = "HTTPSOnly"
-    principals {
-      identifiers = ["*"]
-      type        = "*"
-    }
+  # S3 Bucket Ownership Controls
+  # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_ownership_controls
+  control_object_ownership = true
+  object_ownership         = "BucketOwnerPreferred"
 
-    actions = [
-      "s3:*"
-    ]
+  expected_bucket_owner = local.account_id
 
-    effect = "Deny"
+  acl = "private" # "acl" conflicts with "grant" and "owner"
 
-    resources = [
-      aws_s3_bucket.htc_data_bucket.arn,
-      "${aws_s3_bucket.htc_data_bucket.arn}/*",
-    ]
+  # logging = {
+  #   target_bucket = module.log_bucket.s3_bucket_id
+  #   target_prefix = "log/"
+  # }
 
-    condition {
-      test     = "Bool"
-      variable = "aws:SecureTransport"
-      values   = ["false"]
+  versioning = {
+    status     = true
+    mfa_delete = false
+  }
+
+  server_side_encryption_configuration = {
+    rule = {
+      apply_server_side_encryption_by_default = {
+        kms_master_key_id = module.htc_data_bucket_kms_key.key_arn
+        sse_algorithm     = "aws:kms"
+      }
     }
   }
-}
 
-
-resource "aws_s3_bucket_policy" "htc_data_bucket_policy" {
-  bucket = aws_s3_bucket.htc_data_bucket.id
-  policy = data.aws_iam_policy_document.htc_data_bucket_policy_document.json
+  tags = {
+    Tag = "${var.suffix}"
+  }
 }

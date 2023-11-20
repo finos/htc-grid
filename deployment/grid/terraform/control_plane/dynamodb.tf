@@ -38,7 +38,7 @@ module "htc_dynamodb_table_kms_key" {
           test     = "StringEquals"
           variable = "kms:ViaService"
           values = [
-            "dynamodb.${var.region}.amazonaws.com"
+            "dynamodb.${var.region}.${local.dns_suffix}"
           ]
         }
       ]

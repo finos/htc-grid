@@ -29,7 +29,7 @@ module "ttl_checker_cloudwatch_kms_key" {
         {
           type = "Service"
           identifiers = [
-            "logs.${var.region}.amazonaws.com"
+            "logs.${var.region}.${local.dns_suffix}"
           ]
         }
       ]
@@ -145,7 +145,7 @@ resource "aws_lambda_permission" "allow_cloudwatch_to_call_ttl_checker_lambda" {
   statement_id  = "AllowExecutionFromCloudWatch"
   action        = "lambda:InvokeFunction"
   function_name = module.ttl_checker.lambda_function_arn
-  principal     = "events.amazonaws.com"
+  principal     = "events.${local.dns_suffix}"
   source_arn    = aws_cloudwatch_event_rule.ttl_checker_event_rule.arn
 }
 

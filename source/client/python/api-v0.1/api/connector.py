@@ -110,6 +110,7 @@ class AWSConnector:
             agent_config_data['s3_bucket'],
             agent_config_data['redis_url'],
             agent_config_data['redis_password'],
+            s3_kms_key_id=agent_config_data['s3_kms_key_id'],
             s3_region=agent_config_data['region'],
             s3_custom_resource=s3_custom_resource,
             redis_custom_connection=redis_custom_connection)
@@ -131,7 +132,7 @@ class AWSConnector:
         self.__intra_vpc = False
         logging.warning("Check Private Mode")
         if os.environ.get('INTRA_VPC'):
-            logging.warning("The client run inside a VPC")
+            logging.warning("The client is running inside the VPC")
             self.__intra_vpc = True
         self.__authorization_headers = {}
         if self.__intra_vpc:

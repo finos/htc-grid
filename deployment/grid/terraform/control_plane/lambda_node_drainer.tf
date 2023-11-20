@@ -29,7 +29,7 @@ module "node_drainer_cloudwatch_kms_key" {
         {
           type = "Service"
           identifiers = [
-            "logs.${var.region}.amazonaws.com"
+            "logs.${var.region}.${local.dns_suffix}"
           ]
         }
       ]
@@ -147,7 +147,7 @@ resource "aws_lambda_permission" "allow_cloudwatch_to_call_node_drainer" {
   statement_id  = "AllowDrainerExecutionFromCloudWatch-${count.index}"
   action        = "lambda:InvokeFunction"
   function_name = module.node_drainer.lambda_function_name
-  principal     = "events.amazonaws.com"
+  principal     = "events.${local.dns_suffix}"
   source_arn    = aws_cloudwatch_event_rule.lifecycle_hook_event_rule[count.index].arn
 }
 

@@ -45,7 +45,7 @@ module "htc_task_queue_kms_key" {
           test     = "StringEquals"
           variable = "kms:ViaService"
           values = [
-            "sqs.${var.region}.amazonaws.com"
+            "sqs.${var.region}.${local.dns_suffix}"
           ]
         }
       ]
@@ -139,7 +139,7 @@ module "htc_task_queue_dlq_kms_key" {
           test     = "StringEquals"
           variable = "kms:ViaService"
           values = [
-            "sqs.${var.region}.amazonaws.com"
+            "sqs.${var.region}.${local.dns_suffix}"
           ]
         }
       ]

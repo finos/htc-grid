@@ -29,7 +29,7 @@ module "vpc_flow_logs_cloudwatch_kms_key" {
         {
           type = "Service"
           identifiers = [
-            "logs.${var.region}.amazonaws.com"
+            "logs.${var.region}.${local.dns_suffix}"
           ]
         }
       ]
@@ -133,7 +133,7 @@ module "vpc_endpoints" {
       route_table_ids = flatten([module.vpc.intra_route_table_ids, module.vpc.private_route_table_ids, module.vpc.public_route_table_ids])
     }
     },
-    { for service in toset(["autoscaling", "ecr.api", "ecr.dkr", "ec2", "elasticloadbalancing", "eks", "execute-api", "logs", "monitoring", "sqs", "sts", "ssm", "ssmmessages"]) :
+    { for service in toset(["autoscaling", "ecr.api", "ecr.dkr", "ec2", "elasticloadbalancing", "eks", "execute-api", "logs", "monitoring", "sqs", "sts", "ssm", "ssmmessages", "xray"]) :
       replace(service, ".", "_") =>
       {
         service             = service

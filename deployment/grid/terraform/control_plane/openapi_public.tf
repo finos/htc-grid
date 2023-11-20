@@ -29,7 +29,7 @@ module "htc_public_api_cloudwatch_kms_key" {
         {
           type = "Service"
           identifiers = [
-            "logs.${var.region}.amazonaws.com"
+            "logs.${var.region}.${local.dns_suffix}"
           ]
         }
       ]
@@ -127,7 +127,7 @@ resource "aws_lambda_permission" "openapi_htc_apigw_public_lambda_permission_sub
   statement_id  = "AllowPublicSubmitAPIGatewayInvoke-${local.suffix}"
   action        = "lambda:InvokeFunction"
   function_name = module.submit_task.lambda_function_name
-  principal     = "apigateway.amazonaws.com"
+  principal     = "apigateway.${local.dns_suffix}"
 
   # The "/*/*" portion grants access from any method on any resource
   # within the API Gateway REST API.
@@ -139,7 +139,7 @@ resource "aws_lambda_permission" "openapi_htc_public_apigw_lambda_permission_res
   statement_id  = "AllowPublicResultAPIGatewayInvoke-${local.suffix}"
   action        = "lambda:InvokeFunction"
   function_name = module.get_results.lambda_function_name
-  principal     = "apigateway.amazonaws.com"
+  principal     = "apigateway.${local.dns_suffix}"
 
   # The "/*/*" portion grants access from any method on any resource
   # within the API Gateway REST API.
@@ -151,7 +151,7 @@ resource "aws_lambda_permission" "openapi_htc_apigw_public_lambda_permission_can
   statement_id  = "AllowPublicCancelAPIGatewayInvoke-${local.suffix}"
   action        = "lambda:InvokeFunction"
   function_name = module.cancel_tasks.lambda_function_name
-  principal     = "apigateway.amazonaws.com"
+  principal     = "apigateway.${local.dns_suffix}"
 
   # The "/*/*" portion grants access from any method on any resource
   # within the API Gateway REST API.

@@ -32,6 +32,7 @@ class InOutRedis:
                  cache_password,
                  subnamespace=None,
                  use_S3=False,
+                 s3_kms_key_id=None,
                  region=None,
                  s3_custom_resource=None,
                  redis_custom_connection=None):
@@ -42,7 +43,8 @@ class InOutRedis:
             cache_url(string): URL of the redis cluster
             cache_password(string): AUth password of the redis cluster
             subnamespace(string): subnamespace of the S3 bucket
-            use_S3(bool): add S3  as additional backend for the dataplane
+            use_S3(bool): add S3 as additional backend for the dataplane
+            s3_kms_key_id(string): the KMS Key ID of the S3 bucket (valid only if an S3 bucket has been deployed with data plane)
             region(string): region where the s3 bucket has been created
             s3_custom_resource(object): override default S3 resource
             redis_custom_connection(object): override default redis connection
@@ -58,8 +60,10 @@ class InOutRedis:
             else:
                 self.s3 = s3_custom_resource
             self.bucket = self.s3.Bucket(self.namespace)
+            self.s3_kms_key_id = s3_kms_key_id
         else:
             self.bucket = None
+            self.s3_kms_key_id = None
 
         if redis_custom_connection is None:
             self.redis_cache = redis.StrictRedis(
@@ -127,7 +131,9 @@ class InOutRedis:
         try:
             if self.bucket:
                 self.bucket.upload_file(
-                    Filename=file_name, Key=self.__get_full_key(task_id, postfix)
+                    Filename=file_name,
+                    Key=self.__get_full_key(task_id, postfix),
+                    ExtraArgs={"ServerSideEncryption": 'AES256', "SSEKMSKeyId": self.s3_kms_key_id}
                 )
 
             in_file = open(file_name, "rb")
@@ -144,11 +150,12 @@ class InOutRedis:
 
     def __put_from_bytes(self, task_id, data, postfix):
         try:
-
             if self.bucket:
                 with (io.BytesIO(data)) as f_data:
                     self.bucket.upload_fileobj(
-                        Fileobj=f_data, Key=self.__get_full_key(task_id, postfix)
+                        Fileobj=f_data,
+                        Key=self.__get_full_key(task_id, postfix),
+                        ExtraArgs={"ServerSideEncryption": 'AES256', "SSEKMSKeyId":  self.s3_kms_key_id}
                     )
 
             self.redis_cache.set(self.__get_full_key(task_id, postfix), data)

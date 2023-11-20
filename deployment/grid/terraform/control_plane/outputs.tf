@@ -9,7 +9,12 @@ output "htc_data_cache_url" {
 
 output "htc_data_bucket_name" {
   description = "HTC Data Bucket Name"
-  value       = aws_s3_bucket.htc_data_bucket.id
+  value       = module.htc_data_bucket.s3_bucket_id #aws_s3_bucket.htc_data_bucket.id
+}
+
+output "htc_data_bucket_key_arn" {
+  description = "HTC Data Bucket KMS Key ARN"
+  value       = module.htc_data_bucket_kms_key.key_arn
 }
 
 output "public_api_gateway_url" {

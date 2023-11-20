@@ -29,7 +29,7 @@ module "submit_task_cloudwatch_kms_key" {
         {
           type = "Service"
           identifiers = [
-            "logs.${var.region}.amazonaws.com"
+            "logs.${var.region}.${local.dns_suffix}"
           ]
         }
       ]
@@ -119,7 +119,8 @@ module "submit_task" {
     GRID_STORAGE_SERVICE                          = var.grid_storage_service,
     TASK_QUEUE_SERVICE                            = var.task_queue_service,
     TASK_QUEUE_CONFIG                             = var.task_queue_config,
-    S3_BUCKET                                     = aws_s3_bucket.htc_data_bucket.id,
+    S3_BUCKET                                     = module.htc_data_bucket.s3_bucket_id, #aws_s3_bucket.htc_data_bucket.id,
+    S3_KMS_KEY_ID                                 = module.htc_data_bucket_kms_key.key_arn,
     REDIS_URL                                     = aws_elasticache_replication_group.htc_data_cache.primary_endpoint_address,
     REDIS_PASSWORD                                = random_password.htc_data_cache_password.result,
     METRICS_GRAFANA_PRIVATE_IP                    = var.nlb_influxdb,

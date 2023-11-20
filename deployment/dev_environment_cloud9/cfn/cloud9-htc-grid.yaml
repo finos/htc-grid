@@ -78,12 +78,12 @@ Resources:
           - Effect: Allow
             Principal:
               Service:
-                - ec2.amazonaws.com
-                - ssm.amazonaws.com
+                - !Sub 'ec2.${AWS::URLSuffix}'
+                - !Sub 'ssm.${AWS::URLSuffix}'
             Action:
               - sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess'
       Path: "/"
   C9LambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -94,7 +94,7 @@ Resources:
           - Effect: Allow
             Principal:
               Service:
-                - lambda.amazonaws.com
+                - !Sub 'lambda.${AWS::URLSuffix}'
             Action:
               - sts:AssumeRole
       Path: "/"
@@ -112,7 +112,7 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: arn:aws:logs:*:*:*
+                Resource: !Sub 'arn:${AWS::Partition}:logs:*:*:*'
               - Effect: Allow
                 Action:
                   - cloudformation:DescribeStacks
@@ -153,7 +153,7 @@ Resources:
         Ref: AWS::StackName
       EnvironmentId:
         Ref: C9Instance
-      LabIdeInstanceProfileArn: !If [ NotEventEngine, !GetAtt C9InstanceProfile.Arn, !Sub 'arn:aws:iam::${AWS::AccountId}:instance-profile/TeamRoleInstanceProfile' ]
+      LabIdeInstanceProfileArn: !If [ NotEventEngine, !GetAtt C9InstanceProfile.Arn, !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:instance-profile/TeamRoleInstanceProfile' ]
   C9BootstrapInstanceLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -539,7 +539,7 @@ Resources:
         Ref: C9InstanceType
       Name:
         Ref: AWS::StackName
-      OwnerArn: !If [NotEventEngine , !Ref AWS::NoValue , !Sub 'arn:aws:sts::${AWS::AccountId}:assumed-role/TeamRole/MasterKey']
+      OwnerArn: !If [NotEventEngine , !Ref AWS::NoValue , !Sub 'arn:${AWS::Partition}:sts::${AWS::AccountId}:assumed-role/TeamRole/MasterKey']
       Tags:
         -
           Key: SSMBootstrap

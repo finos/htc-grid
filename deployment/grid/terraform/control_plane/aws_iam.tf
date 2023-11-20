@@ -205,7 +205,7 @@ resource "aws_iam_role" "apigateway_cloudwatch_role" {
     {
       "Action": "sts:AssumeRole",
       "Principal": {
-        "Service": "apigateway.amazonaws.com"
+        "Service": "apigateway.${local.dns_suffix}"
       },
       "Effect": "Allow",
       "Sid": ""

@@ -28,7 +28,7 @@ module "scaling_metrics_cloudwatch_kms_key" {
         {
           type = "Service"
           identifiers = [
-            "logs.${var.region}.amazonaws.com"
+            "logs.${var.region}.${local.dns_suffix}"
           ]
         }
       ]
@@ -142,7 +142,7 @@ resource "aws_lambda_permission" "allow_cloudwatch_to_call_scaling_metrics_lambd
   statement_id  = "AllowExecutionFromCloudWatch"
   action        = "lambda:InvokeFunction"
   function_name = module.scaling_metrics.lambda_function_name
-  principal     = "events.amazonaws.com"
+  principal     = "events.${local.dns_suffix}"
   source_arn    = aws_cloudwatch_event_rule.scaling_metrics_event_rule.arn
 }
 

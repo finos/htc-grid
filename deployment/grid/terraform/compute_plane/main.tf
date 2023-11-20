@@ -13,12 +13,6 @@ locals {
   eks_worker_group = concat([
     for index in range(0, length(var.eks_worker_groups)) :
     merge(var.eks_worker_groups[index], {
-      iam_role_additional_policies = {
-        AmazonEC2ContainerRegistryReadOnly = "arn:${local.partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
-        CloudWatchAgentServerPolicy        = "arn:${local.partition}:iam::aws:policy/CloudWatchAgentServerPolicy",
-        eks_pull_through_cache_permissions = var.ecr_pull_through_cache_permissions_policy_arn,
-      }
-
       block_device_mappings = {
         xvda = {
           device_name = "/dev/xvda"
@@ -47,11 +41,6 @@ locals {
       {
         node_group_name = "core-ondemand",
         capacity_type   = "ON_DEMAND",
-        iam_role_additional_policies = {
-          AmazonEC2ContainerRegistryReadOnly = "arn:${local.partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
-          CloudWatchAgentServerPolicy        = "arn:${local.partition}:iam::aws:policy/CloudWatchAgentServerPolicy",
-          eks_pull_through_cache_permissions = var.ecr_pull_through_cache_permissions_policy_arn,
-        }
 
         min_size     = 2,
         max_size     = 6,
@@ -121,7 +110,7 @@ module "eks_ebs_kms_key" {
 
   key_service_roles_for_autoscaling = [
     # Required for the ASG to manage encrypted volumes for nodes
-    "arn:${local.partition}:iam::${local.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling",
+    "arn:${local.partition}:iam::${local.account_id}:role/aws-service-role/autoscaling.${local.dns_suffix}/AWSServiceRoleForAutoScaling",
     # Required for the Cluster / persistentvolume-controller to create encrypted PVCs
     module.eks.cluster_iam_role_arn,
   ]

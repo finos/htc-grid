@@ -43,7 +43,7 @@ module "htc_data_cache_kms_key" {
           test     = "StringEquals"
           variable = "kms:ViaService"
           values = [
-            "elasticache.${var.region}.amazonaws.com"
+            "elasticache.${var.region}.${local.dns_suffix}"
           ]
         }
       ]

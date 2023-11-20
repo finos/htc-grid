@@ -7,7 +7,7 @@ locals {
   agent_config = <<EOF
 {
   "region": "${var.region}",
-  "sqs_endpoint": "https://sqs.${var.region}.amazonaws.com",
+  "sqs_endpoint": "https://sqs.${var.region}.${local.dns_suffix}",
   "sqs_queue": "${local.sqs_queue}",
   "sqs_dlq": "${local.sqs_dlq}",
   "redis_url": "${module.control_plane.htc_data_cache_url}",
@@ -26,6 +26,7 @@ locals {
   "lambda_name_get_results": "${local.lambda_name_get_results}",
   "lambda_name_cancel_tasks": "${local.lambda_name_cancel_tasks}",
   "s3_bucket": "${module.control_plane.htc_data_bucket_name}",
+  "s3_kms_key_id": "${module.control_plane.htc_data_bucket_key_arn}",
   "grid_storage_service" : "${var.grid_storage_service}",
   "task_queue_service" : "${var.task_queue_service}",
   "task_queue_config" : "${var.task_queue_config}",

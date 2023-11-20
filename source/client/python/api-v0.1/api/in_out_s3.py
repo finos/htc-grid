@@ -25,10 +25,12 @@ class InOutS3:
     namespace = None
     # For S3 implementation , subnamespace is a directory
     subnamespace = None
+    # S3 KMS Key ID
+    s3_kms_key_id = None
 
     s3 = None
 
-    def __init__(self, namespace, region, subnamespace=None, s3_custom_resource=None):
+    def __init__(self, namespace, region, s3_kms_key_id, subnamespace=None, s3_custom_resource=None):
         """Initialize a dataplane backed by an S3 bucket
 
         Args:
@@ -40,6 +42,7 @@ class InOutS3:
 
         self.namespace = namespace
         self.subnamespace = subnamespace
+
         if s3_custom_resource is None:
             self.s3 = boto3.resource('s3', region_name=region)
             logger.warning('using s3 resource from AWS')
@@ -47,6 +50,7 @@ class InOutS3:
             self.s3 = s3_custom_resource
             logger.warning('using s3 resource from other provider')
         self.bucket = self.s3.Bucket(self.namespace)
+        self.s3_kms_key_id = s3_kms_key_id
 
     def put_input_from_file(self, task_id, file_name):
         return self.__put_from_file(task_id, file_name, INPUT_POSTFIX)
@@ -114,7 +118,7 @@ class InOutS3:
 
     def __put_from_file(self, task_id, file_name, postfix):
         try:
-            self.bucket.upload_file(Filename=file_name, Key=self.__get_full_key(task_id, postfix))
+            self.bucket.upload_file(Filename=file_name, Key=self.__get_full_key(task_id, postfix), ExtraArgs={"ServerSideEncryption": 'AES256', "SSEKMSKeyId": self.s3_kms_key_id})
         except Exception as e:
             print(e, file=sys.stderr)
             raise e
@@ -129,7 +133,7 @@ class InOutS3:
     def __put_from_bytes(self, task_id, data, postfix):
         try:
             with (io.BytesIO(data)) as f_data:
-                self.bucket.upload_fileobj(Fileobj=f_data, Key=self.__get_full_key(task_id, postfix))
+                self.bucket.upload_fileobj(Fileobj=f_data, Key=self.__get_full_key(task_id, postfix), ExtraArgs={"ServerSideEncryption": 'AES256', "SSEKMSKeyId": self.s3_kms_key_id})
         except Exception as e:
             print(e, file=sys.stderr)
             raise e
@@ -172,7 +176,7 @@ class InOutS3:
             print(full_new_key)
             print(copy_source)
             target_bucket = self.s3.Bucket(new_namespace)
-            target_bucket.copy(CopySource=copy_source, Key=full_new_key)
+            target_bucket.copy(CopySource=copy_source, Key=full_new_key, ExtraArgs={"ServerSideEncryption": 'AES256', "SSEKMSKeyId": self.s3_kms_key_id})
         except Exception as e:
             print(e, file=sys.stderr)
             raise e

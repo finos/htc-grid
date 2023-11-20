@@ -29,7 +29,7 @@ module "get_results_cloudwatch_kms_key" {
         {
           type = "Service"
           identifiers = [
-            "logs.${var.region}.amazonaws.com"
+            "logs.${var.region}.${local.dns_suffix}"
           ]
         }
       ]
@@ -111,7 +111,8 @@ module "get_results" {
     STATE_TABLE_CONFIG                           = var.state_table_config,
     TASKS_QUEUE_NAME                             = element(local.htc_task_queue_names, 0),
     TASKS_QUEUE_DLQ_NAME                         = element(local.htc_task_queue_dlq_names, 0),
-    S3_BUCKET                                    = aws_s3_bucket.htc_data_bucket.id,
+    S3_BUCKET                                    = module.htc_data_bucket.s3_bucket_id, #aws_s3_bucket.htc_data_bucket.id,
+    S3_KMS_KEY_ID                                = module.htc_data_bucket_kms_key.key_arn,
     REDIS_URL                                    = aws_elasticache_replication_group.htc_data_cache.primary_endpoint_address,
     REDIS_PASSWORD                               = random_password.htc_data_cache_password.result,
     GRID_STORAGE_SERVICE                         = var.grid_storage_service,

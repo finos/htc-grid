@@ -39,7 +39,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
             Action: 'kms:*'
             Resource: '*'
           - Effect: Allow
@@ -55,17 +55,17 @@ Resources:
             Condition:
               StringEquals:
                 kms:ViaService:
-                  - !Sub 'ec2.${AWS::Region}.amazonaws.com'
-                  - !Sub 's3.${AWS::Region}.amazonaws.com'
-                  - !Sub 'sqs.${AWS::Region}.amazonaws.com'
-                  - !Sub 'dynamodb.${AWS::Region}.amazonaws.com'
-                  - !Sub 'ecr.${AWS::Region}.amazonaws.com'
-                  - !Sub 'eks.${AWS::Region}.amazonaws.com'
-                  - !Sub 'elasticache.${AWS::Region}.amazonaws.com'
-                  - !Sub 'lambda.${AWS::Region}.amazonaws.com'
+                  - !Sub 'ec2.${AWS::Region}.${AWS::URLSuffix}'
+                  - !Sub 's3.${AWS::Region}.${AWS::URLSuffix}'
+                  - !Sub 'sqs.${AWS::Region}.${AWS::URLSuffix}'
+                  - !Sub 'dynamodb.${AWS::Region}.${AWS::URLSuffix}'
+                  - !Sub 'ecr.${AWS::Region}.${AWS::URLSuffix}'
+                  - !Sub 'eks.${AWS::Region}.${AWS::URLSuffix}'
+                  - !Sub 'elasticache.${AWS::Region}.${AWS::URLSuffix}'
+                  - !Sub 'lambda.${AWS::Region}.${AWS::URLSuffix}'
           - Effect: Allow
             Principal:
-              Service: !Sub 'logs.${AWS::Region}.amazonaws.com'
+              Service: !Sub 'logs.${AWS::Region}.${AWS::URLSuffix}'
             Action:
               - kms:Encrypt*
               - kms:Decrypt*
@@ -75,11 +75,10 @@ Resources:
             Resource: '*'
             Condition:
               ArnEquals:
-                kms:EncryptionContext:aws:logs:arn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*:*'
+                kms:EncryptionContext:aws:logs:arn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*:*'
           - Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling'
-              #AWS: 'arn:aws:iam::081752890991:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling'
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.${AWS::URLSuffix}/AWSServiceRoleForAutoScaling'
             Action:
               - kms:Encrypt*
               - kms:Decrypt*
@@ -89,9 +88,7 @@ Resources:
             Resource: '*'
           - Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling'
-            #Principal:
-            #  AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.amazonaws.com'
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.${AWS::URLSuffix}/AWSServiceRoleForAutoScaling'
             Action:
               - kms:CreateGrant
             Resource: '*'
@@ -185,8 +182,8 @@ Resources:
             Condition:
               StringLike:
                 's3:x-amz-grant-read':
-                  - '*http://acs.amazonaws.com/groups/global/AllUsers*'
-                  - '*http://acs.amazonaws.com/groups/global/AuthenticatedUsers*'
+                  - !Sub '*http://acs.${AWS::URLSuffix}/groups/global/AllUsers*'
+                  - !Sub '*http://acs.${AWS::URLSuffix}/groups/global/AuthenticatedUsers*'
             Effect: Deny
             Principal: '*'
             Resource:
@@ -274,8 +271,8 @@ Resources:
             Condition:
               StringLike:
                 's3:x-amz-grant-read':
-                  - '*http://acs.amazonaws.com/groups/global/AllUsers*'
-                  - '*http://acs.amazonaws.com/groups/global/AuthenticatedUsers*'
+                  - !Sub '*http://acs.${AWS::URLSuffix}/groups/global/AllUsers*'
+                  - !Sub '*http://acs.${AWS::URLSuffix}/groups/global/AuthenticatedUsers*'
             Effect: Deny
             Principal: '*'
             Resource:
@@ -363,8 +360,8 @@ Resources:
             Condition:
               StringLike:
                 's3:x-amz-grant-read':
-                  - '*http://acs.amazonaws.com/groups/global/AllUsers*'
-                  - '*http://acs.amazonaws.com/groups/global/AuthenticatedUsers*'
+                  - !Sub '*http://acs.${AWS::URLSuffix}/groups/global/AllUsers*'
+                  - !Sub '*http://acs.${AWS::URLSuffix}/groups/global/AuthenticatedUsers*'
             Effect: Deny
             Principal: '*'
             Resource:

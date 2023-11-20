@@ -31,7 +31,7 @@ locals {
   lambda_configuration_s3_bucket = split("/", var.lambda_configuration_s3_source)[2]
   s3_bucket_arns = tolist(
     [
-      aws_s3_bucket.htc_data_bucket.arn,
+      module.htc_data_bucket.s3_bucket_arn, #aws_s3_bucket.htc_data_bucket.arn,
       data.aws_s3_bucket.lambda_configuration_s3_source.arn
     ]
   )
