@@ -9,7 +9,7 @@ BUCKET_NAME=
 FILE_HANDLER=
 FUNCTION_HANDLER=
 ACCOUNT_ID?=$(shell aws sts get-caller-identity | jq -r '.Account')
-BUCKET_NAME=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`LambdaUnitHtcGridBucketId`].OutputValue' --output text)
+BUCKET_NAME=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`LambdaLayerBucketID`].OutputValue' --output text)
 S3_KMS_KEY_ARN=$(shell aws kms describe-key --key-id $(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`HTCStateS3KeyAlias`].OutputValue' --output text) --query 'KeyMetadata.Arn' --output text)
 
 

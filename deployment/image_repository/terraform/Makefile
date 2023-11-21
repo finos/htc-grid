@@ -4,7 +4,7 @@
 
 REGION?=eu-west-1
 
-S3_IMAGE_TFSTATE_BUCKET_NAME:=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`ImageTfstateHtcGridBucketId`].OutputValue' --output text)
+IMAGE_TFSTATE_BUCKET:=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`ImageTFStateBucketID`].OutputValue' --output text)
 S3_KMS_KEY_ARN:=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`HTCStateS3KeyAlias`].OutputValue' --output text)
 TF_SRCS:=$(wildcard *.tf)
 
@@ -14,7 +14,7 @@ all:
 
 
 init:
-	terraform init -backend-config="bucket=$(S3_IMAGE_TFSTATE_BUCKET_NAME)" -backend-config="encrypt=true" -backend-config="kms_key_id=$(S3_KMS_KEY_ARN)" -backend-config="region=$(REGION)"
+	terraform init -backend-config="bucket=$(IMAGE_TFSTATE_BUCKET)" -backend-config="encrypt=true" -backend-config="kms_key_id=$(S3_KMS_KEY_ARN)" -backend-config="region=$(REGION)"
 
 apply: $(TF_SRCS) $(GRID_CONFIG)
 	terraform apply -var-file ../images_config.json -parallelism=1 -var region=$(REGION) -var rebuild_runtimes=$(REBUILD_RUNTIMES)

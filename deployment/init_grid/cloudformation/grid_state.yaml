@@ -334,13 +334,13 @@ Outputs:
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
-  ImageTfstateHtcGridBucketId:
+  ImageTFStateBucketID:
     Description: 'S3 bucket name of image tfstate htc-grid'
     Value: !Ref ImageTfstateHtcGrid
-  TfstateHtcGridBucketId:
+  GridTFStateBucketID:
     Description: 'S3 bucket name of tfstate htc-grid'
     Value: !Ref TfstateHtcGrid
-  LambdaUnitHtcGridBucketId:
+  LambdaLayerBucketID:
     Description: 'S3 bucket name of lambda unit htc-grid'
     Value: !Ref LambdaUnitHtcGrid
   HTCStateS3KeyAlias:

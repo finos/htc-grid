@@ -6,6 +6,9 @@
 BUILD_DIR:=.build
 export TAG
 export REGION?=eu-west-1
+export GRID_TFSTATE_BUCKET=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`GridTFStateBucketID`].OutputValue' --output text)
+export IMAGE_TFSTATE_BUCKET=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`ImageTFStateBucketID`].OutputValue' --output text)
+export LAMBDA_LAYER_BUCKET=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`LambdaLayerBucketID`].OutputValue' --output text)
 
 YAML_SRC:=grid_state.yaml
 
@@ -34,13 +37,19 @@ $(TAG)-workload-bucket: $(BUILD_DIR)/grid_init/init-grid-$(TAG)-workload-bucket
 init: $(BUILD_DIR)/grid_init
 
 clean-grid-state:
-	aws --region $(REGION) s3 rm --recursive s3://$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`TfstateHtcGridBucketId`].OutputValue' --output text) || true
+	aws --region $(REGION) s3 rm --recursive s3://$(GRID_TFSTATE_BUCKET) || true
+	@aws s3api delete-objects --bucket $(GRID_TFSTATE_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(GRID_TFSTATE_BUCKET) --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}')'
+	@aws s3api delete-objects --bucket $(GRID_TFSTATE_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(GRID_TFSTATE_BUCKET) --query='{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}')'
 
 clean-image-state:
-	aws --region $(REGION) s3 rm --recursive s3://$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`ImageTfstateHtcGridBucketId`].OutputValue' --output text) || true
+	aws --region $(REGION) s3 rm --recursive s3://$(IMAGE_TFSTATE_BUCKET) || true
+	@aws s3api delete-objects --bucket $(IMAGE_TFSTATE_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(IMAGE_TFSTATE_BUCKET) --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}')'
+	@aws s3api delete-objects --bucket $(IMAGE_TFSTATE_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(IMAGE_TFSTATE_BUCKET) --query='{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}')'
 
 clean-lambda-storage:
-	aws --region $(REGION) s3 rm --recursive s3://$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`LambdaUnitHtcGridBucketId`].OutputValue' --output text) || true
+	aws --region $(REGION) s3 rm --recursive s3://$(LAMBDA_LAYER_BUCKET) || true
+	@aws s3api delete-objects --bucket $(LAMBDA_LAYER_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(LAMBDA_LAYER_BUCKET) --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}')'
+	@aws s3api delete-objects --bucket $(LAMBDA_LAYER_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(LAMBDA_LAYER_BUCKET) --query='{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}')'
 
 clean: clean-image-state clean-grid-state clean-lambda-storage
 	rm -rf $(BUILD_DIR)/grid_init/tag.*

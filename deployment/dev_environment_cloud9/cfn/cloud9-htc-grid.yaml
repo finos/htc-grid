@@ -70,18 +70,18 @@ Resources:
     Condition: NotEventEngine
     Properties:
       Tags:
-        - Key: Environment
-          Value: AWS Example
+      - Key: Environment
+        Value: !Ref 'AWS::StackName'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - !Sub 'ec2.${AWS::URLSuffix}'
-                - !Sub 'ssm.${AWS::URLSuffix}'
-            Action:
-              - sts:AssumeRole
+        - Effect: Allow
+          Principal:
+            Service:
+            - !Sub 'ec2.${AWS::URLSuffix}'
+            - !Sub 'ssm.${AWS::URLSuffix}'
+          Action:
+          - sts:AssumeRole
       ManagedPolicyArns:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess'
       Path: "/"
@@ -91,40 +91,40 @@ Resources:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - !Sub 'lambda.${AWS::URLSuffix}'
-            Action:
-              - sts:AssumeRole
+        - Effect: Allow
+          Principal:
+            Service:
+            - !Sub 'lambda.${AWS::URLSuffix}'
+          Action:
+          - sts:AssumeRole
       Path: "/"
       Policies:
         - PolicyName: !Sub 'C9LambdaPolicy-${AWS::Region}'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: !Sub 'arn:${AWS::Partition}:logs:*:*:*'
-              - Effect: Allow
-                Action:
-                  - cloudformation:DescribeStacks
-                  - cloudformation:DescribeStackEvents
-                  - cloudformation:DescribeStackResource
-                  - cloudformation:DescribeStackResources
-                  - ec2:DescribeInstances
-                  - ec2:DescribeVolumes
-                  - ec2:AssociateIamInstanceProfile
-                  - ec2:DescribeIamInstanceProfileAssociations
-                  - ec2:ModifyInstanceAttribute
-                  - ec2:ModifyVolume
-                  - ec2:ReplaceIamInstanceProfileAssociation
-                  - iam:ListInstanceProfiles
-                  - iam:PassRole
-                Resource: "*"
+            - Effect: Allow
+              Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              Resource: !Sub 'arn:${AWS::Partition}:logs:*:*:*'
+            - Effect: Allow
+              Action:
+              - cloudformation:DescribeStacks
+              - cloudformation:DescribeStackEvents
+              - cloudformation:DescribeStackResource
+              - cloudformation:DescribeStackResources
+              - ec2:DescribeInstances
+              - ec2:DescribeVolumes
+              - ec2:AssociateIamInstanceProfile
+              - ec2:DescribeIamInstanceProfileAssociations
+              - ec2:ModifyInstanceAttribute
+              - ec2:ModifyVolume
+              - ec2:ReplaceIamInstanceProfileAssociation
+              - iam:ListInstanceProfiles
+              - iam:PassRole
+              Resource: "*"
 
   ################## LAMBDA BOOTSTRAP FUNCTION ################
 
@@ -137,8 +137,8 @@ Resources:
       - C9LambdaExecutionRole
     Properties:
       Tags:
-        - Key: Environment
-          Value: AWS Example
+      - Key: Environment
+        Value: !Ref 'AWS::StackName'
       ServiceToken: !GetAtt C9BootstrapInstanceLambdaFunction.Arn
       REGION: !Ref 'AWS::Region'
       StackName: !Ref 'AWS::StackName'
@@ -149,8 +149,8 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Tags:
-        - Key: Environment
-          Value: AWS Example
+      - Key: Environment
+        Value: !Ref 'AWS::StackName'
       Handler: index.lambda_handler
       Role: !GetAtt C9LambdaExecutionRole.Arn
       Runtime: python3.7
@@ -270,8 +270,8 @@ Resources:
     Type: AWS::SSM::Document
     Properties:
       Tags:
-        - Key: Environment
-          Value: AWS Example
+      - Key: Environment
+        Value: !Ref 'AWS::StackName'
       Content: Yaml
       DocumentType: Command
       Content:
@@ -503,12 +503,12 @@ Resources:
           OutputS3BucketName: !Ref C9OutputBucket
           OutputS3KeyPrefix: bootstrapoutput
       Targets:
-        - Key: tag:SSMBootstrap
-          Values:
-          - Active
-        - Key: tag:Environment
-          Values:
-          - !Ref 'AWS::StackName'
+      - Key: tag:SSMBootstrap
+        Values:
+        - Active
+      - Key: tag:Environment
+        Values:
+        - !Ref 'AWS::StackName'
 
   ################## INSTANCE #####################
   C9InstanceProfile:
@@ -528,8 +528,8 @@ Resources:
       Tags:
         - Key: SSMBootstrap
           Value: Active
-        - Key: Environment
-          Value: !Ref 'AWS::StackName'
+        # - Key: Environment
+        #   Value: !Ref 'AWS::StackName'
       Name: !Ref 'AWS::StackName'
       Description: AWS Cloud9 instance for Examples
       AutomaticStopTimeMinutes: 3600
