@@ -15,7 +15,7 @@ module "htc_data_bucket_kms_key" {
 
   key_statements = [
     {
-      sid    = "Allow CMK KMS Key Access via SQS Service"
+      sid    = "Allow CMK KMS Key Access via S3 Service"
       effect = "Allow"
       actions = [
         "kms:Encrypt*",

@@ -55,46 +55,7 @@ Resources:
             Condition:
               StringEquals:
                 kms:ViaService:
-                  - !Sub 'ec2.${AWS::Region}.${AWS::URLSuffix}'
                   - !Sub 's3.${AWS::Region}.${AWS::URLSuffix}'
-                  - !Sub 'sqs.${AWS::Region}.${AWS::URLSuffix}'
-                  - !Sub 'dynamodb.${AWS::Region}.${AWS::URLSuffix}'
-                  - !Sub 'ecr.${AWS::Region}.${AWS::URLSuffix}'
-                  - !Sub 'eks.${AWS::Region}.${AWS::URLSuffix}'
-                  - !Sub 'elasticache.${AWS::Region}.${AWS::URLSuffix}'
-                  - !Sub 'lambda.${AWS::Region}.${AWS::URLSuffix}'
-          - Effect: Allow
-            Principal:
-              Service: !Sub 'logs.${AWS::Region}.${AWS::URLSuffix}'
-            Action:
-              - kms:Encrypt*
-              - kms:Decrypt*
-              - kms:ReEncrypt*
-              - kms:GenerateDataKey*
-              - kms:Describe*
-            Resource: '*'
-            Condition:
-              ArnEquals:
-                kms:EncryptionContext:aws:logs:arn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*:*'
-          - Effect: Allow
-            Principal:
-              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.${AWS::URLSuffix}/AWSServiceRoleForAutoScaling'
-            Action:
-              - kms:Encrypt*
-              - kms:Decrypt*
-              - kms:ReEncrypt*
-              - kms:GenerateDataKey*
-              - kms:Describe*
-            Resource: '*'
-          - Effect: Allow
-            Principal:
-              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.${AWS::URLSuffix}/AWSServiceRoleForAutoScaling'
-            Action:
-              - kms:CreateGrant
-            Resource: '*'
-            Condition:
-              Bool:
-                kms:GrantIsForAWSResource: true
   HTCStateS3KeyAlias:
     Type: AWS::KMS::Alias
     Properties:
