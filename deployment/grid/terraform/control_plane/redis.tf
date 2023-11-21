@@ -112,13 +112,37 @@ resource "aws_security_group" "allow_incoming_redis" {
     cidr_blocks = [var.vpc_cidr]
   }
 
+  ingress {
+    description = "Allow inbound Redis access on tcp/6379 from allowed_access_cidr_blocks"
+    from_port   = 6379
+    to_port     = 6379
+    protocol    = "tcp"
+    cidr_blocks = var.allowed_access_cidr_blocks
+  }
+
   egress {
-    description = "Allow outbound Redis traffic"
+    description = "Allow outbound Redis access to VPC"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.vpc_cidr]
   }
+
+  egress {
+    description = "Allow outbound Redis access to allowed_access_cidr_blocks"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = var.allowed_access_cidr_blocks
+  }
+
+  # egress {
+  #   description = "Allow outbound Redis traffic"
+  #   from_port   = 0
+  #   to_port     = 0
+  #   protocol    = "-1"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
 }
 
 

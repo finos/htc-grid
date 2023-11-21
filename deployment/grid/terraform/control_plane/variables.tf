@@ -272,3 +272,8 @@ variable "lambda_configuration_s3_source_kms_key_arn" {
   description = "The CMK KMS Key ARN for the Lambda Layer S3 bucket source"
   type        = string
 }
+
+variable "allowed_access_cidr_blocks" {
+  description = "List of CIDR blocks which are allowed ingress/egress access from/to the VPC"
+  type        = list(string)
+}

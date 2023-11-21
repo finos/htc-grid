@@ -140,3 +140,8 @@ variable "node_drainer_lambda_role_arn" {
   description = "Node Drainer Lambda Role ARN"
   type        = string
 }
+
+variable "allowed_access_cidr_blocks" {
+  description = "List of CIDR blocks which are allowed ingress/egress access from/to the VPC"
+  type        = list(string)
+}

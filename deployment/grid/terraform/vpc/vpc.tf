@@ -3,6 +3,12 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
+locals {
+  vpc_cidr_range             = "10.0.0.0/16"
+  allowed_access_cidr_blocks = join(",", concat([local.vpc_cidr_range], var.allowed_access_cidr_blocks))
+}
+
+
 module "vpc_flow_logs_cloudwatch_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"
@@ -53,7 +59,7 @@ module "vpc" {
   version = "~> 5.0"
 
   name               = "${var.cluster_name}-vpc"
-  cidr               = "10.0.0.0/16"
+  cidr               = local.vpc_cidr_range
   azs                = data.aws_availability_zones.available.names
   private_subnets    = local.private_subnets
   public_subnets     = local.public_subnets
@@ -73,6 +79,16 @@ module "vpc" {
   flow_log_cloudwatch_log_group_name_prefix = "/aws/vpc-flow-logs/"
   flow_log_cloudwatch_log_group_name_suffix = "${var.cluster_name}-vpc"
 
+  # Disable dedicated Private Subnet ACL (as using default)
+  private_dedicated_network_acl = false
+  private_inbound_acl_rules     = []
+  private_outbound_acl_rules    = []
+
+  # Disable dedicated Public Subnet ACL (as using default)
+  public_dedicated_network_acl = false
+  public_inbound_acl_rules     = []
+  public_outbound_acl_rules    = []
+
   default_security_group_ingress = [
     {
       description = "HTTPS Ingress from within VPC"
@@ -81,7 +97,7 @@ module "vpc" {
       from_port   = 443
       to_port     = 443
       protocol    = "tcp"
-      cidr_blocks = "10.0.0.0/16"
+      cidr_blocks = local.allowed_access_cidr_blocks
     }
   ]
 

@@ -26,6 +26,8 @@ locals {
   s3_bucket                   = "${var.s3_bucket}-${local.project_name}"
   error_log_group             = "${var.error_log_group}-${local.project_name}"
   error_logging_stream        = "${var.error_logging_stream}-${local.project_name}"
+  default_vpc_cidr_blocks     = data.aws_vpc.default.cidr_block_associations[*].cidr_block
+  allowed_access_cidr_blocks  = concat(var.allowed_access_cidr_blocks, local.default_vpc_cidr_blocks)
 
   default_agent_configuration = {
     agent_chart_url = "../charts"
@@ -82,6 +84,11 @@ data "aws_caller_identity" "current" {}
 data "aws_partition" "current" {}
 
 
+# Default VPC
+data "aws_vpc" "default" {
+  default = true
+}
+
 resource "random_string" "random_resources" {
   length  = 5
   special = false
@@ -104,12 +111,13 @@ resource "random_password" "password" {
 module "vpc" {
   source = "./vpc"
 
-  region                = var.region
-  cluster_name          = local.cluster_name
-  vpc_range             = 16
-  private_subnets       = var.vpc_cidr_block_private
-  public_subnets        = var.vpc_cidr_block_public
-  enable_private_subnet = var.enable_private_subnet
+  region                     = var.region
+  cluster_name               = local.cluster_name
+  vpc_range                  = 16
+  private_subnets            = var.vpc_cidr_block_private
+  public_subnets             = var.vpc_cidr_block_public
+  enable_private_subnet      = var.enable_private_subnet
+  allowed_access_cidr_blocks = local.allowed_access_cidr_blocks
 }
 
 
@@ -122,6 +130,7 @@ module "compute_plane" {
   vpc_public_subnet_ids         = module.vpc.public_subnet_ids
   vpc_default_security_group_id = module.vpc.default_security_group_id
   vpc_cidr                      = module.vpc.vpc_cidr_block
+  allowed_access_cidr_blocks    = local.allowed_access_cidr_blocks
   cluster_name                  = local.cluster_name
   kubernetes_version            = var.kubernetes_version
   k8s_ca_version                = var.k8s_ca_version
@@ -171,6 +180,7 @@ module "control_plane" {
   vpc_public_subnet_ids                         = module.vpc.public_subnet_ids
   vpc_default_security_group_id                 = module.vpc.default_security_group_id
   vpc_cidr                                      = module.vpc.vpc_cidr_block
+  allowed_access_cidr_blocks                    = local.allowed_access_cidr_blocks
   suffix                                        = local.project_name
   region                                        = var.region
   lambda_runtime                                = var.lambda_runtime

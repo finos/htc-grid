@@ -42,3 +42,8 @@ variable "kms_key_admin_roles" {
   description = "List of roles to assign KMS Key Administrator permissions"
   default     = []
 }
+
+variable "allowed_access_cidr_blocks" {
+  description = "List of CIDR blocks which are allowed ingress/egress access from/to the VPC"
+  type        = list(string)
+}

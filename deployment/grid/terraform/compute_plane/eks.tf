@@ -68,14 +68,15 @@ module "eks" {
   cluster_name    = var.cluster_name
   cluster_version = var.kubernetes_version
 
-  cluster_endpoint_public_access  = true
-  cluster_endpoint_private_access = var.enable_private_subnet
+  cluster_endpoint_public_access       = true
+  # cluster_endpoint_public_access_cidrs = var.allowed_access_cidr_blocks
+  cluster_endpoint_private_access      = var.enable_private_subnet
 
   create_kms_key                  = true
   enable_kms_key_rotation         = true
   kms_key_enable_default_policy   = true
   kms_key_description             = "CMK KMS Key used to encrypt/decrypt EKS Secrets"
-  kms_key_deletion_window_in_days = 7
+  kms_key_deletion_window_in_days = var.kms_deletion_window
   kms_key_administrators          = local.kms_key_admin_arns
 
   create_cloudwatch_log_group     = true

@@ -400,10 +400,18 @@ variable "kms_deletion_window" {
 
 variable "kms_key_admin_roles" {
   description = "List of roles to assign KMS Key Administrator permissions"
+  type        = list(string)
   default     = []
 }
 
 variable "create_eks_compute_plane" {
   description = "Controls whether the EKS Compute Plane will be deployed as part of the grid"
+  type        = bool
   default     = true
+}
+
+variable "allowed_access_cidr_blocks" {
+  description = "List of CIDR blocks which are allowed ingress/egress access from/to the VPC"
+  type        = list(string)
+  default     = []
 }

@@ -62,9 +62,10 @@ resource "aws_iam_policy" "htc_agent_permissions" {
       "Action": [
         "logs:CreateLogGroup",
         "logs:CreateLogStream",
+        "logs:DescribeLogStreams",
         "logs:PutLogEvents"
       ],
-      "Resource": "${aws_cloudwatch_log_group.global_error_group.arn}",
+      "Resource": "${aws_cloudwatch_log_group.global_error_group.arn}:*",
       "Effect": "Allow"
     },
     {

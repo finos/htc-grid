@@ -34,6 +34,7 @@ data "aws_iam_role" "additional_kms_key_admin_roles" {
   name = each.key
 }
 
+
 data "aws_availability_zones" "available" {
   state = "available"
 }
