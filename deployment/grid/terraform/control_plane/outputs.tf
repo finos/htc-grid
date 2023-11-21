@@ -34,8 +34,8 @@ output "htc_agent_permissions_policy_arn" {
   value = aws_iam_policy.htc_agent_permissions.arn
 }
 
-output "ecr_pull_through_cache_permissions_policy_arn" {
-  value = aws_iam_policy.ecr_pull_through_cache_permissions.arn
+output "ecr_pull_through_cache_policy_arn" {
+  value = aws_iam_policy.ecr_pull_through_cache_policy.arn
 }
 
 output "node_drainer_lambda_role_arn" {

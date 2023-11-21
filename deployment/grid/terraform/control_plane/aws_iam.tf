@@ -89,7 +89,7 @@ resource "aws_iam_policy" "htc_agent_permissions" {
         "kms:Decrypt",
         "kms:GenerateDataKey"
       ],
-      "Resource": ${jsonencode(local.htc_agent_access_kms_key_arns)},
+      "Resource": ${jsonencode(local.control_plane_kms_key_arns)},
       "Effect": "Allow"
     }
   ]
@@ -99,8 +99,8 @@ EOF
 
 
 #ECR Pull Through Cache Permissions
-resource "aws_iam_policy" "ecr_pull_through_cache_permissions" {
-  name        = "ecr_pull_through_cache_permissions_policy_${local.suffix}"
+resource "aws_iam_policy" "ecr_pull_through_cache_policy" {
+  name        = "ecr_pull_through_cache_policy_${local.suffix}"
   path        = "/"
   description = "IAM policy for ECR Pull-Through-Cache Permissions"
   policy      = <<EOF

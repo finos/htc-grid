@@ -51,7 +51,7 @@ module "global_error_cloudwatch_kms_key" {
 
 resource "aws_cloudwatch_log_group" "global_error_group" {
   name              = var.error_log_group
-  retention_in_days = 14
+  retention_in_days = 365
   kms_key_id        = module.global_error_cloudwatch_kms_key.key_arn
 }
 

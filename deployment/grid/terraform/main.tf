@@ -158,8 +158,8 @@ module "compute_plane" {
   # error_logging_stream                 = local.error_logging_stream
   grafana_admin_password = local.grafana_admin_password
   # htc_agent_permissions_policy_arn              = module.control_plane.htc_agent_permissions_policy_arn
-  ecr_pull_through_cache_permissions_policy_arn = module.control_plane.ecr_pull_through_cache_permissions_policy_arn
-  node_drainer_lambda_role_arn                  = module.control_plane.node_drainer_lambda_role_arn
+  ecr_pull_through_cache_policy_arn = module.control_plane.ecr_pull_through_cache_policy_arn
+  node_drainer_lambda_role_arn      = module.control_plane.node_drainer_lambda_role_arn
 }
 
 

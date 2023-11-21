@@ -2,6 +2,8 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: portfolio-pricing-full-run
+  annotations:
+    seccomp.security.alpha.kubernetes.io/pod: "runtime/default"
 spec:
   parallelism: 1
   completions: 20
@@ -9,13 +11,23 @@ spec:
   activeDeadlineSeconds: 21600
   template:
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: generator
         securityContext:
-          runAsNonRoot: true
           allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
           seccompProfile:
             type: RuntimeDefault
+          capabilities:
+            drop:
+            - NET_RAW
+            - ALL
         image: {{account_id}}.dkr.ecr.{{region}}.amazonaws.com/{{image_name}}:{{image_tag}}
         imagePullPolicy: Always
         resources:

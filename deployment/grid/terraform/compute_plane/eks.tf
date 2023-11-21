@@ -94,9 +94,9 @@ module "eks" {
     instance_types                        = ["m6i.xlarge", "m6id.xlarge", "m6a.xlarge", "m6in.xlarge", "m5.xlarge", "m5d.xlarge", "m5a.xlarge", "m5ad.xlarge", "m5n.xlarge"]
     attach_cluster_primary_security_group = false
     iam_role_additional_policies = {
-      AmazonEC2ContainerRegistryReadOnly   = "arn:${local.partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
-      CloudWatchAgentServerPolicy          = "arn:${local.partition}:iam::aws:policy/CloudWatchAgentServerPolicy",
-      EKSPullThroughCachePermissionsPolicy = var.ecr_pull_through_cache_permissions_policy_arn,
+      AmazonEC2ContainerRegistryReadOnly = "arn:${local.partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+      CloudWatchAgentServerPolicy        = "arn:${local.partition}:iam::aws:policy/CloudWatchAgentServerPolicy",
+      EKSPullThroughCachePolicy          = var.ecr_pull_through_cache_policy_arn,
     }
   }
 

@@ -49,8 +49,9 @@ module "htc_public_api_cloudwatch_kms_key" {
 
 
 resource "aws_cloudwatch_log_group" "htc_public_api_cloudwatch_log_group" {
-  name       = "/aws/apigateway/htc-public-api-${var.cluster_name}-${var.api_gateway_version}"
-  kms_key_id = module.htc_public_api_cloudwatch_kms_key.key_arn
+  name              = "/aws/apigateway/htc-public-api-${var.cluster_name}-${var.api_gateway_version}"
+  kms_key_id        = module.htc_public_api_cloudwatch_kms_key.key_arn
+  retention_in_days = 365
 }
 
 

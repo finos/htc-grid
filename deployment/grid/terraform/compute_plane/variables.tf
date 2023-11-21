@@ -131,7 +131,7 @@ variable "create_eks_compute_plane" {
 #   type        = string
 # }
 
-variable "ecr_pull_through_cache_permissions_policy_arn" {
+variable "ecr_pull_through_cache_policy_arn" {
   description = "ECR Pull Through Cache Permissions Policy ARN"
   type        = string
 }

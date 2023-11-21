@@ -38,20 +38,23 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: "htc-agent-sa"
 
-podSecurityContext: {}
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
   # fsGroup: 2000
 
 
 securityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
   capabilities:
     drop:
     - SYS_PTRACE
   # readOnlyRootFilesystem: true
   # runAsUser: 1000
-  runAsNonRoot: true
-  allowPrivilegeEscalation: false
-  seccompProfile:
-    type: RuntimeDefault
 
 lambda:
   protocolEndpoint: http

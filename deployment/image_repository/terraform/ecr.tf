@@ -38,7 +38,7 @@ module "ecr_kms_key" {
           test     = "StringEquals"
           variable = "kms:ViaService"
           values = [
-            "ecr.${var.region}.amazonaws.com"
+            "ecr.${var.region}.${local.dns_suffix}"
           ]
         }
       ]

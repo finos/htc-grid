@@ -29,26 +29,19 @@ locals {
   )
 
   lambda_configuration_s3_bucket = split("/", var.lambda_configuration_s3_source)[2]
-  s3_bucket_arns = tolist(
-    [
-      module.htc_data_bucket.s3_bucket_arn, #aws_s3_bucket.htc_data_bucket.arn,
-      data.aws_s3_bucket.lambda_configuration_s3_source.arn
-    ]
-  )
+
+  s3_bucket_arns = [
+    module.htc_data_bucket.s3_bucket_arn,
+    data.aws_s3_bucket.lambda_configuration_s3_source.arn
+  ]
 
   control_plane_kms_key_arns = [
     module.htc_dynamodb_table_kms_key.key_arn,
     module.htc_task_queue_kms_key.key_arn,
     module.htc_task_queue_dlq_kms_key.key_arn,
-    module.htc_data_bucket_kms_key.key_arn
+    module.htc_data_bucket_kms_key.key_arn,
+    var.lambda_configuration_s3_source_kms_key_arn
   ]
-
-  htc_agent_access_kms_key_arns = concat(
-    local.control_plane_kms_key_arns,
-    [
-      var.lambda_configuration_s3_source_kms_key_arn
-    ]
-  )
 }
 
 
