@@ -73,12 +73,12 @@ output "grafana_ingress_domain" {
   value       = "https://${data.kubernetes_ingress_v1.grafana_ingress.status.0.load_balancer.0.ingress.0.hostname}"
 }
 
-output "eks_managed_node_groups_asg_names" {
-  description = "Names of the EKS Managed Node Group ASGs"
-  value       = module.eks.eks_managed_node_groups_autoscaling_group_names
-}
+# output "eks_managed_node_groups_asg_names" {
+#   description = "Names of the EKS Managed Node Group ASGs"
+#   value       = module.eks.eks_managed_node_groups_autoscaling_group_names
+# }
 
-output "eks_managed_node_groups_asg_arns" {
-  description = "Names of the EKS Managed Node Group ASGs"
-  value       = compact(flatten([for group in module.eks.eks_managed_node_groups : group.node_group_arn]))
-}
+# output "eks_managed_node_groups_asg_arns" {
+#   description = "Names of the EKS Managed Node Group ASGs"
+#   value       = compact(flatten([for group in module.eks.eks_managed_node_groups : group.node_group_arn]))
+# }

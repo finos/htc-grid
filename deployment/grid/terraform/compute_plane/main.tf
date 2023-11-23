@@ -5,10 +5,11 @@
 
 locals {
   # check if var.suffix is empty then create a random suffix else use var.suffix
-  suffix     = var.suffix != "" ? var.suffix : random_string.random.result
-  account_id = data.aws_caller_identity.current.account_id
-  dns_suffix = data.aws_partition.current.dns_suffix
-  partition  = data.aws_partition.current.partition
+  suffix               = var.suffix != "" ? var.suffix : random_string.random.result
+  account_id           = data.aws_caller_identity.current.account_id
+  dns_suffix           = data.aws_partition.current.dns_suffix
+  partition            = data.aws_partition.current.partition
+  lambda_build_runtime = "${var.aws_htc_ecr}/ecr-public/sam/build-${var.lambda_runtime}:1"
 
   eks_worker_group = concat([
     for index in range(0, length(var.eks_worker_groups)) :
@@ -74,12 +75,12 @@ locals {
     ]
   )
 
-  eks_worker_group_name = [
+  eks_worker_group_names = [
     for index in range(0, length(local.eks_worker_group)) :
     local.eks_worker_group[index].node_group_name
   ]
 
-  eks_worker_group_map = zipmap(local.eks_worker_group_name, local.eks_worker_group)
+  eks_worker_group_map = zipmap(local.eks_worker_group_names, local.eks_worker_group)
 
   default_kms_key_admin_arns = [
     data.aws_caller_identity.current.arn,

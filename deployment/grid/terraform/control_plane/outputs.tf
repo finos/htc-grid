@@ -38,9 +38,9 @@ output "ecr_pull_through_cache_policy_arn" {
   value = aws_iam_policy.ecr_pull_through_cache_policy.arn
 }
 
-output "node_drainer_lambda_role_arn" {
-  value = module.node_drainer.lambda_role_arn
-}
+# output "node_drainer_lambda_role_arn" {
+#   value = module.node_drainer.lambda_role_arn
+# }
 
 output "htc_data_cache_password" {
   value     = random_password.htc_data_cache_password.result

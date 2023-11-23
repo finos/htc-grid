@@ -75,9 +75,9 @@ variable "lambda_name_scaling_metrics" {
   description = "Lambda function name for scaling_metrics"
 }
 
-variable "lambda_name_node_drainer" {
-  description = "Lambda function name for node_drainer"
-}
+# variable "lambda_name_node_drainer" {
+#   description = "Lambda function name for node_drainer"
+# }
 
 variable "metrics_are_enabled" {
   description = "If set to True(1) then metrics will be accumulated and delivered downstream for visualisation"
@@ -208,10 +208,6 @@ variable "kms_key_admin_roles" {
   default     = []
 }
 
-variable "create_eks_compute_plane" {
-  description = "Controls whether the EKS Compute Plane will be deployed as part of the grid"
-}
-
 
 # Lambda Node Drainer
 
@@ -244,24 +240,24 @@ variable "metrics_event_rule_time" {
   description = "Fires event rule to put metrics"
 }
 
-variable "graceful_termination_delay" {
-  description = "graceful termination delay for scaled in action"
-}
+# variable "graceful_termination_delay" {
+#   description = "graceful termination delay for scaled in action"
+# }
 
 variable "aws_xray_daemon_version" {
   description = "version for the XRay daemon"
   type        = string
 }
 
-variable "eks_managed_node_groups_asg_names" {
-  description = "Names of the EKS Managed Node Group ASGs"
-  type        = list(string)
-}
+# variable "eks_managed_node_groups_asg_names" {
+#   description = "Names of the EKS Managed Node Group ASGs"
+#   type        = list(string)
+# }
 
-variable "eks_managed_node_groups_asg_arns" {
-  description = "ARNs of the EKS Managed Node Group ASGs"
-  type        = list(string)
-}
+# variable "eks_managed_node_groups_asg_arns" {
+#   description = "ARNs of the EKS Managed Node Group ASGs"
+#   type        = list(string)
+# }
 
 variable "lambda_configuration_s3_source" {
   description = "The Lambda Layer S3 bucket source"

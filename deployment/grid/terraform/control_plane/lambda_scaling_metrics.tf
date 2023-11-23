@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
+
 module "scaling_metrics_cloudwatch_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"

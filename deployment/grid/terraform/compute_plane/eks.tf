@@ -68,9 +68,9 @@ module "eks" {
   cluster_name    = var.cluster_name
   cluster_version = var.kubernetes_version
 
-  cluster_endpoint_public_access       = true
+  cluster_endpoint_public_access = true
   # cluster_endpoint_public_access_cidrs = var.allowed_access_cidr_blocks
-  cluster_endpoint_private_access      = var.enable_private_subnet
+  cluster_endpoint_private_access = var.enable_private_subnet
 
   create_kms_key                  = true
   enable_kms_key_rotation         = true
@@ -107,7 +107,7 @@ module "eks" {
   manage_aws_auth_configmap = true
   aws_auth_roles = concat(var.input_role, [
     {
-      rolearn  = var.node_drainer_lambda_role_arn
+      rolearn  = module.node_drainer.lambda_role_arn
       username = "lambda"
       groups   = ["system:masters"]
     }

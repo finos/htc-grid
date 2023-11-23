@@ -3,6 +3,17 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
+locals {
+  eks_managed_node_groups_autoscaling_group_names = { 
+    for eks_worker_group_name in local.eks_worker_group_names : 
+    eks_worker_group_name => join("", [ 
+      for eks_mng_asg_name in module.eks.eks_managed_node_groups_autoscaling_group_names : eks_mng_asg_name
+      if startswith(eks_mng_asg_name, "eks-${eks_worker_group_name}-") 
+    ])
+  }
+}
+
+
 module "node_drainer_cloudwatch_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"
@@ -95,10 +106,10 @@ module "node_drainer" {
 
 
 resource "aws_autoscaling_lifecycle_hook" "drainer_hook" {
-  count = length(var.eks_managed_node_groups_asg_names)
+  for_each = local.eks_managed_node_groups_autoscaling_group_names
 
-  name                   = var.eks_managed_node_groups_asg_names[count.index]
-  autoscaling_group_name = var.eks_managed_node_groups_asg_names[count.index]
+  name                   = "autoscaling-lifecyclehook-${each.key}-${local.suffix}"
+  autoscaling_group_name = each.value
   default_result         = "ABANDON"
   heartbeat_timeout      = var.graceful_termination_delay
   lifecycle_transition   = "autoscaling:EC2_INSTANCE_TERMINATING"
@@ -106,9 +117,9 @@ resource "aws_autoscaling_lifecycle_hook" "drainer_hook" {
 
 
 resource "aws_cloudwatch_event_rule" "lifecycle_hook_event_rule" {
-  count = length(var.eks_managed_node_groups_asg_names)
+  for_each = local.eks_managed_node_groups_autoscaling_group_names
 
-  name          = "event-lifecyclehook-${count.index}-${local.suffix}"
+  name          = "event-lifecyclehook-${each.key}-${local.suffix}"
   description   = "Fires event when an EC2 instance is terminated"
   event_pattern = <<EOF
 {
@@ -120,7 +131,7 @@ resource "aws_cloudwatch_event_rule" "lifecycle_hook_event_rule" {
   ],
   "detail": {
     "AutoScalingGroupName": [
-      "${var.eks_managed_node_groups_asg_names[count.index]}"
+      "${each.value}"
     ]
   }
 }
@@ -129,9 +140,9 @@ EOF
 
 
 resource "aws_cloudwatch_event_target" "terminate_instance_event" {
-  count = length(var.eks_managed_node_groups_asg_names)
+  for_each = local.eks_managed_node_groups_autoscaling_group_names
 
-  rule      = "event-lifecyclehook-${count.index}-${local.suffix}"
+  rule      = "event-lifecyclehook-${each.key}-${local.suffix}"
   target_id = "lambda"
   arn       = module.node_drainer.lambda_function_arn
 
@@ -142,13 +153,13 @@ resource "aws_cloudwatch_event_target" "terminate_instance_event" {
 
 
 resource "aws_lambda_permission" "allow_cloudwatch_to_call_node_drainer" {
-  count = length(aws_cloudwatch_event_rule.lifecycle_hook_event_rule)
+  for_each = aws_cloudwatch_event_rule.lifecycle_hook_event_rule
 
-  statement_id  = "AllowDrainerExecutionFromCloudWatch-${count.index}"
+  statement_id  = "AllowDrainerExecutionFromCloudWatch-${each.key}"
   action        = "lambda:InvokeFunction"
   function_name = module.node_drainer.lambda_function_name
   principal     = "events.${local.dns_suffix}"
-  source_arn    = aws_cloudwatch_event_rule.lifecycle_hook_event_rule[count.index].arn
+  source_arn    = each.value.arn
 }
 
 
@@ -164,7 +175,7 @@ resource "aws_iam_policy" "node_drainer_data_policy" {
       "Action": [
         "autoscaling:CompleteLifecycleAction"
       ],
-      "Resource": ${jsonencode(var.eks_managed_node_groups_asg_arns)},
+      "Resource": ${jsonencode(compact(flatten([for group in module.eks.eks_managed_node_groups : group.node_group_arn])))},
       "Effect": "Allow"
     },
     {
@@ -175,16 +186,48 @@ resource "aws_iam_policy" "node_drainer_data_policy" {
       ],
       "Resource": "*",
       "Effect": "Allow"
-    },
-    {
-      "Action": [
-        "kms:Decrypt",
-        "kms:GenerateDataKey"
-      ],
-      "Resource": ${jsonencode(local.control_plane_kms_key_arns)},
-      "Effect": "Allow"
     }
   ]
 }
 EOF
+}
+
+
+#Lambda Drainer EKS Access
+resource "kubernetes_cluster_role" "lambda_cluster_access" {
+  metadata {
+    name = "lambda-cluster-access"
+  }
+
+  rule {
+    verbs      = ["create", "list", "patch"]
+    api_groups = [""]
+    resources  = ["pods", "pods/eviction", "nodes"]
+  }
+
+  depends_on = [
+    module.eks,
+  ]
+}
+
+
+resource "kubernetes_cluster_role_binding" "lambda_user_cluster_role_binding" {
+  metadata {
+    name = "lambda-user-cluster-role-binding"
+  }
+
+  subject {
+    kind = "User"
+    name = "lambda"
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = "lambda-cluster-access"
+  }
+
+  depends_on = [
+    module.eks,
+  ]
 }
