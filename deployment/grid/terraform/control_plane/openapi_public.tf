@@ -64,7 +64,7 @@ resource "aws_api_gateway_rest_api" "htc_public_api" {
     cancel_lambda_name      = module.cancel_tasks.lambda_function_name
     submit_task_lambda_name = module.submit_task.lambda_function_name
     get_result_lambda_name  = module.get_results.lambda_function_name
-    cognito_userpool_arn    = var.cognito_userpool_arn
+    cognito_userpool_arn    = aws_cognito_user_pool.htc_pool.arn
   })))
 
   endpoint_configuration {
@@ -83,7 +83,7 @@ resource "aws_api_gateway_deployment" "htc_public_api_deployment" {
       cancel_lambda_name      = module.cancel_tasks.lambda_function_name
       submit_task_lambda_name = module.submit_task.lambda_function_name
       get_result_lambda_name  = module.get_results.lambda_function_name
-      cognito_userpool_arn    = var.cognito_userpool_arn
+      cognito_userpool_arn    = aws_cognito_user_pool.htc_pool.arn
     })
   }
 

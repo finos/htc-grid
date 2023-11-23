@@ -46,3 +46,23 @@ output "htc_data_cache_password" {
   value     = random_password.htc_data_cache_password.result
   sensitive = true
 }
+
+output "cognito_domain_name" {
+  description = "Cognito Domain Name"
+  value       = local.cognito_domain_name
+}
+
+output "cognito_userpool_id" {
+  description = "Cognito User Pool ID"
+  value       = aws_cognito_user_pool.htc_pool.id
+}
+
+output "cognito_userpool_arn" {
+  description = "Cognito User Pool ARN"
+  value       = aws_cognito_user_pool.htc_pool.arn
+}
+
+output "cognito_userpool_client_id" {
+  description = "Cognito User Pool Client ID"
+  value       = aws_cognito_user_pool_client.user_data_client.id
+}

@@ -28,22 +28,6 @@ variable "aws_htc_ecr" {
   description = "URL of Amazon ECR image repostiories"
 }
 
-variable "cwa_version" {
-  description = "CloudWatch Adapter for Kubernetes version"
-}
-
-variable "aws_node_termination_handler_version" {
-  description = "version of the deployment managing node termination"
-}
-
-variable "cw_agent_version" {
-  description = "CloudWatch Agent version"
-}
-
-variable "fluentbit_version" {
-  description = "Fluentbit version"
-}
-
 variable "cluster_name" {
   description = "Name of EKS cluster in AWS"
 }
@@ -106,38 +90,6 @@ variable "kms_key_admin_roles" {
   default     = []
 }
 
-# variable "htc_dynamodb_table_arn" {
-#   description = "htc_dynamodb_table_arn"
-#   type        = string
-# }
-
-# variable "sqs_queue_and_dlq_arns" {
-#   description = "sqs_queue_and_dlq_arns"
-#   type        = list(string)
-# }
-
-# variable "control_plane_kms_key_arns" {
-#   description = "control_plane_kms_key_arns"
-#   type        = list(string)
-# }
-
-# variable "graceful_termination_delay" {
-#   description = "graceful termination delay for scaled in action"
-# }
-
-# variable "lambda_runtime" {
-#   description = "Python version"
-# }
-
-# variable "lambda_name_node_drainer" {
-#   description = "Lambda function name for node_drainer"
-# }
-
-# variable "htc_agent_permissions_policy_arn" {
-#   description = "HTC AGent Permissions Policy ARN"
-#   type        = string
-# }
-
 variable "ecr_pull_through_cache_policy_arn" {
   description = "ECR Pull Through Cache Permissions Policy ARN"
   type        = string
@@ -151,4 +103,19 @@ variable "node_drainer_lambda_role_arn" {
 variable "allowed_access_cidr_blocks" {
   description = "List of CIDR blocks which are allowed ingress/egress access from/to the VPC"
   type        = list(string)
+}
+
+variable "cognito_domain_name" {
+  description = "Cognito Domain Name"
+  type        = string
+}
+
+variable "cognito_userpool_arn" {
+  description = "Cognito User Pool ARN"
+  type        = string
+}
+
+variable "cognito_userpool_id" {
+  description = "Cognito User Pool ID"
+  type        = string
 }

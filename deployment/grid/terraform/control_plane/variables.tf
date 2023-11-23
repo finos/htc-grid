@@ -172,10 +172,6 @@ variable "nlb_influxdb" {
   default     = ""
 }
 
-variable "cognito_userpool_arn" {
-  description = "ARN of the user pool used for authentication"
-}
-
 variable "cluster_name" {
   description = "Name of EKS cluster in AWS"
 }
@@ -247,16 +243,6 @@ variable "aws_xray_daemon_version" {
   description = "version for the XRay daemon"
   type        = string
 }
-
-# variable "eks_managed_node_groups_asg_names" {
-#   description = "Names of the EKS Managed Node Group ASGs"
-#   type        = list(string)
-# }
-
-# variable "eks_managed_node_groups_asg_arns" {
-#   description = "ARNs of the EKS Managed Node Group ASGs"
-#   type        = list(string)
-# }
 
 variable "eks_managed_node_groups" {
   description = "Map of names and ARNs of EKS Managed Node Group ASGs"
