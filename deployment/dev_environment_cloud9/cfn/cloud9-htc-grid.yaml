@@ -18,7 +18,7 @@ Metadata:
             limitations under the License.nse.'
 Parameters:
   C9InstanceType:
-    Description: Cloud9 instance type
+    Description: Cloud9 Instance Type
     Type: String
     Default: m5.large
     AllowedValues:
@@ -26,48 +26,46 @@ Parameters:
       - t3.medium
       - m4.large
       - m5.large
-    ConstraintDescription: Must be a valid Cloud9 instance type
+    ConstraintDescription: Must be a valid Cloud9 instance type.
   C9KubectlVersion:
-    Description: kubectl Version to install on Cloud9
+    Description: kubectl version to install on Cloud9
     Type: String
     Default: 1.25.12
-    ConstraintDescription: Must be a valid kubectl version
+    ConstraintDescription: Must be a valid kubectl version.
   C9TerraformVersion:
-    Description: Terraform Version to install on Cloud9
+    Description: Terraform version to install on Cloud9
     Type: String
     Default: 1.5.4
-    ConstraintDescription: Must be a valid terraform version
+    ConstraintDescription: Must be a valid Terraform version.
   C9EKSctlVersion:
-    Description: Cloud9 instance eksctl version
+    Description: eksctl version to install on Cloud9
     Type: String
     Default: 0.151.0
-    ConstraintDescription: Must be a valid eksctl version
+    ConstraintDescription: Must be a valid eksctl version.
   C9HelmVersion:
-    Description: Helm Version to install on Cloud9
+    Description: Helm version to install on Cloud9
     Type: String
     Default: 3.12.2
-    ConstraintDescription: Must be a valid helm version
+    ConstraintDescription: Must be a valid Helm version
   HTCGridVersion:
-    Description: HTC Grid Version to install on Cloud9
+    Description: HTC Grid version to install on Cloud9
     Type: String
     Default: latest
-    ConstraintDescription: Must be a valid HTC Grid version
-  #Used only by Event Engine, if you are self-deploying the stack leave the default value to NONE
-  EETeamRoleArn:
-    Description: "ARN of the Team Role"
+    ConstraintDescription: Must be a valid HTC Grid version.
+  ParticipantRoleARN:
+    Description: "ARN of the Participant Role"
     Default: NONE
     Type: String
-    ConstraintDescription: This is ONLY used Event Engine, dont change this if you are self-deploying the stack
+    ConstraintDescription: This is ONLY used via AWS WorkshopStudio. DON'T change this if you are self-deploying the stack.
 
 Conditions:
-  NotEventEngine: !Equals [!Ref EETeamRoleArn, NONE]
+  NotWSParticipant: !Equals [!Ref ParticipantRoleARN, NONE]
 
 Resources:
 
   ################## PERMISSIONS AND ROLES #################
   C9Role:
     Type: AWS::IAM::Role
-    Condition: NotEventEngine
     Properties:
       Tags:
       - Key: Environment
@@ -83,8 +81,10 @@ Resources:
           Action:
           - sts:AssumeRole
       ManagedPolicyArns:
-        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess'
+        # - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess'
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
       Path: "/"
+
   C9LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -122,19 +122,16 @@ Resources:
               - ec2:ModifyInstanceAttribute
               - ec2:ModifyVolume
               - ec2:ReplaceIamInstanceProfileAssociation
+              - ec2:RebootInstances
               - iam:ListInstanceProfiles
               - iam:PassRole
               Resource: "*"
 
   ################## LAMBDA BOOTSTRAP FUNCTION ################
 
-  C9BootstrapInstanceLambda:
-    Description: Bootstrap Cloud9 instance
-    Type: Custom::C9BootstrapInstanceLambda
-    DependsOn:
-      - C9BootstrapInstanceLambdaFunction
-      - C9Instance
-      - C9LambdaExecutionRole
+  C9BootstrapInstanceLambdaExecution:
+    Description: Bootstrap Cloud9 Instance
+    Type: Custom::C9BootstrapInstanceLambdaExecution
     Properties:
       Tags:
       - Key: Environment
@@ -142,8 +139,8 @@ Resources:
       ServiceToken: !GetAtt C9BootstrapInstanceLambdaFunction.Arn
       REGION: !Ref 'AWS::Region'
       StackName: !Ref 'AWS::StackName'
-      EnvironmentId: !Ref 'C9Instance'
-      LabIdeInstanceProfileArn: !If [ NotEventEngine, !GetAtt C9InstanceProfile.Arn, !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:instance-profile/TeamRoleInstanceProfile' ]
+      EnvironmentId: !Ref C9Instance
+      LabIdeInstanceProfileArn: !GetAtt C9InstanceProfile.Arn
 
   C9BootstrapInstanceLambdaFunction:
     Type: AWS::Lambda::Function
@@ -183,7 +180,6 @@ Resources:
                 # Open AWS clients
                 ec2 = boto3.client('ec2')
 
-
                 # Get the InstanceId from Cloud9 IDE
                 print('tag:aws:cloud9:environment : {}'.format(event['ResourceProperties']['EnvironmentId']))
                 instance = ec2.describe_instances(Filters=[{'Name': 'tag:aws:cloud9:environment','Values': [event['ResourceProperties']['EnvironmentId']]}])['Reservations'][0]['Instances'][0]
@@ -213,7 +209,7 @@ Resources:
 
                 # attach instance profile
                 print(f'Instance is running , about to associate iam_instance_profile: {iam_instance_profile}')
-            
+
                 print(f'Check if there is already an Associated instance profile')
                 try:
                   associationID = ec2.describe_iam_instance_profile_associations(
@@ -251,6 +247,17 @@ Resources:
                   except Exception as e:
                       print(e)
 
+                print(f'Reboot instance to enforce registration with SSM')
+                try:
+                  response = ec2.reboot_instances(
+                      InstanceIds=[
+                          instance['InstanceId'],
+                      ],
+                      DryRun=False
+                  )
+                  print(f'response - reboot_instances: {response}')
+                except Exception as e:
+                    print(e)
 
                 responseData = {'Success': 'Started bootstrapping for instance: '+instance['InstanceId']}
                 cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, 'CustomResourcePhysicalID')
@@ -297,7 +304,7 @@ Resources:
                   echo -e " Starting the Cloud9 instance boostrap at: $(date)"
                   echo -e "========================================================"
                   echo -e "\n"
-  
+
                   echo -e "========================================================"
                   echo -e "                 Checking user identity"
                   echo -e "========================================================"
@@ -313,7 +320,6 @@ Resources:
                   if sudo growpart /dev/nvme0n1 1; then sudo xfs_growfs -d /; fi
                   echo -e "========================================================"
                   echo -e "\n\n"
-
 
                   echo -e "========================================================"
                   echo -e "            Setting up temporary directory"
@@ -336,13 +342,12 @@ Resources:
                   sudo chmod +x "${TMP_DIR}/kubectl"
                   sudo mv "${TMP_DIR}/kubectl" "/usr/local/bin/kubectl"
                   if kubectl > /dev/null 2>&1; then
-                    echo -e "[INFO] Successfully installed [$(which kubectl)] with version:\n$(kubectl version --client=true)"; 
-                  else 
-                    echo -e "[ERROR] Failed to install kubectl.."; 
+                    echo -e "[INFO] Successfully installed [$(which kubectl)] with version:\n$(kubectl version --client=true)";
+                  else
+                    echo -e "[ERROR] Failed to install kubectl..";
                   fi
                   echo -e "========================================================"
                   echo -e "\n\n"
-
 
                   echo -e "========================================================"
                   echo -e "                 Installing jq and envsubst"
@@ -350,7 +355,6 @@ Resources:
                   sudo yum -y install jq gettext unzip
                   echo -e "========================================================"
                   echo -e "\n\n"
-
 
                   echo -e "========================================================"
                   echo -e "          Updating AWS CLI to the latest version"
@@ -467,7 +471,7 @@ Resources:
                     echo -e "[INFO] The value for HTCGRID_VERSION is 'latest'. Discovered the latest release as: ${HTCGRID_VERSION}"
                   fi
 
-                  if [ "${HTCGRID_VERSION}" == "main" ]; then 
+                  if [ "${HTCGRID_VERSION}" == "main" ]; then
                     export HTCGRID_URI_REF="heads/main";
                   else
                     export HTCGRID_URI_REF="tags/v${HTCGRID_VERSION}";
@@ -494,8 +498,6 @@ Resources:
 
   C9BootstrapAssociation:
     Type: AWS::SSM::Association
-    DependsOn:
-      - C9OutputBucket
     Properties:
       Name: !Ref C9SSMDocument
       OutputLocation:
@@ -513,29 +515,25 @@ Resources:
   ################## INSTANCE #####################
   C9InstanceProfile:
     Type: AWS::IAM::InstanceProfile
-    Condition: NotEventEngine
     Properties:
       Path: "/"
       Roles:
       - !Ref C9Role
 
   C9Instance:
-    Description: "-"
-    DependsOn:
-    - C9BootstrapAssociation
     Type: AWS::Cloud9::EnvironmentEC2
     Properties:
       Tags:
         - Key: SSMBootstrap
           Value: Active
-        # - Key: Environment
-        #   Value: !Ref 'AWS::StackName'
+        - Key: Environment
+          Value: !Ref 'AWS::StackName'
       Name: !Ref 'AWS::StackName'
-      Description: AWS Cloud9 instance for Examples
+      Description: AWS Cloud9 Instance used to deploy HTC Grid
       AutomaticStopTimeMinutes: 3600
       InstanceType: !Ref C9InstanceType
       ImageId: amazonlinux-2-x86_64
-      OwnerArn: !If [NotEventEngine , !Ref AWS::NoValue , !Sub 'arn:${AWS::Partition}:sts::${AWS::AccountId}:assumed-role/TeamRole/MasterKey']
+      OwnerArn: !If [NotWSParticipant , !Ref 'AWS::NoValue' , !Ref ParticipantRoleARN]
 
 Outputs:
   Cloud9IDE:
