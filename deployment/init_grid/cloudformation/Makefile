@@ -6,9 +6,9 @@
 BUILD_DIR:=.build
 export TAG
 export REGION?=eu-west-1
-export GRID_TFSTATE_BUCKET=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`GridTFStateBucketID`].OutputValue' --output text)
-export IMAGE_TFSTATE_BUCKET=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`ImageTFStateBucketID`].OutputValue' --output text)
-export LAMBDA_LAYER_BUCKET=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`LambdaLayerBucketID`].OutputValue' --output text)
+GRID_TFSTATE_BUCKET=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`GridTFStateBucketID`].OutputValue' --output text || '')
+IMAGE_TFSTATE_BUCKET=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`ImageTFStateBucketID`].OutputValue' --output text || '')
+LAMBDA_LAYER_BUCKET=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`LambdaLayerBucketID`].OutputValue' --output text || '')
 
 YAML_SRC:=grid_state.yaml
 
@@ -23,11 +23,12 @@ $(BUILD_DIR)/grid_init/tag.$(TAG):
 	@touch $(BUILD_DIR)/grid_init/tag.$(TAG)
 
 $(BUILD_DIR)/grid_init/init-grid-$(TAG): $(BUILD_DIR)/grid_init/tag.$(TAG) $(YAML_SRC)
-	@if ! aws cloudformation describe-stacks --stack-name $(TAG) --query "Stacks[0].StackName" --output text >/dev/null 2>&1; then \
+	@if [ "$(shell aws cloudformation list-stacks --query 'StackSummaries[?StackStatus==`CREATE_COMPLETE` && StackName==`$(TAG)`].StackName' --output text)" != "$(TAG)" ]; then \
+	echo "CloudFormation stack $(TAG) doesn't exist. Creating ..."; \
 	aws cloudformation create-stack --stack-name $(TAG) --region $(REGION) --template-body file://$(YAML_SRC) --parameters ParameterKey=BucketTag,ParameterValue=$(TAG); else \
 	echo "Failed creating the CloudFormation stack as it may already exist. Trying to update ..."; \
 	aws cloudformation update-stack --stack-name $(TAG) --region $(REGION) --template-body file://$(YAML_SRC) --parameters ParameterKey=BucketTag,ParameterValue=$(TAG); fi
-	@echo "Waiting for the successful deployment of CloudFormation stack ..."
+	@echo "Waiting for the successful deployment of CloudFormation stack $(TAG) ..."
 	@aws cloudformation wait stack-create-complete --stack-name $(TAG) --region $(REGION)
 	@touch $(BUILD_DIR)/grid_init/init-grid-$(TAG)
 	@aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0]'
@@ -38,18 +39,18 @@ init: $(BUILD_DIR)/grid_init
 
 clean-grid-state:
 	aws --region $(REGION) s3 rm --recursive s3://$(GRID_TFSTATE_BUCKET) || true
-	@aws s3api delete-objects --bucket $(GRID_TFSTATE_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(GRID_TFSTATE_BUCKET) --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}')'
-	@aws s3api delete-objects --bucket $(GRID_TFSTATE_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(GRID_TFSTATE_BUCKET) --query='{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}')'
+	@aws s3api delete-objects --bucket $(GRID_TFSTATE_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(GRID_TFSTATE_BUCKET) --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}')' --output text > /dev/null 2>&1 || true
+	@aws s3api delete-objects --bucket $(GRID_TFSTATE_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(GRID_TFSTATE_BUCKET) --query='{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}')' --output text > /dev/null 2>&1 || true
 
 clean-image-state:
 	aws --region $(REGION) s3 rm --recursive s3://$(IMAGE_TFSTATE_BUCKET) || true
-	@aws s3api delete-objects --bucket $(IMAGE_TFSTATE_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(IMAGE_TFSTATE_BUCKET) --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}')'
-	@aws s3api delete-objects --bucket $(IMAGE_TFSTATE_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(IMAGE_TFSTATE_BUCKET) --query='{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}')'
+	@aws s3api delete-objects --bucket $(IMAGE_TFSTATE_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(IMAGE_TFSTATE_BUCKET) --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}')' --output text > /dev/null 2>&1 || true
+	@aws s3api delete-objects --bucket $(IMAGE_TFSTATE_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(IMAGE_TFSTATE_BUCKET) --query='{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}')' --output text > /dev/null 2>&1 || true
 
 clean-lambda-storage:
 	aws --region $(REGION) s3 rm --recursive s3://$(LAMBDA_LAYER_BUCKET) || true
-	@aws s3api delete-objects --bucket $(LAMBDA_LAYER_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(LAMBDA_LAYER_BUCKET) --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}')'
-	@aws s3api delete-objects --bucket $(LAMBDA_LAYER_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(LAMBDA_LAYER_BUCKET) --query='{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}')'
+	@aws s3api delete-objects --bucket $(LAMBDA_LAYER_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(LAMBDA_LAYER_BUCKET) --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}')' > /dev/null 2>&1 || true
+	@aws s3api delete-objects --bucket $(LAMBDA_LAYER_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(LAMBDA_LAYER_BUCKET) --query='{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}')' --output text > /dev/null 2>&1 || true
 
 clean: clean-image-state clean-grid-state clean-lambda-storage
 	rm -rf $(BUILD_DIR)/grid_init/tag.*
