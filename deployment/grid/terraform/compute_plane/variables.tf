@@ -121,17 +121,17 @@ variable "kms_key_admin_roles" {
 #   type        = list(string)
 # }
 
-variable "graceful_termination_delay" {
-  description = "graceful termination delay for scaled in action"
-}
+# variable "graceful_termination_delay" {
+#   description = "graceful termination delay for scaled in action"
+# }
 
-variable "lambda_runtime" {
-  description = "Python version"
-}
+# variable "lambda_runtime" {
+#   description = "Python version"
+# }
 
-variable "lambda_name_node_drainer" {
-  description = "Lambda function name for node_drainer"
-}
+# variable "lambda_name_node_drainer" {
+#   description = "Lambda function name for node_drainer"
+# }
 
 # variable "htc_agent_permissions_policy_arn" {
 #   description = "HTC AGent Permissions Policy ARN"
@@ -143,10 +143,10 @@ variable "ecr_pull_through_cache_policy_arn" {
   type        = string
 }
 
-# variable "node_drainer_lambda_role_arn" {
-#   description = "Node Drainer Lambda Role ARN"
-#   type        = string
-# }
+variable "node_drainer_lambda_role_arn" {
+  description = "Node Drainer Lambda Role ARN"
+  type        = string
+}
 
 variable "allowed_access_cidr_blocks" {
   description = "List of CIDR blocks which are allowed ingress/egress access from/to the VPC"

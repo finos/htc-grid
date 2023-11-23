@@ -45,3 +45,43 @@ resource "aws_iam_policy" "keda_permissions" {
 }
 EOF
 }
+
+
+#Lambda Drainer EKS Access
+resource "kubernetes_cluster_role" "lambda_cluster_access" {
+  metadata {
+    name = "lambda-cluster-access"
+  }
+
+  rule {
+    verbs      = ["create", "list", "patch"]
+    api_groups = [""]
+    resources  = ["pods", "pods/eviction", "nodes"]
+  }
+
+  depends_on = [
+    module.eks,
+  ]
+}
+
+
+resource "kubernetes_cluster_role_binding" "lambda_user_cluster_role_binding" {
+  metadata {
+    name = "lambda-user-cluster-role-binding"
+  }
+
+  subject {
+    kind = "User"
+    name = "lambda"
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = "lambda-cluster-access"
+  }
+
+  depends_on = [
+    module.eks,
+  ]
+}

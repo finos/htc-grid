@@ -75,9 +75,9 @@ variable "lambda_name_scaling_metrics" {
   description = "Lambda function name for scaling_metrics"
 }
 
-# variable "lambda_name_node_drainer" {
-#   description = "Lambda function name for node_drainer"
-# }
+variable "lambda_name_node_drainer" {
+  description = "Lambda function name for node_drainer"
+}
 
 variable "metrics_are_enabled" {
   description = "If set to True(1) then metrics will be accumulated and delivered downstream for visualisation"
@@ -208,7 +208,6 @@ variable "kms_key_admin_roles" {
   default     = []
 }
 
-
 # Lambda Node Drainer
 
 # variable "dimension_value_metrics" {
@@ -240,9 +239,9 @@ variable "metrics_event_rule_time" {
   description = "Fires event rule to put metrics"
 }
 
-# variable "graceful_termination_delay" {
-#   description = "graceful termination delay for scaled in action"
-# }
+variable "graceful_termination_delay" {
+  description = "graceful termination delay for scaled in action"
+}
 
 variable "aws_xray_daemon_version" {
   description = "version for the XRay daemon"
@@ -258,6 +257,11 @@ variable "aws_xray_daemon_version" {
 #   description = "ARNs of the EKS Managed Node Group ASGs"
 #   type        = list(string)
 # }
+
+variable "eks_managed_node_groups" {
+  description = "Map of names and ARNs of EKS Managed Node Group ASGs"
+  type        = map(map(string))
+}
 
 variable "lambda_configuration_s3_source" {
   description = "The Lambda Layer S3 bucket source"

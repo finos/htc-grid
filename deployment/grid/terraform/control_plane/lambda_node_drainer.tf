@@ -3,15 +3,15 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
-locals {
-  eks_managed_node_groups_autoscaling_group_names = { 
-    for eks_worker_group_name in local.eks_worker_group_names : 
-    eks_worker_group_name => join("", [ 
-      for eks_mng_asg_name in module.eks.eks_managed_node_groups_autoscaling_group_names : eks_mng_asg_name
-      if startswith(eks_mng_asg_name, "eks-${eks_worker_group_name}-") 
-    ])
-  }
-}
+# locals {
+#   eks_managed_node_groups_autoscaling_group_names = { 
+#     for eks_worker_group_name in local.eks_worker_group_names : 
+#     eks_worker_group_name => join("", [ 
+#       for eks_mng_asg_name in module.eks.eks_managed_node_groups_autoscaling_group_names : eks_mng_asg_name
+#       if startswith(eks_mng_asg_name, "eks-${eks_worker_group_name}-") 
+#     ])
+#   }
+# }
 
 
 module "node_drainer_cloudwatch_kms_key" {
@@ -106,10 +106,10 @@ module "node_drainer" {
 
 
 resource "aws_autoscaling_lifecycle_hook" "drainer_hook" {
-  for_each = local.eks_managed_node_groups_autoscaling_group_names
+  for_each = var.eks_managed_node_groups #local.eks_managed_node_groups_autoscaling_group_names
 
   name                   = "autoscaling-lifecyclehook-${each.key}-${local.suffix}"
-  autoscaling_group_name = each.value
+  autoscaling_group_name = each.value.name
   default_result         = "ABANDON"
   heartbeat_timeout      = var.graceful_termination_delay
   lifecycle_transition   = "autoscaling:EC2_INSTANCE_TERMINATING"
@@ -117,7 +117,7 @@ resource "aws_autoscaling_lifecycle_hook" "drainer_hook" {
 
 
 resource "aws_cloudwatch_event_rule" "lifecycle_hook_event_rule" {
-  for_each = local.eks_managed_node_groups_autoscaling_group_names
+  for_each = var.eks_managed_node_groups #local.eks_managed_node_groups_autoscaling_group_names
 
   name          = "event-lifecyclehook-${each.key}-${local.suffix}"
   description   = "Fires event when an EC2 instance is terminated"
@@ -131,7 +131,7 @@ resource "aws_cloudwatch_event_rule" "lifecycle_hook_event_rule" {
   ],
   "detail": {
     "AutoScalingGroupName": [
-      "${each.value}"
+      "${each.value.name}"
     ]
   }
 }
@@ -140,7 +140,7 @@ EOF
 
 
 resource "aws_cloudwatch_event_target" "terminate_instance_event" {
-  for_each = local.eks_managed_node_groups_autoscaling_group_names
+  for_each = var.eks_managed_node_groups #local.eks_managed_node_groups_autoscaling_group_names
 
   rule      = "event-lifecyclehook-${each.key}-${local.suffix}"
   target_id = "lambda"
@@ -175,7 +175,7 @@ resource "aws_iam_policy" "node_drainer_data_policy" {
       "Action": [
         "autoscaling:CompleteLifecycleAction"
       ],
-      "Resource": ${jsonencode(compact(flatten([for group in module.eks.eks_managed_node_groups : group.node_group_arn])))},
+      "Resource": ${jsonencode(compact(flatten([for k, v in var.eks_managed_node_groups : v.arn])))},
       "Effect": "Allow"
     },
     {
@@ -190,44 +190,4 @@ resource "aws_iam_policy" "node_drainer_data_policy" {
   ]
 }
 EOF
-}
-
-
-#Lambda Drainer EKS Access
-resource "kubernetes_cluster_role" "lambda_cluster_access" {
-  metadata {
-    name = "lambda-cluster-access"
-  }
-
-  rule {
-    verbs      = ["create", "list", "patch"]
-    api_groups = [""]
-    resources  = ["pods", "pods/eviction", "nodes"]
-  }
-
-  depends_on = [
-    module.eks,
-  ]
-}
-
-
-resource "kubernetes_cluster_role_binding" "lambda_user_cluster_role_binding" {
-  metadata {
-    name = "lambda-user-cluster-role-binding"
-  }
-
-  subject {
-    kind = "User"
-    name = "lambda"
-  }
-
-  role_ref {
-    api_group = "rbac.authorization.k8s.io"
-    kind      = "ClusterRole"
-    name      = "lambda-cluster-access"
-  }
-
-  depends_on = [
-    module.eks,
-  ]
 }

@@ -23,25 +23,25 @@ output "certificate_authority" {
   value       = module.eks.cluster_certificate_authority_data
 }
 
-output "eks_managed_node_groups" {
-  description = "Map of EKS Managed Node Group outputs"
-  value       = try(module.eks.eks_managed_node_groups, {})
-}
+# output "eks_managed_node_groups" {
+#   description = "Map of EKS Managed Node Group outputs"
+#   value       = try(module.eks.eks_managed_node_groups, {})
+# }
 
-output "eks_managed_node_groups_autoscaling_group_names" {
-  description = "List of EKS Managed Node Groups names"
-  value       = try(module.eks.eks_managed_node_groups_autoscaling_group_names, [])
-}
+# output "eks_managed_node_groups_autoscaling_group_names" {
+#   description = "List of EKS Managed Node Groups names"
+#   value       = try(module.eks.eks_managed_node_groups_autoscaling_group_names, [])
+# }
 
-output "self_managed_node_groups" {
-  description = "Map of self-managed node group outputs"
-  value       = try(module.eks.self_managed_node_groups, {})
-}
+# output "self_managed_node_groups" {
+#   description = "Map of self-managed node group outputs"
+#   value       = try(module.eks.self_managed_node_groups, {})
+# }
 
-output "self_managed_node_groups_autoscaling_group_names" {
-  description = "List of self-managed node groups names"
-  value       = try(module.eks.self_managed_node_groups_autoscaling_group_names, [])
-}
+# output "self_managed_node_groups_autoscaling_group_names" {
+#   description = "List of self-managed node groups names"
+#   value       = try(module.eks.self_managed_node_groups_autoscaling_group_names, [])
+# }
 
 output "nlb_influxdb" {
   description = "url of the NLB in front of the influx DB"
@@ -82,3 +82,8 @@ output "grafana_ingress_domain" {
 #   description = "Names of the EKS Managed Node Group ASGs"
 #   value       = compact(flatten([for group in module.eks.eks_managed_node_groups : group.node_group_arn]))
 # }
+
+output "eks_managed_node_groups" {
+  description = "Map of names and ARNs of EKS Managed Node Group ASGs"
+  value       = local.eks_managed_node_groups
+}

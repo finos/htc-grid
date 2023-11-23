@@ -5,11 +5,10 @@
 
 locals {
   # check if var.suffix is empty then create a random suffix else use var.suffix
-  suffix               = var.suffix != "" ? var.suffix : random_string.random.result
-  account_id           = data.aws_caller_identity.current.account_id
-  dns_suffix           = data.aws_partition.current.dns_suffix
-  partition            = data.aws_partition.current.partition
-  lambda_build_runtime = "${var.aws_htc_ecr}/ecr-public/sam/build-${var.lambda_runtime}:1"
+  suffix     = var.suffix != "" ? var.suffix : random_string.random.result
+  account_id = data.aws_caller_identity.current.account_id
+  dns_suffix = data.aws_partition.current.dns_suffix
+  partition  = data.aws_partition.current.partition
 
   eks_worker_group = concat([
     for index in range(0, length(var.eks_worker_groups)) :
@@ -88,6 +87,24 @@ locals {
   ]
   additional_kms_key_admin_role_arns = [for k, v in data.aws_iam_role.additional_kms_key_admin_roles : v.arn]
   kms_key_admin_arns                 = concat(local.default_kms_key_admin_arns, local.additional_kms_key_admin_role_arns)
+
+  eks_managed_node_group_asg_names = {
+    for eks_worker_group_name in local.eks_worker_group_names :
+    eks_worker_group_name => {
+      "asg_name" = join("", [
+        for eks_mng_asg_name in module.eks.eks_managed_node_groups_autoscaling_group_names : eks_mng_asg_name
+        if startswith(eks_mng_asg_name, "eks-${eks_worker_group_name}-")
+      ])
+    }
+  }
+
+  eks_managed_node_groups = {
+    for eks_worker_group_name, eks_managed_node_group in local.eks_managed_node_group_asg_names :
+    eks_worker_group_name => {
+      "name" = eks_managed_node_group.asg_name
+      "arn"  = data.aws_autoscaling_group.eks_managed_node_group_autoscaling_groups[eks_worker_group_name].arn
+    }
+  }
 }
 
 
@@ -95,6 +112,13 @@ data "aws_iam_role" "additional_kms_key_admin_roles" {
   for_each = toset(var.kms_key_admin_roles)
 
   name = each.key
+}
+
+
+data "aws_autoscaling_group" "eks_managed_node_group_autoscaling_groups" {
+  for_each = local.eks_managed_node_group_asg_names
+
+  name = each.value.asg_name
 }
 
 

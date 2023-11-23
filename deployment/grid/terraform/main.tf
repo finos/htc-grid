@@ -144,20 +144,20 @@ module "compute_plane" {
   fluentbit_version                    = var.fluentbit_version
   suffix                               = local.project_name
   region                               = var.region
-  lambda_runtime                       = var.lambda_runtime
+  # lambda_runtime                       = var.lambda_runtime
   # ddb_state_table                      = local.ddb_state_table
   # sqs_queue                            = local.sqs_queue
   # tasks_queue_name                     = local.tasks_queue_name
   # namespace_metrics                    = var.namespace_metrics
   # dimension_name_metrics               = var.dimension_name_metrics
   # lambda_name_scaling_metrics          = local.lambda_name_scaling_metrics
-  lambda_name_node_drainer             = local.lambda_name_node_drainer
+  # lambda_name_node_drainer             = local.lambda_name_node_drainer
   # period_metrics                       = var.period_metrics
   # metric_name                          = local.metrics_name
   # metrics_event_rule_time              = var.metrics_event_rule_time
-  eks_worker_groups          = var.eks_worker_groups
-  input_role                 = var.input_role
-  graceful_termination_delay = var.graceful_termination_delay
+  eks_worker_groups = var.eks_worker_groups
+  input_role        = var.input_role
+  # graceful_termination_delay = var.graceful_termination_delay
   # aws_xray_daemon_version              = var.aws_xray_daemon_version
   enable_private_subnet = var.enable_private_subnet
   # task_queue_service                   = var.task_queue_service
@@ -167,7 +167,7 @@ module "compute_plane" {
   grafana_admin_password = local.grafana_admin_password
   # htc_agent_permissions_policy_arn              = module.control_plane.htc_agent_permissions_policy_arn
   ecr_pull_through_cache_policy_arn = module.control_plane.ecr_pull_through_cache_policy_arn
-  # node_drainer_lambda_role_arn      = module.control_plane.node_drainer_lambda_role_arn
+  node_drainer_lambda_role_arn      = module.control_plane.node_drainer_lambda_role_arn
 }
 
 
@@ -220,6 +220,7 @@ module "control_plane" {
   cluster_name                                  = local.cluster_name
   cognito_userpool_arn                          = module.compute_plane.cognito_userpool_arn
   api_gateway_version                           = var.api_gateway_version
+  eks_managed_node_groups                       = module.compute_plane.eks_managed_node_groups
   # eks_managed_node_groups_asg_names             = module.compute_plane.eks_managed_node_groups_asg_names
   # eks_managed_node_groups_asg_arns              = module.compute_plane.eks_managed_node_groups_asg_arns
   # htc_agent_namespace                           = var.htc_agent_namespace
@@ -227,12 +228,12 @@ module "control_plane" {
   namespace_metrics           = var.namespace_metrics
   dimension_name_metrics      = var.dimension_name_metrics
   lambda_name_scaling_metrics = local.lambda_name_scaling_metrics
-  # lambda_name_node_drainer    = local.lambda_name_node_drainer
+  lambda_name_node_drainer    = local.lambda_name_node_drainer
   period_metrics              = var.period_metrics
   metric_name                 = local.metrics_name
   metrics_event_rule_time     = var.metrics_event_rule_time
-  # graceful_termination_delay                 = var.graceful_termination_delay
-  aws_xray_daemon_version                    = var.aws_xray_daemon_version
+  graceful_termination_delay  = var.graceful_termination_delay
+  aws_xray_daemon_version     = var.aws_xray_daemon_version
   # lambda_configuration_s3_source             = lookup(lookup(var.agent_configuration, "lambda", local.default_agent_configuration.lambda), "s3_source", local.default_agent_configuration.lambda.s3_source)
   # lambda_configuration_s3_source_kms_key_arn = lookup(lookup(var.agent_configuration, "lambda", local.default_agent_configuration.lambda), "s3_source_kms_key_arn", local.default_agent_configuration.lambda.s3_source_kms_key_arn)
   lambda_configuration_s3_source             = try(var.agent_configuration.lambda.s3_source, local.default_agent_configuration.lambda.s3_source)
@@ -246,22 +247,22 @@ module "control_plane" {
 
 
 module "htc_agent" {
-  source                                     = "./htc-agent"
-  region                                     = var.region
-  agent_chart_url                            = lookup(var.agent_configuration, "agent_chart_url", local.default_agent_configuration.agent_chart_url)
-  termination_grace_period                   = var.graceful_termination_delay
-  suffix                                     = local.project_name
-  agent_name                                 = var.htc_agent_name
-  htc_agent_permissions_policy_arn           = module.control_plane.htc_agent_permissions_policy_arn
-  eks_oidc_provider_arn                      = module.compute_plane.oidc_provider_arn
-  max_htc_agents                             = var.max_htc_agents
-  min_htc_agents                             = var.min_htc_agents
-  htc_agent_target_value                     = var.htc_agent_target_value
-  average_period                             = var.average_period
-  namespace_metrics                          = var.namespace_metrics
-  dimension_name_metrics                     = var.dimension_name_metrics
-  dimension_value_metrics                    = local.cluster_name
-  metric_name                                = local.metrics_name
+  source                           = "./htc-agent"
+  region                           = var.region
+  agent_chart_url                  = lookup(var.agent_configuration, "agent_chart_url", local.default_agent_configuration.agent_chart_url)
+  termination_grace_period         = var.graceful_termination_delay
+  suffix                           = local.project_name
+  agent_name                       = var.htc_agent_name
+  htc_agent_permissions_policy_arn = module.control_plane.htc_agent_permissions_policy_arn
+  eks_oidc_provider_arn            = module.compute_plane.oidc_provider_arn
+  max_htc_agents                   = var.max_htc_agents
+  min_htc_agents                   = var.min_htc_agents
+  htc_agent_target_value           = var.htc_agent_target_value
+  average_period                   = var.average_period
+  namespace_metrics                = var.namespace_metrics
+  dimension_name_metrics           = var.dimension_name_metrics
+  dimension_value_metrics          = local.cluster_name
+  metric_name                      = local.metrics_name
   # agent_image_tag                            = lookup(lookup(var.agent_configuration, "agent", local.default_agent_configuration.agent), "tag", local.default_agent_configuration.agent.tag)
   # get_layer_image_tag                        = lookup(lookup(var.agent_configuration, "get_layer", local.default_agent_configuration.get_layer), "tag", local.default_agent_configuration.get_layer.tag)
   # lambda_image_tag                           = lookup(lookup(var.agent_configuration, "lambda", local.default_agent_configuration.lambda), "runtime", local.default_agent_configuration.lambda.runtime)
