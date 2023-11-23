@@ -81,8 +81,7 @@ Resources:
           Action:
           - sts:AssumeRole
       ManagedPolicyArns:
-        # - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess'
-        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
+      - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
       Path: "/"
 
   C9LambdaExecutionRole:
@@ -329,6 +328,13 @@ Resources:
                     export TMP_DIR="/tmp";
                   fi
                   echo -e "[INFO] All the packages will be temporarily downloaded to ${TMP_DIR}"
+                  echo -e "========================================================"
+                  echo -e "\n\n"
+
+                  echo -e "========================================================"
+                  echo -e "                 Installing virtualenv"
+                  echo -e "========================================================"
+                  sudo pip3 install --upgrade --force-reinstall virtualenv
                   echo -e "========================================================"
                   echo -e "\n\n"
 
