@@ -32,6 +32,7 @@ gridConnector = AWSConnector(client_config_data=
       's3_bucket' : 'string',
       'redis_url' :'string',
       'redis_password' :'string',
+      's3_kms_key_id' : 'string',
       'public_api_gateway_url' : 'string',
       'private_api_gateway_url' : 'string',
       'api_gateway_key' : 'string',
@@ -52,6 +53,7 @@ gridConnector = AWSConnector(client_config_data=
   * `s3_bucket` - The name of the S3 bucket that is used as a back-end for Data Plane
   * `redis_url` - The URL of the Redis deployment that is used as a back-end for the Data Plane
   * `redis_password` - The AUTH password of the Redis deployment that is used as a back-end for the Data Plane
+  * `s3_kms_key_id` - the KMS Key ID that is used to encrypt S3 bucket as a back-end for Data Plane
   * `public_api_gateway_url` -
   * `private_api_gateway_url` -
   * `api_gateway_key` -

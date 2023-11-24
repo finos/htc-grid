@@ -42,8 +42,3 @@ output "grafana_admin_password" {
   value       = local.grafana_admin_password
   sensitive   = true
 }
-
-# output "compute_plane_outputs" {
-#   description = "Compute Plans Outputs"
-#   value       = module.compute_plane
-# }

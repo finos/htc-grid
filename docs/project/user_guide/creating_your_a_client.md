@@ -23,8 +23,8 @@ We assume that all previous steps have been successfully completed, there is at 
     terraform output agent_config
     ```
 
-    c) copy the produced `Agent_config.json` file into cloud9 and note the location
-    d) set environment variable `export AGENT_CONFIG_FILE=/<path>/Agent_config.json`
+    c) copy the produced `agent_config.json` file into cloud9 and note the location
+    d) set environment variable `export AGENT_CONFIG_FILE=/<path>/agent_config.json`
     e) set environment variable `export INTRA_VPC=1` This will allow client to send tasks to ALB without authentication through Cognito as it is deployed in the same VPC as the grid. For clients running from outside the VPC an additional authentication step is required.
 
 

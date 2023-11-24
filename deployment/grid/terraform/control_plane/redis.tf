@@ -135,14 +135,6 @@ resource "aws_security_group" "allow_incoming_redis" {
     protocol    = "-1"
     cidr_blocks = var.allowed_access_cidr_blocks
   }
-
-  # egress {
-  #   description = "Allow outbound Redis traffic"
-  #   from_port   = 0
-  #   to_port     = 0
-  #   protocol    = "-1"
-  #   cidr_blocks = ["0.0.0.0/0"]
-  # }
 }
 
 

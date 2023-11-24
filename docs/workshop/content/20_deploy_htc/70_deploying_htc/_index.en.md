@@ -28,7 +28,7 @@ The execution of this command will prompt for `yes` to continue. Just type `yes`
 If `terraform apply` is successful then in the terraform folder two files are created:
 
 * **kubeconfig_htc_$TAG**: this file will give you access to the EKS cluster through kubectl
-* **Agent_config.json**: this file contains all the parameters, so the agent can run in the infrastructure
+* **agent_config.json**: this file contains all the parameters, so the agent can run in the infrastructure
 
 Let's validate that the Compute Plane has been set up accordingly. First of all, we need to configure our environment with [Kubectl](https://kubernetes.io/docs/tasks/tools/) configuration pointing to our cluster. We will also read from the terraform output the Agent config file and prepare our environment to select the configuration on newly created terminals.
 

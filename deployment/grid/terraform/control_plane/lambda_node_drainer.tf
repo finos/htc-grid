@@ -3,17 +3,6 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
-# locals {
-#   eks_managed_node_groups_autoscaling_group_names = { 
-#     for eks_worker_group_name in local.eks_worker_group_names : 
-#     eks_worker_group_name => join("", [ 
-#       for eks_mng_asg_name in module.eks.eks_managed_node_groups_autoscaling_group_names : eks_mng_asg_name
-#       if startswith(eks_mng_asg_name, "eks-${eks_worker_group_name}-") 
-#     ])
-#   }
-# }
-
-
 module "node_drainer_cloudwatch_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"

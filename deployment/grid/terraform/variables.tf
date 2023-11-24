@@ -334,8 +334,8 @@ variable "metrics_post_agent_connection_string" {
 }
 
 variable "agent_configuration_filename" {
-  description = "filename were agent configuration (in json) is going to be stored"
-  default     = "Agent_config.json"
+  description = "filename where agent configuration (in json) is going to be stored"
+  default     = "agent_config.json"
 }
 
 variable "api_gateway_version" {

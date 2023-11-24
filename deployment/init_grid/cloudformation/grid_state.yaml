@@ -64,7 +64,7 @@ Resources:
         Ref: HTCStateS3Key
 
   # S3 Bucket used for storing the image_repository TF state
-  ImageTfstateHtcGrid:
+  ImageTFStateBucket:
     Type: 'AWS::S3::Bucket'
     DeletionPolicy: Delete
     Properties:
@@ -86,12 +86,12 @@ Resources:
             SSEAlgorithm: 'aws:kms'
             KMSMasterKeyID: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:${HTCStateS3KeyAlias}'
 
-  ImageTfstateHtcGridPolicy:
+  ImageTFStateBucketPolicy:
     DependsOn:
-      - ImageTfstateHtcGrid
+      - ImageTFStateBucket
     Type: 'AWS::S3::BucketPolicy'
     Properties:
-      Bucket: !Ref ImageTfstateHtcGrid
+      Bucket: !Ref ImageTFStateBucket
       PolicyDocument:
         Statement:
           - Action: 's3:PutObject'
@@ -100,7 +100,7 @@ Resources:
                 's3:x-amz-server-side-encryption': true
             Effect: Deny
             Principal: '*'
-            Resource: !Sub 'arn:${AWS::Partition}:s3:::${ImageTfstateHtcGrid}/*'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${ImageTFStateBucket}/*'
             Sid: DenyPublishingUnencryptedResources
           - Action: 's3:PutObject'
             Condition:
@@ -108,7 +108,7 @@ Resources:
                 's3:x-amz-server-side-encryption': 'aws:kms'
             Effect: Deny
             Principal: '*'
-            Resource: !Sub 'arn:${AWS::Partition}:s3:::${ImageTfstateHtcGrid}/*'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${ImageTFStateBucket}/*'
             Sid: DenyIncorrectEncryptionHeader
           - Action:
               - 's3:GetObject'
@@ -118,7 +118,7 @@ Resources:
                 'aws:SecureTransport': false
             Effect: Deny
             Principal: '*'
-            Resource: !Sub 'arn:${AWS::Partition}:s3:::${ImageTfstateHtcGrid}/*'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${ImageTFStateBucket}/*'
             Sid: DenyUnencryptedConnections
           - Action:
               - 's3:PutBucketAcl'
@@ -133,8 +133,8 @@ Resources:
             Effect: Deny
             Principal: '*'
             Resource:
-              - !Sub 'arn:${AWS::Partition}:s3:::${ImageTfstateHtcGrid}'
-              - !Sub 'arn:${AWS::Partition}:s3:::${ImageTfstateHtcGrid}/*'
+              - !Sub 'arn:${AWS::Partition}:s3:::${ImageTFStateBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${ImageTFStateBucket}/*'
             Sid: DenyPublicReadAcl
           - Action:
               - 's3:PutBucketAcl'
@@ -148,12 +148,12 @@ Resources:
             Effect: Deny
             Principal: '*'
             Resource:
-              - !Sub 'arn:${AWS::Partition}:s3:::${ImageTfstateHtcGrid}'
-              - !Sub 'arn:${AWS::Partition}:s3:::${ImageTfstateHtcGrid}/*'
+              - !Sub 'arn:${AWS::Partition}:s3:::${ImageTFStateBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${ImageTFStateBucket}/*'
             Sid: DenyGrantingPublicRead
 
   # S3 Bucket used for storing the Grid TF state
-  TfstateHtcGrid:
+  GridTFStateBucket:
     Type: 'AWS::S3::Bucket'
     DeletionPolicy: Delete
     Properties:
@@ -175,12 +175,12 @@ Resources:
             SSEAlgorithm: 'aws:kms'
             KMSMasterKeyID: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:${HTCStateS3KeyAlias}'
 
-  TfstateHtcGridPolicy:
+  GridTFStateBucketPolicy:
     DependsOn:
-      - TfstateHtcGrid
+      - GridTFStateBucket
     Type: 'AWS::S3::BucketPolicy'
     Properties:
-      Bucket: !Ref TfstateHtcGrid
+      Bucket: !Ref GridTFStateBucket
       PolicyDocument:
         Statement:
           - Action: 's3:PutObject'
@@ -189,7 +189,7 @@ Resources:
                 's3:x-amz-server-side-encryption': true
             Effect: Deny
             Principal: '*'
-            Resource: !Sub 'arn:${AWS::Partition}:s3:::${TfstateHtcGrid}/*'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${GridTFStateBucket}/*'
             Sid: DenyPublishingUnencryptedResources
           - Action: 's3:PutObject'
             Condition:
@@ -197,7 +197,7 @@ Resources:
                 's3:x-amz-server-side-encryption': 'aws:kms'
             Effect: Deny
             Principal: '*'
-            Resource: !Sub 'arn:${AWS::Partition}:s3:::${TfstateHtcGrid}/*'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${GridTFStateBucket}/*'
             Sid: DenyIncorrectEncryptionHeader
           - Action:
               - 's3:GetObject'
@@ -207,7 +207,7 @@ Resources:
                 'aws:SecureTransport': false
             Effect: Deny
             Principal: '*'
-            Resource: !Sub 'arn:${AWS::Partition}:s3:::${TfstateHtcGrid}/*'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${GridTFStateBucket}/*'
             Sid: DenyUnencryptedConnections
           - Action:
               - 's3:PutBucketAcl'
@@ -222,8 +222,8 @@ Resources:
             Effect: Deny
             Principal: '*'
             Resource:
-              - !Sub 'arn:${AWS::Partition}:s3:::${TfstateHtcGrid}'
-              - !Sub 'arn:${AWS::Partition}:s3:::${TfstateHtcGrid}/*'
+              - !Sub 'arn:${AWS::Partition}:s3:::${GridTFStateBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${GridTFStateBucket}/*'
             Sid: DenyPublicReadAcl
           - Action:
               - 's3:PutBucketAcl'
@@ -237,12 +237,12 @@ Resources:
             Effect: Deny
             Principal: '*'
             Resource:
-              - !Sub 'arn:${AWS::Partition}:s3:::${TfstateHtcGrid}'
-              - !Sub 'arn:${AWS::Partition}:s3:::${TfstateHtcGrid}/*'
+              - !Sub 'arn:${AWS::Partition}:s3:::${GridTFStateBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${GridTFStateBucket}/*'
             Sid: DenyGrantingPublicRead
 
   # S3 Bucket used for storing the Lambda binaries
-  LambdaUnitHtcGrid:
+  LambdaLayerBucket:
     Type: 'AWS::S3::Bucket'
     DeletionPolicy: Delete
     Properties:
@@ -264,12 +264,12 @@ Resources:
             SSEAlgorithm: 'aws:kms'
             KMSMasterKeyID: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:${HTCStateS3KeyAlias}'
 
-  LambdaUnitHtcGridPolicy:
+  LambdaLayerBucketPolicy:
     DependsOn:
-      - LambdaUnitHtcGrid
+      - LambdaLayerBucket
     Type: 'AWS::S3::BucketPolicy'
     Properties:
-      Bucket: !Ref LambdaUnitHtcGrid
+      Bucket: !Ref LambdaLayerBucket
       PolicyDocument:
         Statement:
           - Action: 's3:PutObject'
@@ -278,7 +278,7 @@ Resources:
                 's3:x-amz-server-side-encryption': true
             Effect: Deny
             Principal: '*'
-            Resource: !Sub 'arn:${AWS::Partition}:s3:::${LambdaUnitHtcGrid}/*'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${LambdaLayerBucket}/*'
             Sid: DenyPublishingUnencryptedResources
           - Action: 's3:PutObject'
             Condition:
@@ -286,7 +286,7 @@ Resources:
                 's3:x-amz-server-side-encryption': 'aws:kms'
             Effect: Deny
             Principal: '*'
-            Resource: !Sub 'arn:${AWS::Partition}:s3:::${LambdaUnitHtcGrid}/*'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${LambdaLayerBucket}/*'
             Sid: DenyIncorrectEncryptionHeader
           - Action:
               - 's3:GetObject'
@@ -296,7 +296,7 @@ Resources:
                 'aws:SecureTransport': false
             Effect: Deny
             Principal: '*'
-            Resource: !Sub 'arn:${AWS::Partition}:s3:::${LambdaUnitHtcGrid}/*'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${LambdaLayerBucket}/*'
             Sid: DenyUnencryptedConnections
           - Action:
               - 's3:PutBucketAcl'
@@ -311,8 +311,8 @@ Resources:
             Effect: Deny
             Principal: '*'
             Resource:
-              - !Sub 'arn:${AWS::Partition}:s3:::${LambdaUnitHtcGrid}'
-              - !Sub 'arn:${AWS::Partition}:s3:::${LambdaUnitHtcGrid}/*'
+              - !Sub 'arn:${AWS::Partition}:s3:::${LambdaLayerBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${LambdaLayerBucket}/*'
             Sid: DenyPublicReadAcl
           - Action:
               - 's3:PutBucketAcl'
@@ -326,23 +326,23 @@ Resources:
             Effect: Deny
             Principal: '*'
             Resource:
-              - !Sub 'arn:${AWS::Partition}:s3:::${LambdaUnitHtcGrid}'
-              - !Sub 'arn:${AWS::Partition}:s3:::${LambdaUnitHtcGrid}/*'
+              - !Sub 'arn:${AWS::Partition}:s3:::${LambdaLayerBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${LambdaLayerBucket}/*'
             Sid: DenyGrantingPublicRead
 
 Outputs:
   StackName:
-    Description: 'Stack name.'
+    Description: 'The name of the HTC Grid CFN Stack'
     Value: !Sub '${AWS::StackName}'
-  ImageTFStateBucketID:
-    Description: 'S3 bucket name of image tfstate htc-grid'
-    Value: !Ref ImageTfstateHtcGrid
   GridTFStateBucketID:
-    Description: 'S3 bucket name of tfstate htc-grid'
-    Value: !Ref TfstateHtcGrid
+    Description: 'The name of the HTC Grid TF State Bucket'
+    Value: !Ref GridTFStateBucket
+  ImageTFStateBucketID:
+    Description: 'The name of the HTC Grid Image TF State Bucket'
+    Value: !Ref ImageTFStateBucket
   LambdaLayerBucketID:
-    Description: 'S3 bucket name of lambda unit htc-grid'
-    Value: !Ref LambdaUnitHtcGrid
+    Description: 'The name of the HTC Grid Lambda Layer Bucket'
+    Value: !Ref LambdaLayerBucket
   HTCStateS3KeyAlias:
     Description: 'KMS Key Alias used to encrypt the HTC State S3 Buckets'
     Value: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:${HTCStateS3KeyAlias}'

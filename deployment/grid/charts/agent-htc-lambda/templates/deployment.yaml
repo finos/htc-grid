@@ -5,6 +5,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  {{- if eq .Values.securityContext.seccompProfile.type "RuntimeDefault" }}
+  annotations:
+    seccomp.security.alpha.kubernetes.io/pod: "runtime/default"
+  {{- end }}
   name: {{ include "agent-htc-lambda.fullname" . }}
   labels:
     {{- include "agent-htc-lambda.labels" . | nindent 4 }}

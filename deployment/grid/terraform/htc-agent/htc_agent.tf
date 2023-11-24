@@ -164,7 +164,7 @@ module "htc-agent" {
   create_role = true
   role_name   = "role_htc_agent_sa-${local.suffix}"
   role_policies = {
-    agent_permissions = var.htc_agent_permissions_policy_arn #aws_iam_policy.htc_agent_permissions.arn
+    agent_permissions = var.htc_agent_permissions_policy_arn
   }
 
   oidc_providers = {

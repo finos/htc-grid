@@ -53,7 +53,7 @@ securityContext:
   capabilities:
     drop:
     - SYS_PTRACE
-  # readOnlyRootFilesystem: true
+  readOnlyRootFilesystem: true
   # runAsUser: 1000
 
 lambda:
