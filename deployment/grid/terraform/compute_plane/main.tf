@@ -122,6 +122,12 @@ data "aws_autoscaling_group" "eks_managed_node_group_autoscaling_groups" {
 }
 
 
+resource "aws_iam_service_linked_role" "autoscaling_service_linked_role" {
+  aws_service_name = "autoscaling.${local.dns_suffix}"
+  # custom_suffix    = local.suffix
+}
+
+
 module "eks_ebs_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"
@@ -134,7 +140,7 @@ module "eks_ebs_kms_key" {
 
   key_service_roles_for_autoscaling = [
     # Required for the ASG to manage encrypted volumes for nodes
-    "arn:${local.partition}:iam::${local.account_id}:role/aws-service-role/autoscaling.${local.dns_suffix}/AWSServiceRoleForAutoScaling",
+    aws_iam_service_linked_role.autoscaling_service_linked_role.arn,
     # Required for the Cluster / persistentvolume-controller to create encrypted PVCs
     module.eks.cluster_iam_role_arn,
   ]
