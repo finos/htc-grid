@@ -81,7 +81,7 @@ Resources:
           Action:
           - sts:AssumeRole
       ManagedPolicyArns:
-      - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
+      - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess'
       Path: "/"
 
   C9LambdaExecutionRole:
@@ -487,7 +487,7 @@ Resources:
                         -o "/home/ec2-user/environment/aws-htc-grid.tar.gz" \
                         "${HTC_GRID_REPO}/archive/refs/${HTCGRID_URI_REF}.tar.gz"
 
-                  cd /home/ec2-user/environment; tar -zxf aws-htc-grid.tar.gz
+                  cd /home/ec2-user/environment; tar -zxf aws-htc-grid.tar.gz; rm -fr aws-htc-grid.tar.gz
                   if [ ! -e "aws-htc-grid" ]; then
                     mv "aws-htc-grid-${HTCGRID_VERSION}" "aws-htc-grid";
                     echo -e "[INFO] Successfully downloaded HTC-Grid to [~/environment/aws-htc-grid] with version:\n${HTCGRID_VERSION}"

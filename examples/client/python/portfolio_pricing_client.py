@@ -122,10 +122,10 @@ def evaluate_trades_on_grid(grid_tasks):
     try:
         password = os.environ['PASSWORD']
     except KeyError:
-        password = ""
+        password = "" #nosec B105
 
     gridConnector.init(client_config_file,
-                       username=username, password=password)
+                       username=username, password=password) #nosec B105
     gridConnector.authenticate()
 
     submission_resp = gridConnector.send(grid_tasks)

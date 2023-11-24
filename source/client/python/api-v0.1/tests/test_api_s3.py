@@ -159,7 +159,7 @@ def test_init_connector(mock_cognitoidp_client, mock_user_pool, mock_s3_resource
         "task_input_passed_via_external_storage": 1
     }
     connector = AWSConnector()
-    connector.init(
+    connector.init( #nosec B106
         mock_agent_config,
         username="test_user",
         password="test_password",

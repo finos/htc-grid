@@ -132,10 +132,10 @@ def test_init_connector(mock_cognitoidp_client, mock_user_pool, ):
         "task_input_passed_via_external_storage": 1
     }
     connector = AWSConnector()
-    connector.init(
+    connector.init( #nosec B105
         mock_agent_config,
         username="test_user",
-        password="test_password",
+        password="test_password", #nosec B105
         cognitoidp_client=mock_cognitoidp_client,
         redis_custom_connection=fakeredis.FakeRedis())
     return connector

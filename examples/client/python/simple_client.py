@@ -37,9 +37,9 @@ if __name__ == "__main__":
     try:
         password = os.environ['PASSWORD']
     except KeyError:
-        password = ""
+        password = "" #nosec B105
 
-    gridConnector.init(client_config_file, username=username, password=password)    
+    gridConnector.init(client_config_file, username=username, password=password) #nosec B105
     gridConnector.authenticate()
     
     ############################################################################

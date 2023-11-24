@@ -60,7 +60,7 @@ class AWSConnector:
         self.__user_pool_id = ""
         self.__user_pool_client_id = ""
         self.__username = ""
-        self.__password = ""
+        self.__password = "" #nosec B105
         self.__dynamodb_results_pull_intervall = ""
         self.__task_input_passed_via_external_storage = ""
         self.__user_token_id = None
@@ -90,7 +90,7 @@ class AWSConnector:
         except botocore.exceptions.ClientError:
             logging.exception("Failed while refreshing cognito token")
 
-    def init(self, agent_config_data, username="", password="", cognitoidp_client=None, s3_custom_resource=None,
+    def init(self, agent_config_data, username="", password="", cognitoidp_client=None, s3_custom_resource=None, #nosec B107
              redis_custom_connection=None):
         """
         Args:
