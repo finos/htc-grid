@@ -67,9 +67,9 @@ class InOutRedis:
 
         if redis_custom_connection is None:
             self.redis_cache = redis.StrictRedis(
-                host = cache_url,
-                ssl = True,
-                password = cache_password
+                host=cache_url,
+                ssl=True,
+                password=cache_password
             )
         else:
             self.redis_cache = redis_custom_connection
