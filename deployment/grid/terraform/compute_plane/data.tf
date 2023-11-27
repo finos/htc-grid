@@ -49,3 +49,22 @@ data "aws_caller_identity" "current" {}
 
 # Retrieve AWS Partition
 data "aws_partition" "current" {}
+
+
+data "aws_iam_role" "additional_kms_key_admin_roles" {
+  for_each = toset(var.kms_key_admin_roles)
+
+  name = each.key
+}
+
+
+data "aws_iam_roles" "check_asg_service_linked_role" {
+  name_regex = "AWSServiceRoleForAutoScaling"
+}
+
+
+data "aws_autoscaling_group" "eks_managed_node_group_autoscaling_groups" {
+  for_each = local.eks_managed_node_group_asg_names
+
+  name = each.value.asg_name
+}

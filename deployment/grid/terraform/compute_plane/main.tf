@@ -88,6 +88,9 @@ locals {
   additional_kms_key_admin_role_arns = [for k, v in data.aws_iam_role.additional_kms_key_admin_roles : v.arn]
   kms_key_admin_arns                 = concat(local.default_kms_key_admin_arns, local.additional_kms_key_admin_role_arns)
 
+  asg_service_linked_role_exists = can(data.aws_iam_roles.check_asg_service_linked_role.arns)
+  asg_service_linked_role_arn    = local.asg_service_linked_role_exists ? one(data.aws_iam_roles.check_asg_service_linked_role.arns) : aws_iam_service_linked_role.asg_service_linked_role[0].arn
+
   eks_managed_node_group_asg_names = {
     for eks_worker_group_name in local.eks_worker_group_names :
     eks_worker_group_name => {
@@ -108,23 +111,10 @@ locals {
 }
 
 
-data "aws_iam_role" "additional_kms_key_admin_roles" {
-  for_each = toset(var.kms_key_admin_roles)
+resource "aws_iam_service_linked_role" "asg_service_linked_role" {
+  count = local.asg_service_linked_role_exists ? 0 : 1
 
-  name = each.key
-}
-
-
-data "aws_autoscaling_group" "eks_managed_node_group_autoscaling_groups" {
-  for_each = local.eks_managed_node_group_asg_names
-
-  name = each.value.asg_name
-}
-
-
-resource "aws_iam_service_linked_role" "autoscaling_service_linked_role" {
   aws_service_name = "autoscaling.${local.dns_suffix}"
-  # custom_suffix    = local.suffix
 }
 
 
@@ -140,7 +130,7 @@ module "eks_ebs_kms_key" {
 
   key_service_roles_for_autoscaling = [
     # Required for the ASG to manage encrypted volumes for nodes
-    aws_iam_service_linked_role.autoscaling_service_linked_role.arn,
+    local.asg_service_linked_role_arn,
     # Required for the Cluster / persistentvolume-controller to create encrypted PVCs
     module.eks.cluster_iam_role_arn,
   ]
