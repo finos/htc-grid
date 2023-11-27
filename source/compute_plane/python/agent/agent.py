@@ -552,11 +552,6 @@ async def run_task(task, sqs_msg):
     submit_pre_agent_measurements(task)
     task_id = task["task_id"]
 
-    fname_stdout = "./stdout-{task_id}.log".format(task_id=task_id)
-    fname_stderr = "./stderr-{task_id}.log".format(task_id=task_id)
-    f_stdout = open(fname_stdout, "w")
-    f_stderr = open(fname_stderr, "w")
-
     xray_recorder.end_subsegment()
     execution_is_completed_flag = 0
 
@@ -566,8 +561,7 @@ async def run_task(task, sqs_msg):
 
     task_ttl_update = asyncio.create_task(do_ttl_updates_thread(task, sqs_msg))
     await asyncio.gather(task_execution, task_ttl_update)
-    f_stdout.close()
-    f_stderr.close()
+
     xray_recorder.end_segment()
     logging.info("Finished Task: {}".format(task))
     return True
