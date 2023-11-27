@@ -51,7 +51,7 @@ def submit_tasks_batch(
     try:
         password = os.environ['PASSWORD']
     except KeyError:
-        password = "" #nosec B105
+        password = ""  # nosec B105
     adapter.init(agent_config_data, username=username, password=password)
     adapter.authenticate()
     logging.info("connector ready to submit tasks")
