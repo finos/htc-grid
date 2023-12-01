@@ -88,8 +88,8 @@ locals {
   additional_kms_key_admin_role_arns = [for k, v in data.aws_iam_role.additional_kms_key_admin_roles : v.arn]
   kms_key_admin_arns                 = concat(local.default_kms_key_admin_arns, local.additional_kms_key_admin_role_arns)
 
-  asg_service_linked_role_exists = can(data.aws_iam_roles.check_asg_service_linked_role.arns)
-  asg_service_linked_role_arn    = local.asg_service_linked_role_exists ? one(data.aws_iam_roles.check_asg_service_linked_role.arns) : aws_iam_service_linked_role.asg_service_linked_role[0].arn
+  asg_service_linked_role_exists = length(data.aws_iam_roles.check_asg_service_linked_role.arns) > 0 ? true : false
+  asg_service_linked_role_arns   = local.asg_service_linked_role_exists ? data.aws_iam_roles.check_asg_service_linked_role.arns : [ aws_iam_service_linked_role.asg_service_linked_role[0].arn ]
 
   eks_managed_node_group_asg_names = {
     for eks_worker_group_name in local.eks_worker_group_names :
@@ -128,12 +128,12 @@ module "eks_ebs_kms_key" {
 
   key_administrators = local.kms_key_admin_arns
 
-  key_service_roles_for_autoscaling = [
+  key_service_roles_for_autoscaling = flatten([
     # Required for the ASG to manage encrypted volumes for nodes
-    local.asg_service_linked_role_arn,
+    local.asg_service_linked_role_arns,
     # Required for the Cluster / persistentvolume-controller to create encrypted PVCs
     module.eks.cluster_iam_role_arn,
-  ]
+  ])
 
   aliases = ["eks/${var.cluster_name}/ebs"]
 }
