@@ -52,6 +52,11 @@ Parameters:
     Type: String
     Default: latest
     ConstraintDescription: Must be a valid HTC Grid version.
+  HTCGridRepo:
+    Description: HTC Grid repo to pull on Cloud9
+    Type: String
+    Default: https://github.com/awslabs/aws-htc-grid
+    ConstraintDescription: Must be a valid HTC Grid version.
   ParticipantRoleARN:
     Description: "ARN of the Participant Role"
     Default: NONE
@@ -129,7 +134,7 @@ Resources:
   ################## LAMBDA BOOTSTRAP FUNCTION ################
 
   C9BootstrapInstanceLambdaExecution:
-    Description: Bootstrap Cloud9 Instance
+    # Description: Bootstrap Cloud9 Instance
     Type: Custom::C9BootstrapInstanceLambdaExecution
     Properties:
       Tags:
@@ -278,7 +283,7 @@ Resources:
       Tags:
       - Key: Environment
         Value: !Ref 'AWS::StackName'
-      Content: Yaml
+      DocumentFormat: YAML
       DocumentType: Command
       Content:
         schemaVersion: '2.2'
@@ -295,9 +300,10 @@ Resources:
                 - !Sub 'export TERRAFORM_VERSION="${C9TerraformVersion}"'
                 - !Sub 'export HELM_VERSION="${C9HelmVersion}"'
                 - !Sub 'export HTCGRID_VERSION="${HTCGridVersion}"'
+                - !Sub 'export HTCGRID_REPO="${HTCGridRepo}"'
 
                 - |
-                  #source /home/ec2-user/.bashrc
+                  # set -x
 
                   echo -e "========================================================"
                   echo -e " Starting the Cloud9 instance boostrap at: $(date)"
@@ -309,7 +315,7 @@ Resources:
                   echo -e "========================================================"
                   echo -e "[INFO] Running as OS user: $(whoami)"
                   echo -e "[INFO] Running with the following IAM Role:"
-                  sudo -H -u ec2-user aws sts get-caller-identity
+                  sudo -i -u ec2-user aws sts get-caller-identity
                   echo -e "========================================================"
                   echo -e "\n\n"
 
@@ -356,16 +362,16 @@ Resources:
                   echo -e "\n\n"
 
                   echo -e "========================================================"
-                  echo -e "                 Installing jq and envsubst"
+                  echo -e "              Installing pre-requisite tools"
                   echo -e "========================================================"
-                  sudo yum -y install jq gettext unzip
+                  sudo yum -y install git jq gettext unzip
                   echo -e "========================================================"
                   echo -e "\n\n"
 
                   echo -e "========================================================"
                   echo -e "          Updating AWS CLI to the latest version"
                   echo -e "========================================================"
-                  sudo -H -u ec2-user aws --version
+                  sudo -i -u ec2-user aws --version
                   curl --silent --location \
                         -o "${TMP_DIR}/awscliv2.zip" \
                         "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
@@ -389,22 +395,22 @@ Resources:
                   export ACCOUNT_ID="$(aws sts get-caller-identity --output text --query Account)"
                   export AWS_REGION="$(curl -s 169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')"
 
-                  if ! grep -q 'ACCOUNT_ID' ~/.bash_profile; then
+                  if ! grep -q 'ACCOUNT_ID' /home/ec2-user/.bash_profile; then
                     echo -e "export ACCOUNT_ID=\"${ACCOUNT_ID}\"" >> /home/ec2-user/.bash_profile;
                   else
                     echo -e "ACCOUNT_ID already exists in the file;
                   fi
 
-                  if ! grep -q 'AWS_REGION' ~/.bash_profile; then
+                  if ! grep -q 'AWS_REGION' /home/ec2-user/.bash_profile; then
                     echo -e "export AWS_REGION=\"${AWS_REGION}\"" >> /home/ec2-user/.bash_profile;
                   else
                     echo -e "AWS_REGION already exists in the file;
                   fi
 
-                  sudo -H -u ec2-user aws configure set default.region "${AWS_REGION}" > /dev/null 2>&1
-                  sudo -H -u ec2-user aws configure get default.region
+                  sudo -i -u ec2-user aws configure set default.region "${AWS_REGION}" > /dev/null 2>&1
+                  sudo -i -u ec2-user aws configure get default.region
                   echo -e "[INFO] Running with the following IAM Role:"
-                  sudo -H -u ec2-user aws sts get-caller-identity
+                  sudo -i -u ec2-user aws sts get-caller-identity
                   echo -e "========================================================"
                   echo -e "\n\n"
 
@@ -470,31 +476,59 @@ Resources:
                   echo -e "========================================================"
                   echo -e "                   Downloading HTC-Grid"
                   echo -e "========================================================"
-                  export HTC_GRID_REPO="https://github.com/awslabs/aws-htc-grid"
-
-                  if [ "${HTCGRID_VERSION}" == "latest" ]; then
-                    export HTCGRID_VERSION="$(curl -Ls -o /dev/null -w %{url_effective} ${HTC_GRID_REPO}/releases/latest | awk -F '/v' '{ print $NF }')";
-                    echo -e "[INFO] The value for HTCGRID_VERSION is 'latest'. Discovered the latest release as: ${HTCGRID_VERSION}"
+                  export DEFAULT_HTCGRID_REPO="https://github.com/awslabs/aws-htc-grid"
+                  export HTCGRID_HOME="/home/ec2-user/environment"
+                  cd "${HTCGRID_HOME}"
+                  if [ -e "aws-htc-grid" ]; then
+                    export OLD_HTCGRID_DIR="aws-htc-grid.$(date "+%F-%T" | sed 's|:|_|g')"
+                    mv aws-htc-grid "${OLD_HTCGRID_DIR}"
+                    if [ $? -eq 0 ]; then
+                      echo -e "[WARN] Found existing aws-htc-grid directory. Renaming to:\n${OLD_HTCGRID_DIR}"
+                    else
+                      echo -e "[ERROR] Found existing aws-htc-grid directory, however failed to rename it as:\n${OLD_HTCGRID_DIR}"
+                    fi
                   fi
 
-                  if [ "${HTCGRID_VERSION}" == "main" ]; then
-                    export HTCGRID_URI_REF="heads/main";
+                  if [ "${HTCGRID_REPO}" == "${DEFAULT_HTCGRID_REPO}" ]; then
+                    echo -e "[INFO] Downloading HTC Grid release ${HTCGRID_VERSION} from default repo:\n${HTCGRID_REPO}"
+                    if [ "${HTCGRID_VERSION}" == "latest" ]; then
+                      export HTCGRID_VERSION="$(curl -Ls -o /dev/null -w %{url_effective} ${HTCGRID_REPO}/releases/latest | awk -F '/v' '{ print $NF }')";
+                      echo -e "[INFO] The value for HTCGRID_VERSION is 'latest'. Discovered the latest release as: ${HTCGRID_VERSION}"
+                    fi
+
+                    if [ "${HTCGRID_VERSION}" == "main" ]; then
+                      export HTCGRID_URI_REF="heads/main";
+                    else
+                      export HTCGRID_URI_REF="tags/v${HTCGRID_VERSION}";
+                    fi
+
+                    curl --silent --location \
+                          -o "${HTCGRID_HOME}/aws-htc-grid.tar.gz" \
+                          "${HTCGRID_REPO}/archive/refs/${HTCGRID_URI_REF}.tar.gz"
+
+                    cd "${HTCGRID_HOME}"; tar -zxf aws-htc-grid.tar.gz; rm -fr aws-htc-grid.tar.gz
+                    mv "aws-htc-grid-${HTCGRID_VERSION}" "aws-htc-grid"
+
+                    if [ $? -eq 0 ]; then
+                      echo -e "[INFO] Successfully downloaded HTC-Grid to [${HTCGRID_HOME}/aws-htc-grid] with version:\n${HTCGRID_VERSION}"
+                    else
+                      echo -e "[ERROR] Failed to rename aws-htc-grid-${HTCGRID_VERSION} to aws-htc-grid .."
+                    fi
                   else
-                    export HTCGRID_URI_REF="tags/v${HTCGRID_VERSION}";
-                  fi
+                    echo -e "[INFO] Cloning HTC-Grid from:\n${HTCGRID_REPO}/tree/${HTCGRID_VERSION}"
+                    mkdir -p "${HTCGRID_HOME}/aws-htc-grid"; cd "${HTCGRID_HOME}/aws-htc-grid"
+                    git init && git branch -m main || true && \
+                    git remote add origin "${HTCGRID_REPO}.git" -f && git reset --hard origin/main && \
+                    git checkout "${HTCGRID_VERSION}"
 
-                  curl --silent --location \
-                        -o "/home/ec2-user/environment/aws-htc-grid.tar.gz" \
-                        "${HTC_GRID_REPO}/archive/refs/${HTCGRID_URI_REF}.tar.gz"
-
-                  cd /home/ec2-user/environment; tar -zxf aws-htc-grid.tar.gz; rm -fr aws-htc-grid.tar.gz
-                  if [ ! -e "aws-htc-grid" ]; then
-                    mv "aws-htc-grid-${HTCGRID_VERSION}" "aws-htc-grid";
-                    echo -e "[INFO] Successfully downloaded HTC-Grid to [~/environment/aws-htc-grid] with version:\n${HTCGRID_VERSION}"
-                  else
-                    echo -e "[ERROR] Directory [~/environment/aws-htc-grid] already exists! Skipping the rename ...";
+                    if [ $? -eq 0 ]; then
+                      echo -e "[INFO] Successfully downloaded HTC-Grid to [${HTCGRID_HOME}/aws-htc-grid] with version:\n${HTCGRID_VERSION}"
+                    else
+                      echo -e "[ERROR] Failed to clone ${HTCGRID_REPO}.git with version ${HTCGRID_VERSION}. Exiting ...";
+                      exit 254
+                    fi
                   fi
-                  sudo chown -R ec2-user:ec2-user "/home/ec2-user/environment/"
+                  sudo chown -R ec2-user:ec2-user "${HTCGRID_HOME}"
                   echo -e "========================================================"
                   echo -e "\n\n"
 
