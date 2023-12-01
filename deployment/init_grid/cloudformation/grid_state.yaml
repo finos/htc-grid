@@ -87,8 +87,6 @@ Resources:
             KMSMasterKeyID: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:${HTCStateS3KeyAlias}'
 
   GridTFStateBucketPolicy:
-    DependsOn:
-      - GridTFStateBucket
     Type: 'AWS::S3::BucketPolicy'
     Properties:
       Bucket: !Ref GridTFStateBucket
@@ -176,8 +174,6 @@ Resources:
             KMSMasterKeyID: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:${HTCStateS3KeyAlias}'
 
   ImageTFStateBucketPolicy:
-    DependsOn:
-      - ImageTFStateBucket
     Type: 'AWS::S3::BucketPolicy'
     Properties:
       Bucket: !Ref ImageTFStateBucket
@@ -265,8 +261,6 @@ Resources:
             KMSMasterKeyID: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:${HTCStateS3KeyAlias}'
 
   LambdaLayerBucketPolicy:
-    DependsOn:
-      - LambdaLayerBucket
     Type: 'AWS::S3::BucketPolicy'
     Properties:
       Bucket: !Ref LambdaLayerBucket
