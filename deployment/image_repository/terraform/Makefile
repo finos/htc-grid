@@ -22,6 +22,15 @@ apply: $(TF_SRCS) $(GRID_CONFIG)
 destroy:
 	terraform destroy -var-file ../images_config.json -var region=$(REGION)
 
+#########################################
+# execute terraform without confirmation
+#########################################
+auto-apply: $(TF_SRCS) $(GRID_CONFIG)
+	terraform apply -auto-approve -no-color -var-file ../images_config.json -parallelism=1 -var region=$(REGION) -var rebuild_runtimes=$(REBUILD_RUNTIMES)
+auto-destroy:
+	terraform destroy -auto-approve -no-color -var-file ../images_config.json -var region=$(REGION)
+#########################################
+
 reset:
 	rm -rf .terraform
 

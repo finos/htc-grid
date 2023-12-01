@@ -26,8 +26,8 @@ apply: $(TF_SRCS) $(GRID_CONFIG)
 
 destroy:
 	terraform destroy  -var-file $(GRID_CONFIG)
-#########################################
 
+#########################################
 # execute terraform without confirmation
 #########################################
 auto-apply: $(TF_SRCS) $(GRID_CONFIG)
