@@ -71,7 +71,6 @@ Resources:
       BucketName: !Sub
         - '${BucketTag}-htc-grid-tfstate-${RANDOM}'
         - RANDOM: !Select [0, !Split ['-', !Select [2, !Split ['/', !Ref 'AWS::StackId' ]]]]
-      AccessControl: Private
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -158,7 +157,6 @@ Resources:
       BucketName: !Sub
         - '${BucketTag}-htc-grid-image-tfstate-${RANDOM}'
         - RANDOM: !Select [0, !Split ['-', !Select [2, !Split ['/', !Ref 'AWS::StackId' ]]]]
-      AccessControl: Private
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -245,7 +243,6 @@ Resources:
       BucketName: !Sub
         - '${BucketTag}-htc-grid-lambda-layer-${RANDOM}'
         - RANDOM: !Select [0, !Split ['-', !Select [2, !Split ['/', !Ref 'AWS::StackId' ]]]]
-      AccessControl: Private
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
