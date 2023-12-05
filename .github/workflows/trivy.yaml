@@ -2,18 +2,18 @@
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
-name: Test-Bandit
+name: Test-Trivy
 on: [push, pull_request]
 
 jobs:
-  bandit:
+  trivy:
     runs-on: ubuntu-latest
     env:
       NEW_BRANCH: new_branch
       MAIN_BRANCH: main_branch
-      NEW_BRANCH_REPORT_FILE: new_branch_bandit_report_file.txt
-      MAIN_BRANCH_REPORT_FILE: main_branch_bandit_report_file.txt
-      DIFF_REPORTS_FILE: diff_bandit_reports.txt
+      NEW_BRANCH_REPORT_FILE: new_branch_trivy_report_file.sarif
+      MAIN_BRANCH_REPORT_FILE: main_branch_trivy_report_file.sarif
+      DIFF_REPORTS_FILE: diff_trivy_reports.txt
 
     steps:
       - name: Checkout the modified branch
@@ -27,17 +27,36 @@ jobs:
           repository: awslabs/aws-htc-grid
           path: ${{ env.MAIN_BRANCH }}
 
-      - name: Install bandit
-        run: |-
-          pip3 install bandit
-          ls -l -a
-          pwd
+      - name: Run Trivy in fs mode on the new branch
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: ${{ env.NEW_BRANCH }}
+          ignore-unfixed: true
+          severity: UNKNOWN,MEDIUM,HIGH,CRITICAL
+          trivy-config: "${{ env.NEW_BRANCH }}/.github/workflows/trivy.config"
+          # output: ${{ env.NEW_BRANCH_REPORT_FILE }} # This flag doesnt seem to be working.
+        env:
+          TRIVY_OUTPUT: ${{ env.NEW_BRANCH_REPORT_FILE }}
 
-      - name: Run bandit on the new branch
-        run: cd ./${{ env.NEW_BRANCH }}/ && bandit --configfile ./.github/workflows/bandit.config --exit-zero --recursive --output ./../${{ env.NEW_BRANCH_REPORT_FILE }} ./ && cd ./../
+      - name: Run Trivy in fs mode on the main branch
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: ${{ env.MAIN_BRANCH }}
+          ignore-unfixed: true
+          severity: UNKNOWN,MEDIUM,HIGH,CRITICAL
+          trivy-config: "${{ env.NEW_BRANCH }}/.github/workflows/trivy.config"
+          # output: ${{ env.MAIN_BRANCH_REPORT_FILE }} # This flag doesnt seem to be working.
+        env:
+          TRIVY_OUTPUT: ${{ env.MAIN_BRANCH_REPORT_FILE }}
 
-      - name: Run bandit on the main branch
-        run: cd ./${{ env.MAIN_BRANCH }}/ && bandit --configfile ./../${{ env.NEW_BRANCH }}/.github/workflows/bandit.config --exit-zero --recursive --output ./../${{ env.MAIN_BRANCH_REPORT_FILE }} ./ && cd ./../
+      # This action can be enabled when using GitHub Security Code Scanning feature
+      # - name: Upload Trivy scan results to GitHub Security tab
+      #   uses: github/codeql-action/upload-sarif@v2
+      #   if: success() || failure()
+      #   with:
+      #     sarif_file: "${{ env.NEW_BRANCH_REPORT_FILE }}"
 
       - name: Save report results for the new branch
         uses: actions/upload-artifact@v3
