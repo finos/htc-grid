@@ -16,7 +16,7 @@ jobs:
       DIFF_REPORTS_FILE: diff_cfn_nag_reports.txt
 
     steps:
-      - name: Checkout the modified branch
+      - name: Checkout the new branch
         uses: actions/checkout@v3
         with: 
           path: ${{ env.NEW_BRANCH }}
@@ -27,24 +27,19 @@ jobs:
           repository: awslabs/aws-htc-grid
           path: ${{ env.MAIN_BRANCH }}
 
-      - name: Install CFN_Nag
-        run: |-
-          pip3 install awscli 
-          pip3 install cfn-lint             
-          sudo apt-get install jq git -y -q
-          sudo gem install cfn-nag
-          ls -l -a
-          pwd
+      - name: Run cfn_nag on the new branch
+        uses: stelligent/cfn_nag@master
+        with:
+          input_path: ${{ env.NEW_BRANCH }}/deployment/
+          extra_args: -g #-t '..*\/(cfn|cloudformation)\/..*\.yaml' # This flag doesnt seem to be working.
+          output_path: ${{ env.NEW_BRANCH_REPORT_FILE }}
 
-      - name: Run CFN_Nag on the new branch
-        run: |-
-          cd ./${{ env.NEW_BRANCH }}/ && cfn_nag_scan --input-path ./deployment/dev_environment_cloud9/cfn/  >> ./../${{ env.NEW_BRANCH_REPORT_FILE }} || true && cd ./../
-          cd ./${{ env.NEW_BRANCH }}/ && cfn_nag_scan --input-path ./deployment/init_grid/cloudformation/  >> ./../${{ env.NEW_BRANCH_REPORT_FILE }} || true && cd ./../
-
-      - name: Run CFN_Nag on the main branch
-        run: |-
-          cd ./${{ env.MAIN_BRANCH }}/ && cfn_nag_scan --input-path ./deployment/dev_environment_cloud9/cfn/ >> ./../${{ env.MAIN_BRANCH_REPORT_FILE }} || true && cd ./../
-          cd ./${{ env.MAIN_BRANCH }}/ && cfn_nag_scan --input-path ./deployment/init_grid/cloudformation/ >> ./../${{ env.MAIN_BRANCH_REPORT_FILE }} || true && cd ./../
+      - name: Run cfn_nag on main
+        uses: stelligent/cfn_nag@master
+        with:
+          input_path: ${{ env.MAIN_BRANCH }}/deployment/
+          extra_args: -g #-t '..*\/(cfn|cloudformation)\/..*\.yaml' # This flag doesnt seem to be working.
+          output_path: ${{ env.MAIN_BRANCH_REPORT_FILE }}
 
       - name: Save report results for the new branch
         uses: actions/upload-artifact@v3
@@ -58,7 +53,7 @@ jobs:
           name: ${{ env.MAIN_BRANCH_REPORT_FILE }}
           path: ${{ env.MAIN_BRANCH_REPORT_FILE }}
 
-      - name: check
+      - name: Generate the diff of reports between main and the new branch
         run: |-
           diff ${{ env.NEW_BRANCH_REPORT_FILE }} ${{ env.MAIN_BRANCH_REPORT_FILE }} >> ${{ env.DIFF_REPORTS_FILE }} || true
 
@@ -68,8 +63,9 @@ jobs:
           name: ${{ env.DIFF_REPORTS_FILE }}
           path: ${{ env.DIFF_REPORTS_FILE }}
 
-      - name: Verify that the number of errors in the new branch does not exceeding the number of existing errors in the main branch.
+      - name: Verify that the number of errors in the new branch does not exceed the number of existing errors in the main branch
         run: |-          
-          echo 'if [ "$(wc -l < $1 )" -gt "$(wc -l < $2 )" ]; then echo "Warning New branch has more errors!"; exit 1; fi; exit 0' >> script.sh
-          ls -l -a
-          bash ./script.sh ${{ env.NEW_BRANCH_REPORT_FILE }} ${{ env.MAIN_BRANCH_REPORT_FILE }}
+          if [ "$(wc -l < ${{ env.NEW_BRANCH_REPORT_FILE }} )" -gt "$(wc -l < ${{ env.MAIN_BRANCH_REPORT_FILE }} )" ]; then \
+            echo "Warning: New branch has more errors!"
+            exit 1
+          fi

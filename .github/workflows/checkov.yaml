@@ -16,7 +16,7 @@ jobs:
       DIFF_REPORTS_FILE: diff_checkov_reports.txt
 
     steps:
-      - name: Checkout the modified branch
+      - name: Checkout the new branch
         uses: actions/checkout@v3
         with: 
           path: ${{ env.NEW_BRANCH }}
@@ -31,7 +31,7 @@ jobs:
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: ${{ env.NEW_BRANCH }}
-          config_file: "${{ env.NEW_BRANCH }}/.github/workflows/checkov.config"
+          config_file: "${{ env.NEW_BRANCH }}/.github/workflows/checkov.conf"
           output_format: cli,sarif
           output_file_path: console,${{ env.NEW_BRANCH_REPORT_FILE }}
 
@@ -39,7 +39,7 @@ jobs:
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: ${{ env.MAIN_BRANCH }}
-          config_file: "${{ env.NEW_BRANCH }}/.github/workflows/checkov.config"
+          config_file: "${{ env.NEW_BRANCH }}/.github/workflows/checkov.conf"
           output_format: cli,sarif
           output_file_path: console,${{ env.MAIN_BRANCH_REPORT_FILE }}
 
@@ -61,7 +61,7 @@ jobs:
           name: ${{ env.MAIN_BRANCH_REPORT_FILE }}
           path: ${{ env.MAIN_BRANCH_REPORT_FILE }}
 
-      - name: Output diff of 2 reports
+      - name: Generate the diff of reports between main and the new branch
         run: |-
           diff ${{ env.NEW_BRANCH_REPORT_FILE }} ${{ env.MAIN_BRANCH_REPORT_FILE }} >> ${{ env.DIFF_REPORTS_FILE }} || true
 
@@ -71,8 +71,9 @@ jobs:
           name: ${{ env.DIFF_REPORTS_FILE }}
           path: ${{ env.DIFF_REPORTS_FILE }}
 
-      - name: Verify that the number of errors in the new branch does not exceed the number of existing errors in the main branch.
+      - name: Verify that the number of errors in the new branch does not exceed the number of existing errors in the main branch
         run: |-          
-          echo 'if [ "$(wc -l < $1 )" -gt "$(wc -l < $2 )" ]; then echo "Warning New branch has more errors!"; exit 1; fi; exit 0' >> script.sh
-          ls -l -a
-          bash ./script.sh ${{ env.NEW_BRANCH_REPORT_FILE }} ${{ env.MAIN_BRANCH_REPORT_FILE }}
+          if [ "$(wc -l < ${{ env.NEW_BRANCH_REPORT_FILE }} )" -gt "$(wc -l < ${{ env.MAIN_BRANCH_REPORT_FILE }} )" ]; then \
+            echo "Warning: New branch has more errors!"
+            exit 1
+          fi

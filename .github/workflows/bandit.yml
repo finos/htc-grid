@@ -16,7 +16,7 @@ jobs:
       DIFF_REPORTS_FILE: diff_bandit_reports.txt
 
     steps:
-      - name: Checkout the modified branch
+      - name: Checkout the new branch
         uses: actions/checkout@v3
         with: 
           path: ${{ env.NEW_BRANCH }}
@@ -30,14 +30,18 @@ jobs:
       - name: Install bandit
         run: |-
           pip3 install bandit
-          ls -l -a
-          pwd
 
       - name: Run bandit on the new branch
-        run: cd ./${{ env.NEW_BRANCH }}/ && bandit --configfile ./.github/workflows/bandit.config --exit-zero --recursive --output ./../${{ env.NEW_BRANCH_REPORT_FILE }} ./ && cd ./../
+        run: |-
+          bandit --configfile ${{ env.NEW_BRANCH }}/.github/workflows/bandit.conf \
+                 --exit-zero --recursive \
+                 --output ${{ env.NEW_BRANCH_REPORT_FILE }} ${{ env.NEW_BRANCH }}/
 
       - name: Run bandit on the main branch
-        run: cd ./${{ env.MAIN_BRANCH }}/ && bandit --configfile ./../${{ env.NEW_BRANCH }}/.github/workflows/bandit.config --exit-zero --recursive --output ./../${{ env.MAIN_BRANCH_REPORT_FILE }} ./ && cd ./../
+        run: |-
+          bandit --configfile ${{ env.NEW_BRANCH }}/.github/workflows/bandit.conf \
+                 --exit-zero --recursive \
+                 --output ${{ env.MAIN_BRANCH_REPORT_FILE }} ${{ env.MAIN_BRANCH }}/
 
       - name: Save report results for the new branch
         uses: actions/upload-artifact@v3
@@ -51,7 +55,7 @@ jobs:
           name: ${{ env.MAIN_BRANCH_REPORT_FILE }}
           path: ${{ env.MAIN_BRANCH_REPORT_FILE }}
 
-      - name: Output diff of 2 reports
+      - name: Generate the diff of reports between main and the new branch
         run: |-
           diff ${{ env.NEW_BRANCH_REPORT_FILE }} ${{ env.MAIN_BRANCH_REPORT_FILE }} >> ${{ env.DIFF_REPORTS_FILE }} || true
 
@@ -61,8 +65,9 @@ jobs:
           name: ${{ env.DIFF_REPORTS_FILE }}
           path: ${{ env.DIFF_REPORTS_FILE }}
 
-      - name: Verify that the number of errors in the new branch does not exceed the number of existing errors in the main branch.
+      - name: Verify that the number of errors in the new branch does not exceed the number of existing errors in the main branch
         run: |-          
-          echo 'if [ "$(wc -l < $1 )" -gt "$(wc -l < $2 )" ]; then echo "Warning New branch has more errors!"; exit 1; fi; exit 0' >> script.sh
-          ls -l -a
-          bash ./script.sh ${{ env.NEW_BRANCH_REPORT_FILE }} ${{ env.MAIN_BRANCH_REPORT_FILE }}
+          if [ "$(wc -l < ${{ env.NEW_BRANCH_REPORT_FILE }} )" -gt "$(wc -l < ${{ env.MAIN_BRANCH_REPORT_FILE }} )" ]; then \
+            echo "Warning: New branch has more errors!"
+            exit 1
+          fi
