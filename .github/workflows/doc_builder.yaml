@@ -1,3 +1,7 @@
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
 name: Publish docs via GitHub Pages
 on:
   push:
@@ -10,11 +14,13 @@ jobs:
   build:
     name: Deploy docs
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout mainline
         uses: actions/checkout@v2
         with:
           ref: 'main'
+
       - name: Deploy docs
         uses: mhausenblas/mkdocs-deploy-gh-pages@master
         env:

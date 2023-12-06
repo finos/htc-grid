@@ -1,0 +1,87 @@
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
+name: Infra-as-Code Code Scanning
+on: [push, pull_request]
+permissions:
+  contents: read
+
+jobs:
+
+################
+# Trivy Checks #
+################
+  trivy:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+    runs-on: ubuntu-latest
+    env:
+      TRIVY_REPORT_FILE: trivy_report.sarif
+
+    steps:
+      - name: Checkout the branch
+        uses: actions/checkout@v3
+
+      - name: Run trivy in fs mode and generate report
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          severity: UNKNOWN,MEDIUM,HIGH,CRITICAL
+          trivy-config: ".github/conf/trivy.yaml"
+          # output: ${{ env.TRIVY_REPORT_FILE }} # This flag doesnt seem to be working.
+        env:
+          TRIVY_OUTPUT: ${{ env.TRIVY_REPORT_FILE }}
+
+      # As per the following issue/solution: https://github.com/aquasecurity/trivy/issues/5003
+      - name: Fix trivy SARIF report for URI scheme
+        run: |-
+          sed -i 's#git::https:/##g' ${{ env.TRIVY_REPORT_FILE }}
+
+      - name: Upload trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: success() || failure()
+        with:
+          sarif_file: "${{ env.TRIVY_REPORT_FILE }}"
+
+      - name: Save report results as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.TRIVY_REPORT_FILE }}
+          path: ${{ env.TRIVY_REPORT_FILE }}
+
+##################
+# Checkov Checks #
+##################
+  checkov:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+    runs-on: ubuntu-latest
+    env:
+      CHECKOV_REPORT_FILE: checkov_report.sarif
+
+    steps:
+      - name: Checkout the branch
+        uses: actions/checkout@v3
+
+      - name: Run checkov on the new branch
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          config_file: ".github/conf/checkov.yaml"
+          output_format: cli,sarif
+          output_file_path: console,${{ env.CHECKOV_REPORT_FILE }}
+
+      - name: Upload checkov scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: success() || failure()
+        with:
+          sarif_file: "${{ env.CHECKOV_REPORT_FILE }}"
+
+      - name: Save report results as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.CHECKOV_REPORT_FILE }}
+          path: ${{ env.CHECKOV_REPORT_FILE }}

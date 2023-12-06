@@ -17,9 +17,9 @@ scan:
     - '**/.terraform'
     - venv/
 
-misconfiguration:
-  terraform:
-    exclude-downloaded-modules: true
+# misconfiguration:
+#   terraform:
+#     exclude-downloaded-modules: true
 
 # These flag dont seem to be working from the config file.
 
