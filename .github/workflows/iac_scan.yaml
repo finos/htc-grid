@@ -67,7 +67,7 @@ jobs:
       - name: Checkout the branch
         uses: actions/checkout@v3
 
-      - name: Run checkov on the new branch
+      - name: Run checkov and generate report
         uses: bridgecrewio/checkov-action@v12
         with:
           config_file: ".github/conf/checkov.yaml"
@@ -85,3 +85,50 @@ jobs:
         with:
           name: ${{ env.CHECKOV_REPORT_FILE }}
           path: ${{ env.CHECKOV_REPORT_FILE }}
+
+#################
+# TFLint Checks #
+#################
+  tflint:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+    runs-on: ubuntu-latest
+    env:
+      TFLINT_REPORT_FILE: tflint_report.sarif
+
+    steps:
+      - name: Checkout the branch
+        uses: actions/checkout@v3
+
+      - name: Setup tflint
+        uses: terraform-linters/setup-tflint@v3
+        with:
+          tflint_wrapper: true
+
+      - name: Install tflint plugins
+        run: |-
+          tflint --init -c .github/conf/tflint.hcl
+
+      - name: Run tflint
+        id: tflint_run
+        run: |-
+          tflint --recursive --format sarif -c $(pwd)/.github/conf/tflint.hcl
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Generate report
+        run: |-
+          echo '${{ steps.tflint_run.outputs.stdout }}' > "${{ env.TFLINT_REPORT_FILE }}"
+
+      - name: Upload tflint scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: success() || failure()
+        with:
+          sarif_file: "${{ env.TFLINT_REPORT_FILE }}"
+
+      - name: Save report results as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.TFLINT_REPORT_FILE }}
+          path: ${{ env.TFLINT_REPORT_FILE }}
