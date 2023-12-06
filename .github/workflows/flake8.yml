@@ -4,15 +4,20 @@
 
 name: Test-Flake8
 on: [push, pull_request]
+permissions:
+  contents: read
 
 jobs:
-  flake:
+  flake8:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     runs-on: ubuntu-latest
     env:
       NEW_BRANCH: new_branch
       MAIN_BRANCH: main_branch
-      NEW_BRANCH_REPORT_FILE: new_branch_flake_report_file.txt
-      MAIN_BRANCH_REPORT_FILE: main_branch_flake_report_file.txt
+      NEW_BRANCH_REPORT_FILE: new_branch_flake_report_file.sarif
+      MAIN_BRANCH_REPORT_FILE: main_branch_flake_report_file.sarif
       DIFF_REPORTS_FILE: diff_reports.txt
 
     steps:
@@ -27,21 +32,27 @@ jobs:
           repository: awslabs/aws-htc-grid
           path: ${{ env.MAIN_BRANCH }}
 
-      - name: Install flake8
-        run: |-
-          pip3 install flake8
-          ls -l -a
-          pwd
-
       - name: Run flake8 on the new branch
-        run: |-
-          flake8 --config ${{ env.NEW_BRANCH }}/.github/workflows/flake8.conf \
-                 --exit-zero --output-file ${{ env.NEW_BRANCH_REPORT_FILE }} ${{ env.NEW_BRANCH }}
+        uses: py-actions/flake8@v2
+        with:
+          path: ${{ env.NEW_BRANCH }}
+          args: --config ${{ env.NEW_BRANCH }}/.github/workflows/flake8.conf --output-file ${{ env.NEW_BRANCH_REPORT_FILE }}
+          plugins: 'flake8-sarif'
+        continue-on-error: true
 
-      - name: Run flake8 on the main branch
-        run: |-
-          flake8 --config ${{ env.NEW_BRANCH }}/.github/workflows/flake8.conf \
-                 --exit-zero --output-file ${{ env.MAIN_BRANCH_REPORT_FILE }} ${{ env.MAIN_BRANCH }}
+      - name: Run flake8 on main
+        uses: py-actions/flake8@v2
+        with:
+          path: ${{ env.MAIN_BRANCH }}
+          args: --config ${{ env.NEW_BRANCH }}/.github/workflows/flake8.conf --output-file ${{ env.MAIN_BRANCH_REPORT_FILE }}
+          plugins: 'flake8-sarif'
+        continue-on-error: true
+
+      - name: Upload flake8 scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: success() || failure()
+        with:
+          sarif_file: "${{ env.NEW_BRANCH_REPORT_FILE }}"
 
       - name: Save report results for the new branch
         uses: actions/upload-artifact@v3

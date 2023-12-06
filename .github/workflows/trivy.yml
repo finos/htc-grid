@@ -2,18 +2,23 @@
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
-name: Test-CFN-Lint
+name: Test-Trivy
 on: [push, pull_request]
+permissions:
+  contents: read
 
 jobs:
-  cfn-lint:
+  trivy:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     runs-on: ubuntu-latest
     env:
       NEW_BRANCH: new_branch
       MAIN_BRANCH: main_branch
-      NEW_BRANCH_REPORT_FILE: new_branch_cfnlint_report_file.json
-      MAIN_BRANCH_REPORT_FILE: main_branch_cfnlint_report_file.json
-      DIFF_REPORTS_FILE: diff_cfnlint_reports.txt
+      NEW_BRANCH_REPORT_FILE: new_branch_trivy_report_file.sarif
+      MAIN_BRANCH_REPORT_FILE: main_branch_trivy_report_file.sarif
+      DIFF_REPORTS_FILE: diff_trivy_reports.txt
 
     steps:
       - name: Checkout the new branch
@@ -27,26 +32,40 @@ jobs:
           repository: awslabs/aws-htc-grid
           path: ${{ env.MAIN_BRANCH }}
 
-      - name: Setup cfn-lint with latest version
-        uses: scottbrenner/cfn-lint-action@v2
+      - name: Run Trivy in fs mode on the new branch
+        uses: aquasecurity/trivy-action@master
         with:
-          command: cfn-lint --version
+          scan-type: 'fs'
+          scan-ref: ${{ env.NEW_BRANCH }}
+          ignore-unfixed: true
+          severity: UNKNOWN,MEDIUM,HIGH,CRITICAL
+          trivy-config: "${{ env.NEW_BRANCH }}/.github/workflows/trivy.conf"
+          # output: ${{ env.NEW_BRANCH_REPORT_FILE }} # This flag doesnt seem to be working.
+        env:
+          TRIVY_OUTPUT: ${{ env.NEW_BRANCH_REPORT_FILE }}
 
-      - name: Run cfn_lint on the new branch
-        run: |-
-          cfn-lint --config-file ${{ env.NEW_BRANCH }}/.github/workflows/cfn_lint.conf \
-                   --format json --output-file ${{ env.NEW_BRANCH_REPORT_FILE }} \
-                   ${{ env.NEW_BRANCH }}/deployment/dev_environment_cloud9/**/*.yaml \
-                   ${{ env.NEW_BRANCH }}/deployment/init_grid/**/*.yaml
-        continue-on-error: true
+      - name: Run Trivy in fs mode on the main branch
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: ${{ env.MAIN_BRANCH }}
+          ignore-unfixed: true
+          severity: UNKNOWN,MEDIUM,HIGH,CRITICAL
+          trivy-config: "${{ env.NEW_BRANCH }}/.github/workflows/trivy.conf"
+          # output: ${{ env.MAIN_BRANCH_REPORT_FILE }} # This flag doesnt seem to be working.
+        env:
+          TRIVY_OUTPUT: ${{ env.MAIN_BRANCH_REPORT_FILE }}
 
-      - name: Run cfn_lint on the main branch
+      # As per the following issue/solution: https://github.com/aquasecurity/trivy/issues/5003
+      - name: Fix trivy SARIF report for URI scheme
         run: |-
-          cfn-lint --config-file ${{ env.NEW_BRANCH }}/.github/workflows/cfn_lint.conf \
-                   --format json --output-file ${{ env.MAIN_BRANCH_REPORT_FILE }} \
-                   ${{ env.MAIN_BRANCH }}/deployment/dev_environment_cloud9/**/*.yaml \
-                   ${{ env.MAIN_BRANCH }}/deployment/init_grid/**/*.yaml
-        continue-on-error: true
+          sed -i 's#git::https:/##g' ${{ env.NEW_BRANCH_REPORT_FILE }}
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: success() || failure()
+        with:
+          sarif_file: "${{ env.NEW_BRANCH_REPORT_FILE }}"
 
       - name: Save report results for the new branch
         uses: actions/upload-artifact@v3

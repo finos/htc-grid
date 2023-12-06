@@ -4,15 +4,20 @@
 
 name: Test-Bandit
 on: [push, pull_request]
+permissions:
+  contents: read
 
 jobs:
   bandit:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     runs-on: ubuntu-latest
     env:
       NEW_BRANCH: new_branch
       MAIN_BRANCH: main_branch
-      NEW_BRANCH_REPORT_FILE: new_branch_bandit_report_file.txt
-      MAIN_BRANCH_REPORT_FILE: main_branch_bandit_report_file.txt
+      NEW_BRANCH_REPORT_FILE: new_branch_bandit_report_file.sarif
+      MAIN_BRANCH_REPORT_FILE: main_branch_bandit_report_file.sarif
       DIFF_REPORTS_FILE: diff_bandit_reports.txt
 
     steps:
@@ -29,19 +34,25 @@ jobs:
 
       - name: Install bandit
         run: |-
-          pip3 install bandit
+          pip3 install bandit bandit-sarif-formatter
 
       - name: Run bandit on the new branch
         run: |-
           bandit --configfile ${{ env.NEW_BRANCH }}/.github/workflows/bandit.conf \
-                 --exit-zero --recursive \
+                 --format sarif --exit-zero --recursive \
                  --output ${{ env.NEW_BRANCH_REPORT_FILE }} ${{ env.NEW_BRANCH }}/
 
       - name: Run bandit on the main branch
         run: |-
           bandit --configfile ${{ env.NEW_BRANCH }}/.github/workflows/bandit.conf \
-                 --exit-zero --recursive \
+                 --format sarif --exit-zero --recursive \
                  --output ${{ env.MAIN_BRANCH_REPORT_FILE }} ${{ env.MAIN_BRANCH }}/
+
+      - name: Upload bandit scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: success() || failure()
+        with:
+          sarif_file: "${{ env.NEW_BRANCH_REPORT_FILE }}"
 
       - name: Save report results for the new branch
         uses: actions/upload-artifact@v3

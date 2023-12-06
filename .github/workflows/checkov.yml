@@ -4,15 +4,20 @@
 
 name: Test-Checkov
 on: [push, pull_request]
+permissions:
+  contents: read
 
 jobs:
   checkov:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     runs-on: ubuntu-latest
     env:
       NEW_BRANCH: new_branch
       MAIN_BRANCH: main_branch
-      NEW_BRANCH_REPORT_FILE: new_branch_checkov_report_file.json
-      MAIN_BRANCH_REPORT_FILE: main_branch_checkov_report_file.json
+      NEW_BRANCH_REPORT_FILE: new_branch_checkov_report_file.sarif
+      MAIN_BRANCH_REPORT_FILE: main_branch_checkov_report_file.sarif
       DIFF_REPORTS_FILE: diff_checkov_reports.txt
 
     steps:
@@ -43,11 +48,10 @@ jobs:
           output_format: cli,sarif
           output_file_path: console,${{ env.MAIN_BRANCH_REPORT_FILE }}
 
-      # This action can be enabled when using GitHub Security Code Scanning feature
-      # - name: Upload checkov scan results to GitHub Security tab
-      #   uses: github/codeql-action/upload-sarif@v2
-      #   with:
-      #     sarif_file: "./../${{ env.NEW_BRANCH_REPORT_FILE }}"
+      - name: Upload checkov scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: "${{ env.NEW_BRANCH_REPORT_FILE }}"
 
       - name: Save report results for the new branch
         uses: actions/upload-artifact@v3
