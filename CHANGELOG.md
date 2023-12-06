@@ -2,6 +2,59 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.4.3](https://github.com/awslabs/aws-htc-grid/compare/v0.4.2...v0.4.3)
+
+> 6 December 2023
+
+### Terraform State:
+- Encrypt and secure `init_grid` state and Lambda buckets.
+- Limit the scope of KMS Key policy for State Buckets.
+- Remove `AccessControls` and use `BucketPolicy` to keep the bucket private.
+- Configure all Makefiles to use encrypted S3 Buckets for TF State, non-root Dockerfiles, fix HTCGRID_ECR_REPO, name CloudFormation stack outputs, and support updating existing `init_grid` stack.
+- Improve `init_grid` Makefile to handle initial and deletion cases better.
+- Add support for cleaning up S3 object versions and standardize bucket variable naming.
+
+### HTC Grid Containers:
+- Configure all Dockerfiles to run non-root containers and fix builds.
+- Configure all HTC K8S resources to run with `runAsNonRoot`, default `seccompProfile`, and disabled `allowPrivilegeEscalation`.
+- Rename components, add `readOnlyFileSystem` and seccomp profile to HTC Agent, fix and cleanup code.
+- Remove file system write dependencies for the agent.
+- Harden K8S manifests and enforce further chekov rules.
+- Configure Grafana Ingress to drop invalid HTTP Header fields.
+
+### HTC Grid Control Plane:
+- Configure CMK KMS Key encryption for VPC Flow Logs, ECR Repositories, SQS, DynamoDB, S3, EKS Cluster, EKS MNG EBS Volumes, and all CloudWatch Logs.
+- Add encrypted CloudWatch Logging for API Gateway.
+- Create S3 via TF Module, add encryption support for S3 Data Plane in the agent, fix AWS partition, and DNS Suffix usage.
+- Simplify code and move all lambdas and auth to the `control_plane`.
+- Configure and consolidate least-privilege permissions on KMS, Lambda, and Agent IAM policies.
+- Add KMS `Decrypt` and `GenerateDataKey` permissions to Lambda and Agent permissions.
+- Move installation of `jq` onto lambda images and fix the bootstrap script.
+- Convert EC Redis to a single replica cluster mode and add encryption.
+- Add AUTH for ElastiCache Redis Cluster.
+- Enable XRay tracing for Lambda functions and adjust Redis config.
+- Add an explicit ASG Service Linked Role declaration to enable KMS support for ASG EBS Volumes.
+- Handle cases where `AWSServiceRoleForAutoScaling` already exists.
+- Add S3 and SQS Resource Policies to enforce HTTPS and create separate CMK KMS Keys for DLQs per each SQS Queue.
+- Configure the DLQs to be used with the respective SQS Queues and fix naming/references.
+- Add security group and ACL controls where possible.
+- Configure `securityContext` for OpenAPI.
+
+### General:
+- Add GitHub workflows for `cfn_lint`, `trivy`, and `checkov`.
+- Standardize, fix, and simplify tests.
+- Standardize the naming of TF resources.
+- Fix docs and `random_password` to align with pipelines.
+- Add auto deploy & destroy stages for images.
+
+### Cloud9:
+- Fix Cloud9 deployment script to target correct instances.
+- Fix Cloud9 bootstrap race condition and adjust to WS.
+- Force a reinstall at bootstrap time to fix virtualenv issues.
+- Add support for specifying a Git repo/branch for HTCGridSource.
+- Remove Admin role from KMS Admins as it doesn't exist in WS.
+
+
 #### [v0.4.2](https://github.com/awslabs/aws-htc-grid/compare/v0.4.1...v0.4.2)
 
 > 4 October 2023
@@ -9,20 +62,6 @@ All notable changes to this project will be documented in this file. Dates are d
 - Remove `CDK` as IaC for deploying HTC Grid
 - Remove any hardcoded dependency to `urllib3`
 - Migrate lambda function runtime  from python 3.7 to python 3.11
-
-
-> 14 September 2023
-
-- Move the deployment of the Helm charts outside of the `EKS Blueprints Addons` module to native TF Resource(s) to better handle the resource dependencies to those addons and simplify code.
-- Switch Grafana ingress to use the new `ingressClassName` spec format instead of the deprecated `kubernetes.io/ingress.class` annotation.
-- Switch to using the `kubernetes_annotations` TF Resource to manage the Cognito annotations for Grafana Ingress.
-- Adjust workshop notes on creation of Cognito user for the user-pool with sign-up disabled.
-- Add ability to always use the `latest` released tag in the Cloud9 instance deployment.
-- Fix the Private API Gateway and Resource Policy race-condition/dependency.
-- Fix `image_repository` destroy issues since adding explicit region flags to ECR commands.
-- Fix missing comma in `state_table_dynamodb.py`.
-- Add explicit region flag when listing ECR repos in the workshop.
-- Clean up and adjust workshop notes, code, comments and other docs (ie the FSI Whitepaper link).
 
 
 #### [v0.4.1](https://github.com/awslabs/aws-htc-grid/compare/v0.4.0...v0.4.1)
