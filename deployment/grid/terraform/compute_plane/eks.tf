@@ -60,7 +60,9 @@ module "eks_cloudwatch_kms_key" {
   aliases = ["cloudwatch/eks/${var.cluster_name}"]
 }
 
-
+#trivy:ignore:AVD-AWS-0040 Allow Public EKS API Access
+#trivy:ignore:AVD-AWS-0041 Allow API Access from 0.0.0.0/0
+#trivy:ignore:AVD-AWS-0104 Allow ALL Egress CIDR ranges
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 19.0"

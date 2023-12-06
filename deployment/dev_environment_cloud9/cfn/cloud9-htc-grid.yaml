@@ -277,6 +277,54 @@ Resources:
     Type: AWS::S3::Bucket
     DeletionPolicy: Delete
 
+  C9OutputBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref C9OutputBucket
+      PolicyDocument:
+        Statement:
+          - Action:
+              - 's3:GetObject'
+              - 's3:PutObject'
+            Condition:
+              Bool:
+                'aws:SecureTransport': false
+            Effect: Deny
+            Principal: '*'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${C9OutputBucket}/*'
+            Sid: DenyUnencryptedConnections
+          - Action:
+              - 's3:PutBucketAcl'
+              - 's3:PutObject'
+              - 's3:PutObjectAcl'
+            Condition:
+              StringEquals:
+                's3:x-amz-acl':
+                  - authenticated-read
+                  - public-read
+                  - public-read-write
+            Effect: Deny
+            Principal: '*'
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3:::${C9OutputBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${C9OutputBucket}/*'
+            Sid: DenyPublicReadAcl
+          - Action:
+              - 's3:PutBucketAcl'
+              - 's3:PutObject'
+              - 's3:PutObjectAcl'
+            Condition:
+              StringLike:
+                's3:x-amz-grant-read':
+                  - !Sub '*http://acs.${AWS::URLSuffix}/groups/global/AllUsers*'
+                  - !Sub '*http://acs.${AWS::URLSuffix}/groups/global/AuthenticatedUsers*'
+            Effect: Deny
+            Principal: '*'
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3:::${C9OutputBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${C9OutputBucket}/*'
+            Sid: DenyGrantingPublicRead
+
   C9SSMDocument:
     Type: AWS::SSM::Document
     Properties:
