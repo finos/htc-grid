@@ -29,8 +29,8 @@ jobs:
         with:
           scan-type: 'fs'
           ignore-unfixed: true
-          severity: UNKNOWN,MEDIUM,HIGH,CRITICAL
           trivy-config: ".github/conf/trivy.yaml"
+          # severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
           # output: ${{ env.TRIVY_REPORT_FILE }} # This flag doesnt seem to be working.
         env:
           TRIVY_OUTPUT: ${{ env.TRIVY_REPORT_FILE }}

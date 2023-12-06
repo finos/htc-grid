@@ -56,6 +56,8 @@ resource "aws_cloudwatch_log_group" "htc_private_api_cloudwatch_log_group" {
 
 
 resource "aws_api_gateway_rest_api" "htc_private_api" {
+  #checkov:skip=CKV_AWS_237: Create before destroy already implemented in the deployment
+
   name = "htc-private-api-${var.cluster_name}"
 
   body = jsonencode(yamldecode(templatefile("../../../source/control_plane/openapi/private/api_definition.yaml", {
@@ -73,6 +75,8 @@ resource "aws_api_gateway_rest_api" "htc_private_api" {
 
 
 resource "aws_api_gateway_deployment" "htc_private_api_deployment" {
+  #checkov:skip=CKV_AWS_237: Create before destroy already implemented
+
   rest_api_id = aws_api_gateway_rest_api.htc_private_api.id
 
   triggers = {
@@ -96,6 +100,9 @@ resource "aws_api_gateway_deployment" "htc_private_api_deployment" {
 
 
 resource "aws_api_gateway_stage" "htc_private_api_stage" {
+  #checkov:skip=CKV_AWS_120: API Gateway caching wouldn't work for this API
+  #checkov:skip=CKV2_AWS_51:[TODO] Client certificate authentication will be implemented instead of Cognito
+
   rest_api_id   = aws_api_gateway_rest_api.htc_private_api.id
   deployment_id = aws_api_gateway_deployment.htc_private_api_deployment.id
 
@@ -113,7 +120,11 @@ resource "aws_api_gateway_stage" "htc_private_api_stage" {
   ]
 }
 
+
 resource "aws_api_gateway_method_settings" "htc_private_api_method_settings" {
+  #checkov:skip=CKV_AWS_308: API Gateway method setting caching encryption wouldn't work for this API
+  #checkov:skip=CKV_AWS_225: API Gateway method setting caching wouldn't work for this API
+
   rest_api_id = aws_api_gateway_rest_api.htc_private_api.id
   stage_name  = aws_api_gateway_stage.htc_private_api_stage.stage_name
 

@@ -148,6 +148,9 @@ Resources:
 
   C9BootstrapInstanceLambdaFunction:
     Type: AWS::Lambda::Function
+    #checkov:skip=CKV_AWS_116:C9BootstrapInstanceLambdaFunction is used for bootstrapping and doesnt require DLQ
+    #checkov:skip=CKV_AWS_117:C9BootstrapInstanceLambdaFunction runs inside the default VPC
+    #checkov:skip=CKV_AWS_115:C9BootstrapInstanceLambdaFunction is triggered by CFN and doesnt require concurrency
     Properties:
       Tags:
       - Key: Environment
@@ -275,7 +278,16 @@ Resources:
   ################## SSM BOOTSRAP HANDLER ###############
   C9OutputBucket:
     Type: AWS::S3::Bucket
+    #checkov:skip=AVD-AWS-0088:C9OutputBucket is a logging bucket and doesnt require encryption
+    #checkov:skip=AVD-AWS-0132:C9OutputBucket is a logging bucket and doesnt require encryption
+    #checkov:skip=CKV_AWS_21:C9OutputBucket is a logging bucket and doesnt require versioning
     DeletionPolicy: Delete
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
 
   C9OutputBucketPolicy:
     Type: 'AWS::S3::BucketPolicy'

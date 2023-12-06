@@ -6,6 +6,8 @@
 # HTC Agent permissions
 #trivy:ignore:AVD-AWS-0057 Allow sensitive permissions on individual resources
 resource "aws_iam_policy" "htc_agent_permissions" {
+  #checkov:skip=AVD-AWS-0057:Allow sensitive permissions on individual resources
+
   name        = "htc_agent_permissions_policy_${local.suffix}"
   path        = "/"
   description = "IAM policy for HTC Agent Permissions"
@@ -131,6 +133,8 @@ EOF
 # Lambda Data Policy Permssions
 #trivy:ignore:AVD-AWS-0057 Allow sensitive permissions on individual resources
 resource "aws_iam_policy" "lambda_data_policy" {
+  #checkov:skip=AVD-AWS-0057:Allow sensitive permissions on individual resources
+
   name        = "lambda_data_policy_${local.suffix}"
   path        = "/"
   description = "IAM Policy that controls the data access for Control Plane Lambdas"

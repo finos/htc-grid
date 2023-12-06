@@ -66,6 +66,8 @@ resource "random_password" "htc_data_cache_password" {
 
 
 resource "aws_elasticache_replication_group" "htc_data_cache" {
+  #checkov:skip=CKV2_AWS_50:[TODO] Make HTC Data Cache Multi AZ Configrable
+
   replication_group_id = "htc-data-cache-${lower(local.suffix)}"
   description          = "Replication group for htc_data_cache cluster"
   engine               = "redis"
