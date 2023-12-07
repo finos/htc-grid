@@ -132,3 +132,36 @@ jobs:
         with:
           name: ${{ env.TFLINT_REPORT_FILE }}
           path: ${{ env.TFLINT_REPORT_FILE }}
+
+#############
+# TF Checks #
+#############
+  tfchecks:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the branch
+        uses: actions/checkout@v3
+
+      - name: Check Terraform fmt for grid
+        uses: dflook/terraform-fmt-check@v1
+        with:
+          path: deployment/grid/terraform
+
+      - name: Validate Terraform code for grid
+        uses: dflook/terraform-validate@v1
+        with:
+          path: deployment/grid/terraform
+
+      - name: Check Terraform fmt for image_repository
+        uses: dflook/terraform-fmt-check@v1
+        with:
+          path: deployment/image_repository/terraform
+
+      - name: Validate Terraform code for grid
+        uses: dflook/terraform-validate@v1
+        with:
+          path: deployment/grid/terraform

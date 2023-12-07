@@ -89,7 +89,7 @@ locals {
   kms_key_admin_arns                 = concat(local.default_kms_key_admin_arns, local.additional_kms_key_admin_role_arns)
 
   asg_service_linked_role_exists = length(data.aws_iam_roles.check_asg_service_linked_role.arns) > 0 ? true : false
-  asg_service_linked_role_arns   = local.asg_service_linked_role_exists ? data.aws_iam_roles.check_asg_service_linked_role.arns : [ aws_iam_service_linked_role.asg_service_linked_role[0].arn ]
+  asg_service_linked_role_arns   = local.asg_service_linked_role_exists ? data.aws_iam_roles.check_asg_service_linked_role.arns : [aws_iam_service_linked_role.asg_service_linked_role[0].arn]
 
   eks_managed_node_group_asg_names = {
     for eks_worker_group_name in local.eks_worker_group_names :
