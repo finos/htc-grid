@@ -4,6 +4,7 @@
 
 variable "region" {
   description = "AWS region"
+  type        = string
 }
 
 variable "input_role" {
@@ -17,31 +18,32 @@ variable "input_role" {
 
 variable "kubernetes_version" {
   description = "Name of EKS cluster in AWS"
-}
-
-variable "htc_agent_namespace" {
-  description = "kubernetes namespace for the deployment of the agent"
-  default     = "default"
+  type        = string
 }
 
 variable "aws_htc_ecr" {
   description = "URL of Amazon ECR image repostiories"
+  type        = string
 }
 
 variable "cluster_name" {
   description = "Name of EKS cluster in AWS"
+  type        = string
 }
 
 variable "k8s_ca_version" {
   description = "Cluster autoscaler version"
+  type        = string
 }
 
 variable "k8s_keda_version" {
   description = "Keda version"
+  type        = string
 }
 
 variable "suffix" {
   description = "suffix for generating unique name for AWS resource"
+  type        = string
   default     = ""
 }
 
@@ -51,22 +53,17 @@ variable "eks_worker_groups" {
 
 variable "vpc_private_subnet_ids" {
   description = "Private subnet IDs"
+  type        = list(string)
 }
 
 variable "vpc_public_subnet_ids" {
   description = "Public subnet IDs"
-}
-
-variable "vpc_default_security_group_id" {
-  description = "Default SG ID"
+  type        = list(string)
 }
 
 variable "vpc_id" {
   description = "Default VPC ID"
-}
-
-variable "vpc_cidr" {
-  description = "Default VPC CIDR"
+  type        = string
 }
 
 variable "enable_private_subnet" {
@@ -82,11 +79,13 @@ variable "grafana_admin_password" {
 
 variable "kms_deletion_window" {
   description = "Number of days after which KMS key will be permanently deleted"
+  type        = number
   default     = 7
 }
 
 variable "kms_key_admin_roles" {
   description = "List of roles to assign KMS Key Administrator permissions"
+  type        = list(string)
   default     = []
 }
 
@@ -100,10 +99,10 @@ variable "node_drainer_lambda_role_arn" {
   type        = string
 }
 
-variable "allowed_access_cidr_blocks" {
-  description = "List of CIDR blocks which are allowed ingress/egress access from/to the VPC"
-  type        = list(string)
-}
+# variable "allowed_access_cidr_blocks" {
+#   description = "List of CIDR blocks which are allowed ingress/egress access from/to the VPC"
+#   type        = list(string)
+# }
 
 variable "cognito_domain_name" {
   description = "Cognito Domain Name"
@@ -118,4 +117,10 @@ variable "cognito_userpool_arn" {
 variable "cognito_userpool_id" {
   description = "Cognito User Pool ID"
   type        = string
+}
+
+variable "eks_node_volume_size" {
+  description = "Size in GB for EKS Worker Nodes"
+  type        = number
+  default     = 50
 }

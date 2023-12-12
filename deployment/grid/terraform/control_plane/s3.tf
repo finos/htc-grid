@@ -98,6 +98,6 @@ module "htc_data_bucket" {
   }
 
   tags = {
-    Tag = "${var.suffix}"
+    Tag = var.suffix
   }
 }

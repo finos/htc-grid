@@ -17,7 +17,7 @@ locals {
         xvda = {
           device_name = "/dev/xvda"
           ebs = {
-            volume_size           = 50
+            volume_size           = var.eks_node_volume_size
             volume_type           = "gp3"
             encrypted             = true
             kms_key_id            = module.eks_ebs_kms_key.key_arn
@@ -50,7 +50,7 @@ locals {
           xvda = {
             device_name = "/dev/xvda"
             ebs = {
-              volume_size           = 20
+              volume_size           = var.eks_node_volume_size
               volume_type           = "gp3"
               encrypted             = true
               kms_key_id            = module.eks_ebs_kms_key.key_arn

@@ -25,8 +25,8 @@ variable "agent_image_tag" {
 }
 
 variable "htc_agent_permissions_policy_arn" {
-  type        = string
   description = "IAM Policy ARN for HTC Agent IRSA Permissions"
+  type        = string
 }
 
 variable "suffix" {
@@ -51,8 +51,8 @@ variable "test_agent_image_tag" {
 }
 
 variable "lambda_image_repository" {
-  type        = string
   description = "repository to the lambda image"
+  type        = string
 }
 
 variable "lambda_image_tag" {
@@ -89,8 +89,8 @@ variable "agent_max_cpu" {
 }
 
 variable "lambda_min_cpu" {
-  type        = number
   description = "Minimum CPU asisgned to the lambda (in milli)"
+  type        = number
 }
 
 variable "lambda_max_cpu" {
@@ -118,7 +118,7 @@ variable "lambda_min_memory" {
 
 variable "lambda_max_memory" {
   description = "Maximum memory asisgned to the agent (in MiB)"
-  type        = string
+  type        = number
   default     = 100
 }
 
@@ -163,10 +163,10 @@ variable "lambda_configuration_s3_source" {
   type        = string
 }
 
-variable "lambda_configuration_s3_source_kms_key_arn" {
-  description = "The CMK KMS Key ARN for the Lambda Layer S3 bucket source"
-  type        = string
-}
+# variable "lambda_configuration_s3_source_kms_key_arn" {
+#   description = "The CMK KMS Key ARN for the Lambda Layer S3 bucket source"
+#   type        = string
+# }
 
 variable "region" {
   description = "The region of the Lambda Layer"
@@ -174,17 +174,17 @@ variable "region" {
   default     = "eu-west-1"
 }
 
-variable "lambda_configuration_layer_name" {
-  description = "The name of the lambda layer storing the source code"
-  type        = string
-  default     = "mock_layer"
-}
+# variable "lambda_configuration_layer_name" {
+#   description = "The name of the lambda layer storing the source code"
+#   type        = string
+#   default     = "mock_layer"
+# }
 
-variable "lambda_configuration_layer_version" {
-  description = "The version of the lambda layer storing the source code"
-  type        = number
-  default     = 1
-}
+# variable "lambda_configuration_layer_version" {
+#   description = "The version of the lambda layer storing the source code"
+#   type        = number
+#   default     = 1
+# }
 
 variable "lambda_configuration_function_name" {
   description = "The name of the lambda function to be executed"
@@ -204,33 +204,41 @@ variable "lambda_handler_function_name" {
 
 variable "namespace_metrics" {
   description = "NameSpace for metrics"
+  type        = string
 }
 
 variable "dimension_name_metrics" {
   description = "Dimensions name for the CloudWatch metrics"
+  type        = string
 }
 
 variable "dimension_value_metrics" {
   description = "Dimensions name for the CloudWatch metrics"
+  type        = string
 }
 
-variable "average_period" {
-  description = "Average period in second used by the HPA to compute the current load on the system"
-  default     = 30
-}
+# variable "average_period" {
+#   description = "Average period in second used by the HPA to compute the current load on the system"
+#   type        = number
+#   default     = 30
+# }
 
 variable "metric_name" {
   description = "Metrics name"
+  type        = string
 }
 
 variable "max_htc_agents" {
   description = "maximum number of agents that can run on EKS"
+  type        = number
 }
 
 variable "min_htc_agents" {
   description = "minimum number of agents that can run on EKS"
+  type        = number
 }
 
 variable "htc_agent_target_value" {
   description = "target value for the load on the system"
+  type        = number
 }

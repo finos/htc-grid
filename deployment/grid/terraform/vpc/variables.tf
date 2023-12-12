@@ -4,11 +4,13 @@
 
 variable "region" {
   description = "AWS region"
+  type        = string
   default     = "eu-west-1"
 }
 
 variable "cluster_name" {
   description = "Name of EKS cluster in AWS"
+  type        = string
   default     = "htc"
 }
 
@@ -35,11 +37,13 @@ variable "enable_private_subnet" {
 
 variable "kms_deletion_window" {
   description = "Number of days after which KMS key will be permanently deleted"
+  type        = number
   default     = 7
 }
 
 variable "kms_key_admin_roles" {
   description = "List of roles to assign KMS Key Administrator permissions"
+  type        = list(string)
   default     = []
 }
 

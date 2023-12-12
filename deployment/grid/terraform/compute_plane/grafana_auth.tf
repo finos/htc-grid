@@ -9,7 +9,7 @@ resource "aws_cognito_user_pool_client" "grafana" {
   allowed_oauth_flows_user_pool_client = true
   generate_secret                      = true
   allowed_oauth_flows                  = ["code"]
-  callback_urls                        = ["https://${data.kubernetes_ingress_v1.grafana_ingress.status.0.load_balancer.0.ingress.0.hostname}/oauth2/idpresponse"]
+  callback_urls                        = ["https://${data.kubernetes_ingress_v1.grafana_ingress.status[0].load_balancer[0].ingress[0].hostname}/oauth2/idpresponse"]
   allowed_oauth_scopes = [
     "email", "openid"
   ]

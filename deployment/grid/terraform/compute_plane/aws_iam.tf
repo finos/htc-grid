@@ -14,7 +14,7 @@ module "keda_role" {
   }
 
   cluster_service_accounts = {
-    "${var.cluster_name}" = ["keda:keda-operator"]
+    (var.cluster_name) = ["keda:keda-operator"]
   }
 
   depends_on = [

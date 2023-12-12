@@ -25,12 +25,12 @@ output "certificate_authority" {
 
 output "nlb_influxdb" {
   description = "url of the NLB in front of the influx DB"
-  value       = data.kubernetes_service_v1.influxdb_load_balancer.status.0.load_balancer.0.ingress.0.hostname
+  value       = data.kubernetes_service_v1.influxdb_load_balancer.status[0].load_balancer[0].ingress[0].hostname
 }
 
 output "grafana_ingress_domain" {
   description = "Ingress Domain for Grafana"
-  value       = "https://${data.kubernetes_ingress_v1.grafana_ingress.status.0.load_balancer.0.ingress.0.hostname}"
+  value       = "https://${data.kubernetes_ingress_v1.grafana_ingress.status[0].load_balancer[0].ingress[0].hostname}"
 }
 
 output "eks_managed_node_groups" {
