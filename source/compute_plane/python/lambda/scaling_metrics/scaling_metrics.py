@@ -13,6 +13,7 @@ from api.queue_manager import queue_manager
 # TODO - retrieve the endpoint url from Terraform
 region = os.environ["REGION"]
 
+
 def lambda_handler(event, context):
     # For every x minute
     # count all items with "task_status" PENDING in the dynamoDB table "tasks_state_table"
@@ -22,34 +23,34 @@ def lambda_handler(event, context):
 
     # TODO - retrieve the endpoint url from Terraform
     task_queue = queue_manager(
-        task_queue_service=os.environ['TASK_QUEUE_SERVICE'],
-        task_queue_config=os.environ['TASK_QUEUE_CONFIG'],
-        tasks_queue_name=os.environ['TASKS_QUEUE_NAME'],
-        region=region)
+        task_queue_service=os.environ["TASK_QUEUE_SERVICE"],
+        task_queue_config=os.environ["TASK_QUEUE_CONFIG"],
+        tasks_queue_name=os.environ["TASKS_QUEUE_NAME"],
+        region=region,
+    )
 
     task_pending = task_queue.get_queue_length()
     logging.info("Scaling Metrics: pending task in DDB = {}".format(task_pending))
     # Create CloudWatch client
-    cloudwatch = boto3.client('cloudwatch')
+    cloudwatch = boto3.client("cloudwatch")
     period = int(os.environ["PERIOD"])
     cloudwatch.put_metric_data(
         MetricData=[
             {
-                'MetricName': os.environ['METRICS_NAME'],
-                'Timestamp': time.time(),
-                'Dimensions': [
+                "MetricName": os.environ["METRICS_NAME"],
+                "Timestamp": time.time(),
+                "Dimensions": [
                     {
-                        'Name': os.environ['DIMENSION_NAME'],
-                        'Value': os.environ['DIMENSION_VALUE']
+                        "Name": os.environ["DIMENSION_NAME"],
+                        "Value": os.environ["DIMENSION_VALUE"],
                     },
                 ],
-                'Unit': 'Count',
-                'StorageResolution': period,
-                'Value': task_pending,
-
+                "Unit": "Count",
+                "StorageResolution": period,
+                "Value": task_pending,
             },
         ],
-        Namespace=os.environ['NAMESPACE']
+        Namespace=os.environ["NAMESPACE"],
     )
     return
 

@@ -6,7 +6,6 @@ from influxdb import InfluxDBClient
 
 
 class PerfTrackerInfluxDBConnector:
-
     def __init__(self, connector_string, influxdb_ip):
         """
         Expected format of the connection string:
@@ -26,7 +25,9 @@ class PerfTrackerInfluxDBConnector:
         # self.firehose_client = boto3.client('firehose',  region_name=self.region_name)
         # self.firehose_client = boto3.client('firehose',  region_name=self.region_name, endpoint_url="https://firehose.eu-west-1.amazonaws.com")
 
-        self.influxdb_client = InfluxDBClient(host=self.influxdb_ip, port=self.influxdb_port)
+        self.influxdb_client = InfluxDBClient(
+            host=self.influxdb_ip, port=self.influxdb_port
+        )
 
         self.influxdb_client.create_database(self.database)
         self.influxdb_client.switch_database(self.database)
@@ -42,7 +43,7 @@ class PerfTrackerInfluxDBConnector:
         sample = {
             "measurement": self.measurement,
             "time": json_data_sample["EVENT_TIME"],
-            "fields": fields
+            "fields": fields,
         }
 
         self.samples_buffer.append(sample)

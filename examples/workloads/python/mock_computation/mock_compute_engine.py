@@ -4,9 +4,10 @@
 
 import time
 
+
 def lambda_handler(event, context):
-    message = 'Starting task processing... (args[0]) {}!'.format(event)
+    message = "Starting task processing... (args[0]) {}!".format(event)
     print(message)
-    args = event['worker_arguments']
-    time.sleep(int(args[0])/1000)
+    args = event["worker_arguments"]
+    time.sleep(int(args[0]) / 1000)
     return int(args[0])

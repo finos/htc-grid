@@ -8,7 +8,6 @@ from ql_common import construct_date, init_heston_model
 
 
 def evaluate_european_option(input_dict):
-
     tparams = input_dict["tradeParameters"]
 
     # Option Construction
@@ -22,9 +21,15 @@ def evaluate_european_option(input_dict):
 
     # Market Data
     underlying = ql.SimpleQuote(tparams["underlying"])
-    dividendYield = ql.FlatForward(todaysDate, tparams["dividendYield"], ql.Actual365Fixed())
-    volatility = ql.BlackConstantVol(todaysDate, ql.TARGET(), tparams["volatility"], ql.Actual365Fixed())
-    riskFreeRate = ql.FlatForward(todaysDate, tparams["riskFreeRate"], ql.Actual365Fixed())
+    dividendYield = ql.FlatForward(
+        todaysDate, tparams["dividendYield"], ql.Actual365Fixed()
+    )
+    volatility = ql.BlackConstantVol(
+        todaysDate, ql.TARGET(), tparams["volatility"], ql.Actual365Fixed()
+    )
+    riskFreeRate = ql.FlatForward(
+        todaysDate, tparams["riskFreeRate"], ql.Actual365Fixed()
+    )
 
     process = ql.BlackScholesMertonProcess(
         ql.QuoteHandle(underlying),
@@ -50,7 +55,9 @@ def evaluate_european_option(input_dict):
     elif input_dict["engineName"] == "FdBlackScholesVanillaEngine":
         timeSteps = input_dict["engineParameters"]["timeSteps"]
         gridPoints = input_dict["engineParameters"]["gridPoints"]
-        option.setPricingEngine(ql.FdBlackScholesVanillaEngine(process, timeSteps, gridPoints))
+        option.setPricingEngine(
+            ql.FdBlackScholesVanillaEngine(process, timeSteps, gridPoints)
+        )
 
     elif input_dict["engineName"] == "BinomialVanillaEngine":
         timeSteps = input_dict["engineParameters"]["timeSteps"]
@@ -59,32 +66,38 @@ def evaluate_european_option(input_dict):
         option.setPricingEngine(ql.BinomialVanillaEngine(process, tree, timeSteps))
 
     elif input_dict["engineName"] == "MCEuropeanEngine":
-
         if input_dict["engineParameters"]["random_source"] == "pseudorandom":
-            option.setPricingEngine(ql.MCEuropeanEngine(
-                process,
-                "pseudorandom",
-                timeSteps=input_dict["engineParameters"]["timeSteps"],
-                requiredTolerance=input_dict["engineParameters"]["requiredTolerance"],
-                seed=input_dict["engineParameters"]["seed"]
-            )
+            option.setPricingEngine(
+                ql.MCEuropeanEngine(
+                    process,
+                    "pseudorandom",
+                    timeSteps=input_dict["engineParameters"]["timeSteps"],
+                    requiredTolerance=input_dict["engineParameters"][
+                        "requiredTolerance"
+                    ],
+                    seed=input_dict["engineParameters"]["seed"],
+                )
             )
 
         elif input_dict["engineParameters"]["random_source"] == "lowdiscrepancy":
-
-            option.setPricingEngine(ql.MCEuropeanEngine(
-                process,
-                "lowdiscrepancy",
-                timeSteps=input_dict["engineParameters"]["timeSteps"],
-                requiredSamples=input_dict["engineParameters"]["requiredSamples"]
-            )
+            option.setPricingEngine(
+                ql.MCEuropeanEngine(
+                    process,
+                    "lowdiscrepancy",
+                    timeSteps=input_dict["engineParameters"]["timeSteps"],
+                    requiredSamples=input_dict["engineParameters"]["requiredSamples"],
+                )
             )
 
         else:
-            raise Exception("Unimplemented engineName [{}]".format(input_dict["engineName"]))
+            raise Exception(
+                "Unimplemented engineName [{}]".format(input_dict["engineName"])
+            )
 
     else:
-        raise Exception("Unimplemented engineName [{}]".format(input_dict["engineName"]))
+        raise Exception(
+            "Unimplemented engineName [{}]".format(input_dict["engineName"])
+        )
 
     value = option.NPV()
     return value

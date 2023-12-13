@@ -5,9 +5,10 @@
 from api.state_table_dynamodb import StateTableDDB
 
 
-def state_table_manager(state_table_service, state_table_config, tasks_state_table_name, region=None):
-
-    state_table_config = state_table_config.replace("'", "\"")
+def state_table_manager(
+    state_table_service, state_table_config, tasks_state_table_name, region=None
+):
+    state_table_config = state_table_config.replace("'", '"')
 
     if state_table_service == "DynamoDB":
         return StateTableDDB(state_table_config, tasks_state_table_name, region)

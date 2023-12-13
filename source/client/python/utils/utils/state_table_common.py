@@ -11,9 +11,13 @@ TASK_STATE_PROCESSING = "processing"
 
 
 class StateTableException(Exception):
-
-    def __init__(self, original_message, supplied_message, caused_by_throttling=False, caused_by_condition=False):
-
+    def __init__(
+        self,
+        original_message,
+        supplied_message,
+        caused_by_throttling=False,
+        caused_by_condition=False,
+    ):
         super().__init__(original_message)
 
         self.caused_by_throttling = caused_by_throttling

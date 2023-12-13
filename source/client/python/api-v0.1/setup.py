@@ -21,5 +21,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=["redis", "requests", "warrant-lite", "apscheduler", "urllib3"],
-    python_requires='>=3.6',
+    python_requires=">=3.6",
 )

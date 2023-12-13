@@ -19,7 +19,6 @@ logging.basicConfig(
 
 class QueueSQS:
     def __init__(self, endpoint_url, queue_name, region):
-
         logging.info(f"Initializing QueueSQS: {endpoint_url} {queue_name} {region}")
 
         self.endpoint_url = endpoint_url
@@ -27,15 +26,17 @@ class QueueSQS:
         self.queue_name = queue_name
 
         try:
-
-            sqs_resource = boto3.resource("sqs", region_name=region, endpoint_url=endpoint_url)
+            sqs_resource = boto3.resource(
+                "sqs", region_name=region, endpoint_url=endpoint_url
+            )
 
             self.sqs_queue = sqs_resource.get_queue_by_name(QueueName=queue_name)
 
-            self.sqs_client = boto3.client("sqs", region_name=region, endpoint_url=endpoint_url)
+            self.sqs_client = boto3.client(
+                "sqs", region_name=region, endpoint_url=endpoint_url
+            )
 
         except Exception as e:
-
             msg = f"QueueSQS: cannot initialize queue_name [{queue_name}], endpoint_url [{endpoint_url}] region [{region}] : {e} [{traceback.format_exc()}]"
             errlog.log(msg)
             raise TaskQueueException(e, msg, traceback.format_exc())
@@ -54,7 +55,6 @@ class QueueSQS:
         """
 
         try:
-
             return self.sqs_queue.send_messages(Entries=message_bodies)
 
         except Exception as e:
@@ -131,7 +131,6 @@ class QueueSQS:
         """
 
         try:
-
             self.sqs_client.change_message_visibility(
                 QueueUrl=self.sqs_queue.url,
                 ReceiptHandle=message_handle_id,

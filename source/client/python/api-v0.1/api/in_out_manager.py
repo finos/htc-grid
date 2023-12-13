@@ -18,12 +18,24 @@ Valid Configurations <service type>
 
 """
 
-logging.basicConfig(format="%(asctime)s - %(levelname)s - %(filename)s - %(funcName)s  - %(lineno)d - %(message)s",
-                    datefmt='%H:%M:%S', level=logging.INFO)
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(filename)s - %(funcName)s  - %(lineno)d - %(message)s",
+    datefmt="%H:%M:%S",
+    level=logging.INFO,
+)
 logging.info("Init AWS Grid Connector")
 
 
-def in_out_manager(grid_storage_service, s3_bucket, redis_url, redis_password, s3_kms_key_id=None, s3_region=None, s3_custom_resource=None, redis_custom_connection=None):
+def in_out_manager(
+    grid_storage_service,
+    s3_bucket,
+    redis_url,
+    redis_password,
+    s3_kms_key_id=None,
+    s3_region=None,
+    s3_custom_resource=None,
+    redis_custom_connection=None,
+):
     """This function returns a connection to the data plane. This connection will be used for uploading and
        downloading the payload associated to the tasks
 
@@ -40,9 +52,15 @@ def in_out_manager(grid_storage_service, s3_bucket, redis_url, redis_password, s
     Returns:
         object: a connection to the data plane
     """
-    logging.info(" storage_type {} s3 bucket {} s3_kms_key_id {} redis_url {}".format(grid_storage_service, s3_bucket, s3_kms_key_id, redis_url))
+    logging.info(
+        " storage_type {} s3 bucket {} s3_kms_key_id {} redis_url {}".format(
+            grid_storage_service, s3_bucket, s3_kms_key_id, redis_url
+        )
+    )
     if grid_storage_service == "S3":
-        return InOutS3(namespace=s3_bucket, region=s3_region, s3_kms_key_id=s3_kms_key_id)
+        return InOutS3(
+            namespace=s3_bucket, region=s3_region, s3_kms_key_id=s3_kms_key_id
+        )
 
     elif grid_storage_service == "REDIS":
         return InOutRedis(
@@ -52,7 +70,8 @@ def in_out_manager(grid_storage_service, s3_bucket, redis_url, redis_password, s
             use_S3=False,
             s3_kms_key_id=s3_kms_key_id,
             s3_custom_resource=s3_custom_resource,
-            redis_custom_connection=redis_custom_connection)
+            redis_custom_connection=redis_custom_connection,
+        )
 
     elif grid_storage_service == "S3+REDIS":
         return InOutRedis(
@@ -63,8 +82,12 @@ def in_out_manager(grid_storage_service, s3_bucket, redis_url, redis_password, s
             s3_kms_key_id=s3_kms_key_id,
             region=s3_region,
             s3_custom_resource=s3_custom_resource,
-            redis_custom_connection=redis_custom_connection)
+            redis_custom_connection=redis_custom_connection,
+        )
 
     else:
-        raise Exception("InOutManager can not parse connection string: {}".format(
-            grid_storage_service))
+        raise Exception(
+            "InOutManager can not parse connection string: {}".format(
+                grid_storage_service
+            )
+        )

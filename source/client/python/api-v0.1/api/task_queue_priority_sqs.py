@@ -40,7 +40,9 @@ class QueuePrioritySQS:
             # e.g., htc_task_queue-kbgcncl__1
             queue_name = first_queue_name.split("__")[0] + "__{}".format(priority)
 
-            self.priority_to_queue_lookup[priority] = QueueSQS(endpoint_url, queue_name, region)
+            self.priority_to_queue_lookup[priority] = QueueSQS(
+                endpoint_url, queue_name, region
+            )
 
     def send_messages(self, message_bodies=[], message_attributes={}):
         """
@@ -64,7 +66,6 @@ class QueuePrioritySQS:
             response = queue.send_messages(message_bodies, message_attributes)
 
         except Exception as e:
-
             msg = f"Priority QueueSQS: failed to send {len(message_bodies)} messages [{message_bodies}], Exception: [{e}] [{traceback.format_exc()}]"
             errlog.log(msg)
             raise TaskQueueException(e, msg, traceback.format_exc())
@@ -91,7 +92,6 @@ class QueuePrioritySQS:
         wait_time_sec = 0
 
         for priority in reversed(self.priorities):
-
             queue = self.priority_to_queue_lookup[priority]
 
             queue_sqs_response = queue.receive_message(wait_time_sec)
@@ -117,7 +117,6 @@ class QueuePrioritySQS:
         """
 
         try:
-
             queue = self.__get_queue_object(message_handle_id, task_priority)
 
             res = queue.delete_message(message_handle_id)
@@ -125,12 +124,13 @@ class QueuePrioritySQS:
             return res
 
         except Exception as e:
-
             msg = f"PrioritySQS: Failed to delete msg by handle_id [{message_handle_id}] priority [{task_priority}] : [{e}] [{traceback.format_exc()}]"
             errlog.log(msg)
             raise TaskQueueException(e, msg, traceback.format_exc())
 
-    def change_visibility(self, message_handle_id, visibility_timeout_sec, task_priority=None):
+    def change_visibility(
+        self, message_handle_id, visibility_timeout_sec, task_priority=None
+    ):
         """Changes visibility timeout of the message by its handle
 
         Args:
@@ -142,7 +142,6 @@ class QueuePrioritySQS:
         """
 
         try:
-
             queue = self.__get_queue_object(message_handle_id, task_priority)
 
             res = queue.change_visibility(message_handle_id, visibility_timeout_sec)

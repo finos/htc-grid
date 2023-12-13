@@ -11,11 +11,11 @@ import logging
 import argparse
 
 try:
-    client_config_file = os.environ['AGENT_CONFIG_FILE']
+    client_config_file = os.environ["AGENT_CONFIG_FILE"]
 except:
     client_config_file = "/etc/agent/Agent_config.tfvars.json"
 
-with open(client_config_file, 'r') as file:
+with open(client_config_file, "r") as file:
     client_config_file = json.loads(file.read())
 
 
@@ -26,19 +26,15 @@ class PortfolioGenerator:
     """
 
     def __init__(self, config=None):
-
         if config is None:
-            self.config = {
-                "portfolio_target_size": 1
-            }
+            self.config = {"portfolio_target_size": 1}
         else:
             self.config = config
 
-        with open('sample_portfolio.json') as json_file:
+        with open("sample_portfolio.json") as json_file:
             self.seed_portfolio = json.load(json_file)
 
     def generate_portfolio(self):
-
         portfolio = []
 
         seed_range = len(self.seed_portfolio["portfolio"])
@@ -52,7 +48,6 @@ class PortfolioGenerator:
 
 
 def get_sample_portfolio():
-
     return {
         "portfolio": [
             {
@@ -67,8 +62,8 @@ def get_sample_portfolio():
                     "underlying": 7.0,
                     "dividendYield": 0.05,
                     "volatility": 0.10,
-                    "riskFreeRate": 0.05
-                }
+                    "riskFreeRate": 0.05,
+                },
             }
         ]
     }
@@ -89,7 +84,9 @@ def split_portfolio_into_tasks(portfolio):
 
     batch_size = FLAGS.trades_per_worker
     trades_list = portfolio["portfolio"]
-    tasks_batches = [trades_list[x:x + batch_size] for x in range(0, len(trades_list), batch_size)]
+    tasks_batches = [
+        trades_list[x: x + batch_size] for x in range(0, len(trades_list), batch_size)
+    ]
 
     grid_tasks = []
 
@@ -116,16 +113,15 @@ def evaluate_trades_on_grid(grid_tasks):
     gridConnector = AWSConnector()
 
     try:
-        username = os.environ['USERNAME']
+        username = os.environ["USERNAME"]
     except KeyError:
         username = ""
     try:
-        password = os.environ['PASSWORD']
+        password = os.environ["PASSWORD"]
     except KeyError:
         password = ""  # nosec B105
 
-    gridConnector.init(client_config_file,
-                       username=username, password=password)  # nosec B105
+    gridConnector.init(client_config_file, username=username, password=password)  # nosec B105
     gridConnector.authenticate()
 
     submission_resp = gridConnector.send(grid_tasks)
@@ -178,27 +174,43 @@ def merge_results(sample_portfolio, grid_results):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         """ An example of a client application that receives/generates a portfolio of trades
         and evaluates """,
         add_help=True,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
 
-    parser.add_argument("--workload_type", type=str, default="single_trade",
-                        choices=["single_trade", "random_portfolio"],
-                        help="""Determines how tasks are being generated.""")
+    parser.add_argument(
+        "--workload_type",
+        type=str,
+        default="single_trade",
+        choices=["single_trade", "random_portfolio"],
+        help="""Determines how tasks are being generated.""",
+    )
 
-    parser.add_argument("--trades_per_worker", type=int, default=1,
-                        help="""Defines how many tasks/trades each worker will evaluate (i.e., batching per worker)
+    parser.add_argument(
+        "--trades_per_worker",
+        type=int,
+        default=1,
+        help="""Defines how many tasks/trades each worker will evaluate (i.e., batching per worker)
                                 For example if we have 5 trades and trades per worker set to 2,
-                                then we have total number of tasks equal to 3: [1,2] [3,4] [5]""")
+                                then we have total number of tasks equal to 3: [1,2] [3,4] [5]""",
+    )
 
-    parser.add_argument("--portfolio_size", type=int, default=10,
-                        help="Override the size of the sample portfolio")
+    parser.add_argument(
+        "--portfolio_size",
+        type=int,
+        default=10,
+        help="Override the size of the sample portfolio",
+    )
 
-    parser.add_argument("--timeout_sec", type=int, default=120,
-                        help="How long to wait for all results to be completed.")
+    parser.add_argument(
+        "--timeout_sec",
+        type=int,
+        default=120,
+        help="How long to wait for all results to be completed.",
+    )
 
     FLAGS = parser.parse_args()
 
@@ -211,10 +223,7 @@ if __name__ == "__main__":
         sample_portfolio = get_sample_portfolio()
 
     elif FLAGS.workload_type == "random_portfolio":
-
-        configuration = {
-            "portfolio_target_size": FLAGS.portfolio_size
-        }
+        configuration = {"portfolio_target_size": FLAGS.portfolio_size}
 
         pg = PortfolioGenerator(configuration)
 

@@ -9,7 +9,6 @@ import boto3
 
 
 class PerfTrackerFirehoseConnector:
-
     def __init__(self, connector_string):
         """
         Expected format of the connection string:
@@ -23,8 +22,11 @@ class PerfTrackerFirehoseConnector:
         self.delivery_stream_name = tokens[1]
 
         # self.firehose_client = boto3.client('firehose',  region_name=self.region_name)
-        self.firehose_client = boto3.client('firehose', region_name=self.region_name,
-                                            endpoint_url=f"https://firehose.{self.region_name}.amazonaws.com")
+        self.firehose_client = boto3.client(
+            "firehose",
+            region_name=self.region_name,
+            endpoint_url=f"https://firehose.{self.region_name}.amazonaws.com",
+        )
 
         self.samples_buffer = []
 
@@ -34,18 +36,18 @@ class PerfTrackerFirehoseConnector:
             "time": datetime.datetime.utcnow(),
             "fields": {
                 "duration": random.randint(0, 1000),
-            }
+            },
         }
 
     def add_sample(self, json_data_sample):
-        sample = {'Data': json.dumps(json_data_sample)}
+        sample = {"Data": json.dumps(json_data_sample)}
 
         self.samples_buffer.append(sample)
 
     def submit_measurements(self):
         res = self.firehose_client.put_record_batch(
-            DeliveryStreamName=self.delivery_stream_name,
-            Records=self.samples_buffer)
+            DeliveryStreamName=self.delivery_stream_name, Records=self.samples_buffer
+        )
 
         self.samples_buffer = []
 
