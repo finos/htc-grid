@@ -30,6 +30,7 @@ jobs:
           scan-type: 'fs'
           ignore-unfixed: true
           trivy-config: ".github/conf/trivy.yaml"
+          trivyignores: ".github/conf/.trivyignore"
           # severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
           # output: ${{ env.TRIVY_REPORT_FILE }} # This flag doesnt seem to be working.
         env:
@@ -153,15 +154,18 @@ jobs:
 
       - name: Validate Terraform code for grid
         uses: dflook/terraform-validate@v1
+        if: success() || failure()
         with:
           path: deployment/grid/terraform
 
       - name: Check Terraform fmt for image_repository
         uses: dflook/terraform-fmt-check@v1
+        if: success() || failure()
         with:
           path: deployment/image_repository/terraform
 
-      - name: Validate Terraform code for grid
+      - name: Validate Terraform code for image_repository
         uses: dflook/terraform-validate@v1
+        if: success() || failure()
         with:
-          path: deployment/grid/terraform
+          path: deployment/image_repository/terraform

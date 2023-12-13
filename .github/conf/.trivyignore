@@ -1,0 +1,5 @@
+# We dont use HEALTHCHECK for Dockerfiles as we dont run any services
+AVD-DS-0026
+
+# S3 Bucket Logging is currently not enabled
+AVD-AWS-0089
