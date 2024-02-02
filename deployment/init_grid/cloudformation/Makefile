@@ -23,7 +23,7 @@ $(BUILD_DIR)/grid_init/tag.$(TAG):
 	@touch $(BUILD_DIR)/grid_init/tag.$(TAG)
 
 $(BUILD_DIR)/grid_init/init-grid-$(TAG): $(BUILD_DIR)/grid_init/tag.$(TAG) $(YAML_SRC)
-	@if [ "$(shell aws cloudformation list-stacks --query 'StackSummaries[?StackStatus==`CREATE_COMPLETE` && StackName==`$(TAG)`].StackName' --output text)" != "$(TAG)" ]; then \
+	@if [ "$(shell aws cloudformation list-stacks --region $(REGION) --query 'StackSummaries[?StackStatus==`CREATE_COMPLETE` && StackName==`$(TAG)`].StackName' --output text)" != "$(TAG)" ]; then \
 	echo "CloudFormation stack $(TAG) doesn't exist. Creating ..."; \
 	aws cloudformation create-stack --stack-name $(TAG) --region $(REGION) --template-body file://$(YAML_SRC) --parameters ParameterKey=BucketTag,ParameterValue=$(TAG); else \
 	echo "Failed creating the CloudFormation stack as it may already exist. Trying to update ..."; \
@@ -38,19 +38,13 @@ $(TAG)-workload-bucket: $(BUILD_DIR)/grid_init/init-grid-$(TAG)-workload-bucket
 init: $(BUILD_DIR)/grid_init
 
 clean-grid-state:
-	aws --region $(REGION) s3 rm --recursive s3://$(GRID_TFSTATE_BUCKET) || true
-	@aws s3api delete-objects --bucket $(GRID_TFSTATE_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(GRID_TFSTATE_BUCKET) --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}')' --output text > /dev/null 2>&1 || true
-	@aws s3api delete-objects --bucket $(GRID_TFSTATE_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(GRID_TFSTATE_BUCKET) --query='{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}')' --output text > /dev/null 2>&1 || true
+	../scripts/python/delete_bucket.py $(GRID_TFSTATE_BUCKET)
 
 clean-image-state:
-	aws --region $(REGION) s3 rm --recursive s3://$(IMAGE_TFSTATE_BUCKET) || true
-	@aws s3api delete-objects --bucket $(IMAGE_TFSTATE_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(IMAGE_TFSTATE_BUCKET) --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}')' --output text > /dev/null 2>&1 || true
-	@aws s3api delete-objects --bucket $(IMAGE_TFSTATE_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(IMAGE_TFSTATE_BUCKET) --query='{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}')' --output text > /dev/null 2>&1 || true
+	../scripts/python/delete_bucket.py $(IMAGE_TFSTATE_BUCKET)
 
 clean-lambda-storage:
-	aws --region $(REGION) s3 rm --recursive s3://$(LAMBDA_LAYER_BUCKET) || true
-	@aws s3api delete-objects --bucket $(LAMBDA_LAYER_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(LAMBDA_LAYER_BUCKET) --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}')' > /dev/null 2>&1 || true
-	@aws s3api delete-objects --bucket $(LAMBDA_LAYER_BUCKET) --delete '$(shell aws s3api list-object-versions --bucket $(LAMBDA_LAYER_BUCKET) --query='{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}')' --output text > /dev/null 2>&1 || true
+	../scripts/python/delete_bucket.py $(LAMBDA_LAYER_BUCKET)
 
 clean: clean-image-state clean-grid-state clean-lambda-storage
 	rm -rf $(BUILD_DIR)/grid_init/tag.*
