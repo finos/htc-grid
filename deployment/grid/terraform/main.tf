@@ -4,27 +4,28 @@
 
 
 locals {
-  account_id                 = data.aws_caller_identity.current.account_id
-  dns_suffix                 = data.aws_partition.current.dns_suffix
-  partition                  = data.aws_partition.current.partition
-  aws_htc_ecr                = var.aws_htc_ecr != "" ? var.aws_htc_ecr : "${local.account_id}.dkr.ecr.${var.region}.${local.dns_suffix}"
-  project_name               = var.project_name != "" ? var.project_name : random_string.random_resources.result
-  grafana_admin_password     = var.grafana_admin_password != "" ? var.grafana_admin_password : random_password.password.result
-  cluster_name               = "${var.cluster_name}-${local.project_name}"
-  ddb_state_table            = "${var.ddb_state_table}-${local.project_name}"
-  sqs_queue                  = "${var.sqs_queue}-${local.project_name}"
-  tasks_queue_name           = "${var.sqs_queue}-${local.project_name}__0"
-  sqs_dlq                    = "${var.sqs_dlq}-${local.project_name}"
-  lambda_name_get_results    = "${var.lambda_name_get_results}-${local.project_name}"
-  lambda_name_submit_tasks   = "${var.lambda_name_submit_tasks}-${local.project_name}"
-  lambda_name_cancel_tasks   = "${var.lambda_name_cancel_tasks}-${local.project_name}"
-  lambda_name_ttl_checker    = "${var.lambda_name_ttl_checker}-${local.project_name}"
-  lambda_name_scaling_metric = "${var.lambda_name_scaling_metric}-${local.project_name}"
-  metrics_name               = "${var.metrics_name}-${local.project_name}"
-  config_name                = "${var.config_name}-${local.project_name}"
-  s3_bucket                  = "${var.s3_bucket}-${local.project_name}"
-  error_log_group            = "${var.error_log_group}-${local.project_name}"
-  error_logging_stream       = "${var.error_logging_stream}-${local.project_name}"
+  account_id                  = data.aws_caller_identity.current.account_id
+  dns_suffix                  = data.aws_partition.current.dns_suffix
+  aws_htc_ecr                 = var.aws_htc_ecr != "" ? var.aws_htc_ecr : "${local.account_id}.dkr.ecr.${var.region}.${local.dns_suffix}"
+  project_name                = var.project_name != "" ? var.project_name : random_string.random_resources.result
+  grafana_admin_password      = var.grafana_admin_password != "" ? var.grafana_admin_password : random_password.password.result
+  cluster_name                = "${var.cluster_name}-${local.project_name}"
+  ddb_state_table             = "${var.ddb_state_table}-${local.project_name}"
+  sqs_queue                   = "${var.sqs_queue}-${local.project_name}"
+  tasks_queue_name            = "${var.sqs_queue}-${local.project_name}__0"
+  sqs_dlq                     = "${var.sqs_dlq}-${local.project_name}"
+  lambda_name_get_results     = "${var.lambda_name_get_results}-${local.project_name}"
+  lambda_name_submit_tasks    = "${var.lambda_name_submit_tasks}-${local.project_name}"
+  lambda_name_cancel_tasks    = "${var.lambda_name_cancel_tasks}-${local.project_name}"
+  lambda_name_ttl_checker     = "${var.lambda_name_ttl_checker}-${local.project_name}"
+  lambda_name_scaling_metrics = "${var.lambda_name_scaling_metrics}-${local.project_name}"
+  lambda_name_node_drainer    = "${var.lambda_name_node_drainer}-${local.project_name}"
+  metrics_name                = "${var.metrics_name}-${local.project_name}"
+  s3_bucket                   = "${var.s3_bucket}-${local.project_name}"
+  error_log_group             = "${var.error_log_group}-${local.project_name}"
+  error_logging_stream        = "${var.error_logging_stream}-${local.project_name}"
+  default_vpc_cidr_blocks     = data.aws_vpc.default.cidr_block_associations[*].cidr_block
+  allowed_access_cidr_blocks  = concat(var.allowed_access_cidr_blocks, local.default_vpc_cidr_blocks)
 
   default_agent_configuration = {
     agent_chart_url = "../charts"
@@ -47,7 +48,8 @@ locals {
       maxMemory                    = "3900"
       minMemory                    = "4096"
       storage                      = "S3"
-      location                     = "s3://mock_location"
+      s3_source                    = "s3://mock_location"
+      s3_source_kms_key_arn        = "arn:aws:kms:${var.region}:${local.account_id}:key/mock_key_arn"
       function_name                = "function"
       layer_name                   = "mock_computation_layer"
       lambda_handler_file_name     = ""
@@ -80,6 +82,11 @@ data "aws_caller_identity" "current" {}
 data "aws_partition" "current" {}
 
 
+# Default VPC
+data "aws_vpc" "default" {
+  default = true
+}
+
 resource "random_string" "random_resources" {
   length  = 5
   special = false
@@ -92,73 +99,66 @@ resource "random_password" "password" {
   length           = 16
   special          = true
   override_special = "_%@!"
+  min_lower        = 1
+  min_upper        = 1
+  min_numeric      = 1
+  min_special      = 1
 }
 
 
 module "vpc" {
   source = "./vpc"
 
-  region                = var.region
-  cluster_name          = local.cluster_name
-  vpc_range             = 16
-  private_subnets       = var.vpc_cidr_block_private
-  public_subnets        = var.vpc_cidr_block_public
-  enable_private_subnet = var.enable_private_subnet
+  region                     = var.region
+  cluster_name               = local.cluster_name
+  vpc_range                  = 16
+  private_subnets            = var.vpc_cidr_block_private
+  public_subnets             = var.vpc_cidr_block_public
+  enable_private_subnet      = var.enable_private_subnet
+  allowed_access_cidr_blocks = local.allowed_access_cidr_blocks
+  kms_key_admin_roles        = var.kms_key_admin_roles
+  kms_deletion_window        = var.kms_deletion_window
 }
 
 
 module "compute_plane" {
   source = "./compute_plane"
 
-  vpc_id                               = module.vpc.vpc_id
-  vpc_private_subnet_ids               = module.vpc.private_subnet_ids
-  vpc_public_subnet_ids                = module.vpc.public_subnet_ids
-  vpc_default_security_group_id        = module.vpc.default_security_group_id
-  vpc_cidr                             = module.vpc.vpc_cidr_block
-  cluster_name                         = local.cluster_name
-  kubernetes_version                   = var.kubernetes_version
-  k8s_ca_version                       = var.k8s_ca_version
-  k8s_keda_version                     = var.k8s_keda_version
-  aws_htc_ecr                          = local.aws_htc_ecr
-  htc_agent_namespace                  = var.htc_agent_namespace
-  cwa_version                          = var.cwa_version
-  state_table_service                  = var.state_table_service
-  state_table_config                   = var.state_table_config
-  aws_node_termination_handler_version = var.aws_node_termination_handler
-  cw_agent_version                     = var.cw_agent_version
-  fluentbit_version                    = var.fluentbit_version
-  suffix                               = local.project_name
-  region                               = var.region
-  lambda_runtime                       = var.lambda_runtime
-  ddb_state_table                      = local.ddb_state_table
-  sqs_queue                            = local.sqs_queue
-  tasks_queue_name                     = local.tasks_queue_name
-  namespace_metrics                    = var.namespace_metrics
-  dimension_name_metrics               = var.dimension_name_metrics
-  lambda_name_scaling_metrics          = local.lambda_name_scaling_metric
-  period_metrics                       = var.period_metrics
-  metric_name                          = local.metrics_name
-  metrics_event_rule_time              = var.metrics_event_rule_time
-  eks_worker_groups                    = var.eks_worker_groups
-  input_role                           = var.input_role
-  graceful_termination_delay           = var.graceful_termination_delay
-  aws_xray_daemon_version              = var.aws_xray_daemon_version
-  enable_private_subnet                = var.enable_private_subnet
-  task_queue_service                   = var.task_queue_service
-  task_queue_config                    = var.task_queue_config
-  error_log_group                      = local.error_log_group
-  error_logging_stream                 = local.error_logging_stream
-  grafana_admin_password               = local.grafana_admin_password
+  vpc_id                            = module.vpc.vpc_id
+  vpc_private_subnet_ids            = module.vpc.private_subnet_ids
+  vpc_public_subnet_ids             = module.vpc.public_subnet_ids
+  cluster_name                      = local.cluster_name
+  kubernetes_version                = var.kubernetes_version
+  k8s_ca_version                    = var.k8s_ca_version
+  k8s_keda_version                  = var.k8s_keda_version
+  aws_htc_ecr                       = local.aws_htc_ecr
+  suffix                            = local.project_name
+  region                            = var.region
+  eks_worker_groups                 = var.eks_worker_groups
+  eks_node_volume_size              = var.eks_node_volume_size
+  input_role                        = var.input_role
+  enable_private_subnet             = var.enable_private_subnet
+  grafana_admin_password            = local.grafana_admin_password
+  ecr_pull_through_cache_policy_arn = module.control_plane.ecr_pull_through_cache_policy_arn
+  node_drainer_lambda_role_arn      = module.control_plane.node_drainer_lambda_role_arn
+  cognito_domain_name               = module.control_plane.cognito_domain_name
+  cognito_userpool_arn              = module.control_plane.cognito_userpool_arn
+  cognito_userpool_id               = module.control_plane.cognito_userpool_id
+  kms_key_admin_roles               = var.kms_key_admin_roles
+  kms_deletion_window               = var.kms_deletion_window
+  # allowed_access_cidr_blocks        = local.allowed_access_cidr_blocks
 }
+
 
 module "control_plane" {
   source = "./control_plane"
 
-  vpc_id                                        = module.vpc.vpc_id
-  vpc_private_subnet_ids                        = module.vpc.private_subnet_ids
-  vpc_public_subnet_ids                         = module.vpc.public_subnet_ids
+  vpc_id                 = module.vpc.vpc_id
+  vpc_private_subnet_ids = module.vpc.private_subnet_ids
+  # vpc_public_subnet_ids                         = module.vpc.public_subnet_ids
   vpc_default_security_group_id                 = module.vpc.default_security_group_id
   vpc_cidr                                      = module.vpc.vpc_cidr_block
+  allowed_access_cidr_blocks                    = local.allowed_access_cidr_blocks
   suffix                                        = local.project_name
   region                                        = var.region
   lambda_runtime                                = var.lambda_runtime
@@ -192,13 +192,24 @@ module "control_plane" {
   dynamodb_gsi_index_table_read_capacity        = var.dynamodb_default_read_capacity
   dynamodb_gsi_ttl_table_write_capacity         = var.dynamodb_default_write_capacity
   dynamodb_gsi_ttl_table_read_capacity          = var.dynamodb_default_read_capacity
-  dynamodb_gsi_parent_table_write_capacity      = var.dynamodb_default_write_capacity
-  dynamodb_gsi_parent_table_read_capacity       = var.dynamodb_default_read_capacity
-  agent_use_congestion_control                  = var.agent_use_congestion_control
   nlb_influxdb                                  = module.compute_plane.nlb_influxdb
   cluster_name                                  = local.cluster_name
-  cognito_userpool_arn                          = module.compute_plane.cognito_userpool_arn
   api_gateway_version                           = var.api_gateway_version
+  eks_managed_node_groups                       = module.compute_plane.eks_managed_node_groups
+  tasks_queue_name                              = local.tasks_queue_name
+  namespace_metrics                             = var.namespace_metrics
+  dimension_name_metrics                        = var.dimension_name_metrics
+  lambda_name_scaling_metrics                   = local.lambda_name_scaling_metrics
+  lambda_name_node_drainer                      = local.lambda_name_node_drainer
+  period_metrics                                = var.period_metrics
+  metric_name                                   = local.metrics_name
+  metrics_event_rule_time                       = var.metrics_event_rule_time
+  graceful_termination_delay                    = var.graceful_termination_delay
+  lambda_configuration_s3_source                = try(var.agent_configuration.lambda.s3_source, local.default_agent_configuration.lambda.s3_source)
+  lambda_configuration_s3_source_kms_key_arn    = try(var.agent_configuration.lambda.s3_source_kms_key_arn, local.default_agent_configuration.lambda.s3_source_kms_key_arn)
+  kms_key_admin_roles                           = var.kms_key_admin_roles
+  kms_deletion_window                           = var.kms_deletion_window
+
 
   depends_on = [
     module.vpc,
@@ -211,43 +222,41 @@ module "htc_agent" {
   region                             = var.region
   agent_chart_url                    = lookup(var.agent_configuration, "agent_chart_url", local.default_agent_configuration.agent_chart_url)
   termination_grace_period           = var.graceful_termination_delay
-  agent_image_tag                    = lookup(lookup(var.agent_configuration, "agent", local.default_agent_configuration.agent), "tag", local.default_agent_configuration.agent.tag)
-  get_layer_image_tag                = lookup(lookup(var.agent_configuration, "get_layer", local.default_agent_configuration.get_layer), "tag", local.default_agent_configuration.get_layer.tag)
-  lambda_image_tag                   = lookup(lookup(var.agent_configuration, "lambda", local.default_agent_configuration.lambda), "runtime", local.default_agent_configuration.lambda.runtime)
-  test_agent_image_tag               = lookup(lookup(var.agent_configuration, "test", local.default_agent_configuration.test), "tag", local.default_agent_configuration.test.tag)
   suffix                             = local.project_name
   agent_name                         = var.htc_agent_name
-  agent_permissions_policy_arn       = module.compute_plane.agent_permissions_policy_arn
+  htc_agent_permissions_policy_arn   = module.control_plane.htc_agent_permissions_policy_arn
   eks_oidc_provider_arn              = module.compute_plane.oidc_provider_arn
   max_htc_agents                     = var.max_htc_agents
   min_htc_agents                     = var.min_htc_agents
   htc_agent_target_value             = var.htc_agent_target_value
-  average_period                     = var.average_period
   namespace_metrics                  = var.namespace_metrics
   dimension_name_metrics             = var.dimension_name_metrics
   dimension_value_metrics            = local.cluster_name
   metric_name                        = local.metrics_name
-  agent_min_cpu                      = lookup(lookup(var.agent_configuration, "agent", local.default_agent_configuration.agent), "minCPU", local.default_agent_configuration.agent.minCPU)
-  agent_max_cpu                      = lookup(lookup(var.agent_configuration, "agent", local.default_agent_configuration.agent), "maxCPU", local.default_agent_configuration.agent.maxCPU)
-  lambda_max_cpu                     = lookup(lookup(var.agent_configuration, "lambda", local.default_agent_configuration.lambda), "maxCPU", local.default_agent_configuration.lambda.maxCPU)
-  lambda_min_cpu                     = lookup(lookup(var.agent_configuration, "lambda", local.default_agent_configuration.lambda), "minCPU", local.default_agent_configuration.lambda.minCPU)
-  agent_min_memory                   = lookup(lookup(var.agent_configuration, "agent", local.default_agent_configuration.agent), "minMemory", local.default_agent_configuration.agent.minMemory)
-  agent_max_memory                   = lookup(lookup(var.agent_configuration, "agent", local.default_agent_configuration.agent), "maxMemory", local.default_agent_configuration.agent.maxMemory)
-  lambda_min_memory                  = lookup(lookup(var.agent_configuration, "lambda", local.default_agent_configuration.lambda), "minMemory", local.default_agent_configuration.lambda.minMemory)
-  lambda_max_memory                  = lookup(lookup(var.agent_configuration, "lambda", local.default_agent_configuration.lambda), "maxMemory", local.default_agent_configuration.lambda.maxMemory)
-  agent_pull_policy                  = lookup(lookup(var.agent_configuration, "agent", local.default_agent_configuration.agent), "pullPolicy", local.default_agent_configuration.agent.pullPolicy)
-  lambda_pull_policy                 = lookup(lookup(var.agent_configuration, "lambda", local.default_agent_configuration.lambda), "pullPolicy", local.default_agent_configuration.lambda.pullPolicy)
-  get_layer_pull_policy              = lookup(lookup(var.agent_configuration, "get_layer", local.default_agent_configuration.get_layer), "pullPolicy", local.default_agent_configuration.get_layer.pullPolicy)
-  test_pull_policy                   = lookup(lookup(var.agent_configuration, "test", local.default_agent_configuration.test), "pullPolicy", local.default_agent_configuration.test.pullPolicy)
-  agent_image_repository             = lookup(lookup(var.agent_configuration, "agent", local.default_agent_configuration.agent), "image", local.default_agent_configuration.agent.image)
-  get_layer_image_repository         = lookup(lookup(var.agent_configuration, "get_layer", local.default_agent_configuration.get_layer), "image", local.default_agent_configuration.get_layer.image)
-  lambda_image_repository            = lookup(lookup(var.agent_configuration, "lambda", local.default_agent_configuration.lambda), "image", local.default_agent_configuration.lambda.image)
-  test_agent_image_repository        = lookup(lookup(var.agent_configuration, "test", local.default_agent_configuration.test), "image", local.default_agent_configuration.test.image)
-  lambda_configuration_storage_type  = lookup(lookup(var.agent_configuration, "get_layer", local.default_agent_configuration.lambda), "layer_type", local.default_agent_configuration.get_layer.lambda_layer_type)
-  lambda_configuration_location      = lookup(lookup(var.agent_configuration, "lambda", local.default_agent_configuration.lambda), "location", local.default_agent_configuration.lambda.location)
-  lambda_handler_file_name           = lookup(lookup(var.agent_configuration, "lambda", local.default_agent_configuration.lambda), "lambda_handler_file_name", local.default_agent_configuration.lambda.lambda_handler_file_name)
-  lambda_handler_function_name       = lookup(lookup(var.agent_configuration, "lambda", local.default_agent_configuration.lambda), "lambda_handler_function_name", local.default_agent_configuration.lambda.lambda_handler_function_name)
-  lambda_configuration_function_name = lookup(lookup(var.agent_configuration, "lambda", local.default_agent_configuration.lambda), "function_name", local.default_agent_configuration.lambda.function_name)
+  agent_image_tag                    = try(var.agent_configuration.agent.tag, local.default_agent_configuration.agent.tag)
+  agent_image_repository             = try(var.agent_configuration.agent.image, local.default_agent_configuration.agent.image)
+  agent_pull_policy                  = try(var.agent_configuration.agent.pullPolicy, local.default_agent_configuration.agent.pullPolicy)
+  agent_min_cpu                      = try(var.agent_configuration.agent.minCPU, local.default_agent_configuration.agent.minCPU)
+  agent_max_cpu                      = try(var.agent_configuration.agent.maxCPU, local.default_agent_configuration.agent.maxCPU)
+  agent_min_memory                   = try(var.agent_configuration.agent.minMemory, local.default_agent_configuration.agent.minMemory)
+  agent_max_memory                   = try(var.agent_configuration.agent.maxMemory, local.default_agent_configuration.agent.maxMemory)
+  get_layer_image_tag                = try(var.agent_configuration.get_layer.tag, local.default_agent_configuration.get_layer.tag)
+  get_layer_image_repository         = try(var.agent_configuration.get_layer.image, local.default_agent_configuration.get_layer.image)
+  get_layer_pull_policy              = try(var.agent_configuration.get_layer.pullPolicy, local.default_agent_configuration.get_layer.pullPolicy)
+  lambda_image_tag                   = try(var.agent_configuration.lambda.runtime, local.default_agent_configuration.lambda.runtime)
+  lambda_image_repository            = try(var.agent_configuration.lambda.image, local.default_agent_configuration.lambda.image)
+  lambda_pull_policy                 = try(var.agent_configuration.lambda.pullPolicy, local.default_agent_configuration.lambda.pullPolicy)
+  lambda_min_cpu                     = try(var.agent_configuration.lambda.minCPU, local.default_agent_configuration.lambda.minCPU)
+  lambda_max_cpu                     = try(var.agent_configuration.lambda.maxCPU, local.default_agent_configuration.lambda.maxCPU)
+  lambda_min_memory                  = try(var.agent_configuration.lambda.minMemory, local.default_agent_configuration.lambda.minMemory)
+  lambda_max_memory                  = try(var.agent_configuration.lambda.maxMemory, local.default_agent_configuration.lambda.maxMemory)
+  lambda_handler_file_name           = try(var.agent_configuration.lambda.lambda_handler_file_name, local.default_agent_configuration.lambda.lambda_handler_file_name)
+  lambda_handler_function_name       = try(var.agent_configuration.lambda.lambda_handler_function_name, local.default_agent_configuration.lambda.lambda_handler_function_name)
+  lambda_configuration_function_name = try(var.agent_configuration.lambda.function_name, local.default_agent_configuration.lambda.function_name)
+  lambda_configuration_s3_source     = try(var.agent_configuration.lambda.s3_source, local.default_agent_configuration.lambda.s3_source)
+  test_agent_image_tag               = try(var.agent_configuration.test.tag, local.default_agent_configuration.test.tag)
+  test_pull_policy                   = try(var.agent_configuration.test.pullPolicy, local.default_agent_configuration.test.pullPolicy)
+  test_agent_image_repository        = try(var.agent_configuration.test.image, local.default_agent_configuration.test.image)
 
   depends_on = [
     module.vpc,

@@ -4,7 +4,6 @@
 
 
 class MockComputeEngineJobWrapper:
-
     def __init__(self, worker_arguments, n_tasks_per_job, payload_options):
         self.worker_arguments = worker_arguments
         self.payload_options = payload_options
@@ -15,22 +14,24 @@ class MockComputeEngineJobWrapper:
     def form_dict_task_definition(self):
         worker_arguments = self.worker_arguments.split(" ")
 
-        task_definition = {
-            "worker_arguments": worker_arguments
-        }
+        task_definition = {"worker_arguments": worker_arguments}
 
         if int(worker_arguments[0]) >= 0:
             self.expected_output_string = worker_arguments[0]
         elif worker_arguments[-1] in self.computational_results_dic:
-            self.expected_output_string = self.computational_results_dic[worker_arguments[-1]]
+            self.expected_output_string = self.computational_results_dic[
+                worker_arguments[-1]
+            ]
         else:
             raise Exception(
-                "Can not verify result as computation is not known for input '{}'".format(self.worker_arguments))
+                "Can not verify result as computation is not known for input '{}'".format(
+                    self.worker_arguments
+                )
+            )
 
         return task_definition
 
     def generate_binary_job(self):
-
         task_dict = self.form_dict_task_definition()
 
         tasks = []
@@ -41,7 +42,8 @@ class MockComputeEngineJobWrapper:
         return tasks
 
     def verify_results(self, stdout):
-
         if stdout.rstrip() != self.expected_output_string:
-            return False, "Expected: [{}] != Received [{}]".format(self.expected_output_string, stdout.rstrip())
+            return False, "Expected: [{}] != Received [{}]".format(
+                self.expected_output_string, stdout.rstrip()
+            )
         return True, ""

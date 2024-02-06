@@ -4,7 +4,8 @@
 
 REGION?=eu-west-1
 
-S3_GRID_TFSTATE_BUCKET_NAME:=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[2].OutputValue' --output text)
+GRID_TFSTATE_BUCKET:=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`GridTFStateBucketID`].OutputValue' --output text)
+S3_KMS_KEY_ARN:=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`HTCStateS3KeyAlias`].OutputValue' --output text)
 export GRAFANA_ADMIN_PASSWORD?=$(shell uuidgen)
 TF_SRCS:=$(wildcard *.tf)
 
@@ -16,7 +17,7 @@ all:
 #	mkdir -p $@
 
 init:
-	terraform init -backend-config="bucket=$(S3_GRID_TFSTATE_BUCKET_NAME)" -backend-config="region=$(REGION)"
+	terraform init -backend-config="bucket=$(GRID_TFSTATE_BUCKET)" -backend-config="encrypt=true" -backend-config="kms_key_id=$(S3_KMS_KEY_ARN)" -backend-config="region=$(REGION)"
 
 # execute terraform with confirmation
 #########################################
@@ -25,8 +26,8 @@ apply: $(TF_SRCS) $(GRID_CONFIG)
 
 destroy:
 	terraform destroy  -var-file $(GRID_CONFIG)
-#########################################
 
+#########################################
 # execute terraform without confirmation
 #########################################
 auto-apply: $(TF_SRCS) $(GRID_CONFIG)

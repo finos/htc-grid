@@ -14,9 +14,11 @@ class TTLExpirationGenerator:
         self.expriation_offset_sec = task_ttl_expiration_offset_sec
 
         if self.refresh_interval_sec >= self.expriation_offset_sec:
-            raise Exception("""Refresh interval [{}] must be smaller then expiration offset [{}].
+            raise Exception(
+                """Refresh interval [{}] must be smaller then expiration offset [{}].
                 Otherwise TTL will always expire before we have chance to extend it!""".format(
-                self.refresh_interval_sec, self.expriation_offset_sec)
+                    self.refresh_interval_sec, self.expriation_offset_sec
+                )
             )
         self.next_refresh_timestamp = 0
         self.next_expiration_timestamp = 0

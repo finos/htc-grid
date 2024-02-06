@@ -69,8 +69,14 @@ reset-images-deployment: ./deployment/image_repository/terraform
 transfer-images: ./deployment/image_repository/terraform
 	@$(MAKE) -C $< apply
 
+auto-transfer-images: ./deployment/image_repository/terraform
+	@$(MAKE) -C $< auto-apply
+
 destroy-images: ./deployment/image_repository/terraform
 	@$(MAKE) -C $< destroy
+
+auto-destroy-images: ./deployment/image_repository/terraform
+	@$(MAKE) -C $< auto-destroy
 
 
 ###############################################

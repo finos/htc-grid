@@ -33,7 +33,7 @@ export PASSWORD=<my_grafana_admin_password>
 Running the following commands will create the above user in Cognito, with the value of `PASSWORD` as an initial password:
 ```bash
 userpoolid=$(make get-userpool-id TAG=$TAG REGION=$HTCGRID_REGION)
-aws cognito-idp admin-create-user --user-pool-id $userpoolid --username $USERNAME --temporary-password $PASSWORD
+aws cognito-idp admin-create-user --user-pool-id $userpoolid --username $USERNAME --temporary-password $PASSWORD --region $HTCGRID_REGION
 ```
 
 ## Grafana

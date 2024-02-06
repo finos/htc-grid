@@ -3,6 +3,51 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
+module "cancel_tasks_cloudwatch_kms_key" {
+  source  = "terraform-aws-modules/kms/aws"
+  version = "~> 2.0"
+
+  description             = "CMK KMS Key used to encrypt cancel_tasks CloudWatch Logs"
+  deletion_window_in_days = var.kms_deletion_window
+  enable_key_rotation     = true
+
+  key_administrators = local.kms_key_admin_arns
+
+  key_statements = [
+    {
+      sid = "Allow Lambda functions to encrypt/decrypt CloudWatch Logs"
+      actions = [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey",
+        "kms:Decrypt",
+      ]
+      effect = "Allow"
+      principals = [
+        {
+          type = "Service"
+          identifiers = [
+            "logs.${var.region}.${local.dns_suffix}"
+          ]
+        }
+      ]
+      resources = ["*"]
+      conditions = [
+        {
+          test     = "ArnEquals"
+          variable = "kms:EncryptionContext:aws:logs:arn"
+          values   = ["arn:${local.partition}:logs:${var.region}:${local.account_id}:log-group:/aws/lambda/${var.lambda_name_cancel_tasks}"]
+        }
+      ]
+    }
+  ]
+
+  aliases = ["cloudwatch/lambda/${var.lambda_name_cancel_tasks}"]
+}
+
+
 module "cancel_tasks" {
   source  = "terraform-aws-modules/lambda/aws"
   version = "~> 5.0"
@@ -40,8 +85,22 @@ module "cancel_tasks" {
   memory_size = 1024
   timeout     = 300
   runtime     = var.lambda_runtime
-  create_role = false
-  lambda_role = aws_iam_role.role_lambda_cancel_tasks.arn
+
+  role_name             = "role_lambda_cancel_tasks_${local.suffix}"
+  role_description      = "Lambda role for cancel_tasks-${local.suffix}"
+  attach_network_policy = true
+
+  attach_policies    = true
+  number_of_policies = 1
+  policies = [
+    aws_iam_policy.lambda_data_policy.arn
+  ]
+
+  attach_cloudwatch_logs_policy = true
+  cloudwatch_logs_kms_key_id    = module.cancel_tasks_cloudwatch_kms_key.key_arn
+
+  attach_tracing_policy = true
+  tracing_mode          = "Active"
 
   vpc_subnet_ids         = var.vpc_private_subnet_ids
   vpc_security_group_ids = [var.vpc_default_security_group_id]
@@ -50,8 +109,8 @@ module "cancel_tasks" {
     STATE_TABLE_NAME                              = var.ddb_state_table,
     STATE_TABLE_SERVICE                           = var.state_table_service,
     STATE_TABLE_CONFIG                            = var.state_table_config,
-    TASKS_QUEUE_NAME                              = aws_sqs_queue.htc_task_queue["__0"].name,
-    TASKS_QUEUE_DLQ_NAME                          = aws_sqs_queue.htc_task_queue_dlq.name,
+    TASKS_QUEUE_NAME                              = element(local.htc_task_queue_names, 0),
+    TASKS_QUEUE_DLQ_NAME                          = element(local.htc_task_queue_dlq_names, 0),
     METRICS_ARE_ENABLED                           = var.metrics_are_enabled,
     METRICS_CANCEL_TASKS_LAMBDA_CONNECTION_STRING = var.metrics_cancel_tasks_lambda_connection_string,
     ERROR_LOG_GROUP                               = var.error_log_group,
@@ -60,8 +119,10 @@ module "cancel_tasks" {
     GRID_STORAGE_SERVICE                          = var.grid_storage_service,
     TASK_QUEUE_SERVICE                            = var.task_queue_service,
     TASK_QUEUE_CONFIG                             = var.task_queue_config,
-    S3_BUCKET                                     = aws_s3_bucket.htc-stdout-bucket.id,
-    REDIS_URL                                     = aws_elasticache_cluster.stdin-stdout-cache.cache_nodes.0.address,
+    S3_BUCKET                                     = module.htc_data_bucket.s3_bucket_id, #aws_s3_bucket.htc_data_bucket.id,
+    S3_KMS_KEY_ID                                 = module.htc_data_bucket_kms_key.key_arn,
+    REDIS_URL                                     = aws_elasticache_replication_group.htc_data_cache.primary_endpoint_address,
+    REDIS_PASSWORD                                = random_password.htc_data_cache_password.result,
     METRICS_GRAFANA_PRIVATE_IP                    = var.nlb_influxdb,
     REGION                                        = var.region
   }
@@ -69,38 +130,4 @@ module "cancel_tasks" {
   tags = {
     service = "htc-grid"
   }
-}
-
-
-#Lambda Cancel Tasks IAM Role & Permissions
-resource "aws_iam_role" "role_lambda_cancel_tasks" {
-  name               = "role_lambda_cancel_tasks-${local.suffix}"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
-}
-EOF
-}
-
-
-
-resource "aws_iam_role_policy_attachment" "cancel_tasks_lambda_logs_attachment" {
-  role       = aws_iam_role.role_lambda_cancel_tasks.name
-  policy_arn = aws_iam_policy.lambda_logging_policy.arn
-}
-
-
-resource "aws_iam_role_policy_attachment" "cancel_tasks_lambda_data_attachment" {
-  role       = aws_iam_role.role_lambda_cancel_tasks.name
-  policy_arn = aws_iam_policy.lambda_data_policy.arn
 }

@@ -6,6 +6,9 @@
 BUILD_DIR:=.build
 export TAG
 export REGION?=eu-west-1
+GRID_TFSTATE_BUCKET=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`GridTFStateBucketID`].OutputValue' --output text || '')
+IMAGE_TFSTATE_BUCKET=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`ImageTFStateBucketID`].OutputValue' --output text || '')
+LAMBDA_LAYER_BUCKET=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`LambdaLayerBucketID`].OutputValue' --output text || '')
 
 YAML_SRC:=grid_state.yaml
 
@@ -20,24 +23,28 @@ $(BUILD_DIR)/grid_init/tag.$(TAG):
 	@touch $(BUILD_DIR)/grid_init/tag.$(TAG)
 
 $(BUILD_DIR)/grid_init/init-grid-$(TAG): $(BUILD_DIR)/grid_init/tag.$(TAG) $(YAML_SRC)
-	aws cloudformation create-stack --stack-name $(TAG) --region $(REGION) --template-body file://$(YAML_SRC) --parameters ParameterKey=BucketTag,ParameterValue=$(TAG)
-	@echo "Waiting for cloud formation successful deployment"
+	@if [ "$(shell aws cloudformation list-stacks --region $(REGION) --query 'StackSummaries[?StackStatus==`CREATE_COMPLETE` && StackName==`$(TAG)`].StackName' --output text)" != "$(TAG)" ]; then \
+	echo "CloudFormation stack $(TAG) doesn't exist. Creating ..."; \
+	aws cloudformation create-stack --stack-name $(TAG) --region $(REGION) --template-body file://$(YAML_SRC) --parameters ParameterKey=BucketTag,ParameterValue=$(TAG); else \
+	echo "Failed creating the CloudFormation stack as it may already exist. Trying to update ..."; \
+	aws cloudformation update-stack --stack-name $(TAG) --region $(REGION) --template-body file://$(YAML_SRC) --parameters ParameterKey=BucketTag,ParameterValue=$(TAG); fi
+	@echo "Waiting for the successful deployment of CloudFormation stack $(TAG) ..."
 	@aws cloudformation wait stack-create-complete --stack-name $(TAG) --region $(REGION)
 	@touch $(BUILD_DIR)/grid_init/init-grid-$(TAG)
-	aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0]'
+	@aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0]'
 
 $(TAG)-workload-bucket: $(BUILD_DIR)/grid_init/init-grid-$(TAG)-workload-bucket
 
 init: $(BUILD_DIR)/grid_init
 
 clean-grid-state:
-	aws --region $(REGION) s3 rm --recursive s3://$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[2].OutputValue' --output text) || true
+	../scripts/python/delete_bucket.py $(GRID_TFSTATE_BUCKET)
 
 clean-image-state:
-	aws --region $(REGION) s3 rm --recursive s3://$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[1].OutputValue' --output text) || true
+	../scripts/python/delete_bucket.py $(IMAGE_TFSTATE_BUCKET)
 
 clean-lambda-storage:
-	aws --region $(REGION) s3 rm --recursive s3://$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[0].OutputValue' --output text) || true
+	../scripts/python/delete_bucket.py $(LAMBDA_LAYER_BUCKET)
 
 clean: clean-image-state clean-grid-state clean-lambda-storage
 	rm -rf $(BUILD_DIR)/grid_init/tag.*

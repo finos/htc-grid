@@ -4,7 +4,6 @@
 
 
 class TaskQueueException(Exception):
-
     def __init__(self, original_exception, supplied_message, traceback_msg):
         super().__init__(original_exception)
         self.original_message = str(original_exception)

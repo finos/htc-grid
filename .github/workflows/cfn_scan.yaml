@@ -1,0 +1,84 @@
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
+name: CloudFormation Code Scanning
+on: [push, pull_request]
+permissions:
+  contents: read
+
+jobs:
+
+###################
+# CFN Lint Checks #
+###################
+  cfn-lint:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+    runs-on: ubuntu-latest
+    env:
+      CFN_LINT_REPORT_FILE: cfn_lint_report.sarif
+
+    steps:
+      - name: Checkout the branch
+        uses: actions/checkout@v3
+
+      - name: Setup cfn-lint with latest version
+        uses: scottbrenner/cfn-lint-action@v2
+        with:
+          command: cfn-lint --version
+
+      - name: Run cfn-lint and generate report
+        run: |-
+          cfn-lint --config-file .github/conf/cfn_lint.yaml \
+                   --format sarif --output-file ${{ env.CFN_LINT_REPORT_FILE }} \
+                   deployment/dev_environment_cloud9/**/*.yaml \
+                   deployment/init_grid/**/*.yaml
+        continue-on-error: true
+
+      - name: Upload cfn-lint scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: success() || failure()
+        with:
+          sarif_file: "${{ env.CFN_LINT_REPORT_FILE }}"
+
+      - name: Save report results as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.CFN_LINT_REPORT_FILE }}
+          path: ${{ env.CFN_LINT_REPORT_FILE }}
+
+##################
+# CFN Nag Checks #
+##################
+  cfn_nag:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+    runs-on: ubuntu-latest
+    env:
+      CFN_NAG_REPORT_FILE: cfn_nag_report.sarif
+
+    steps:
+      - name: Checkout the branch
+        uses: actions/checkout@v3
+
+      - name: Run cfn_nag and generate report
+        uses: stelligent/cfn_nag@master
+        with:
+          input_path: deployment/
+          extra_args: '-g -o sarif' #-t '..*\/(cfn|cloudformation)\/..*\.yaml' # This flag doesnt seem to be working.
+          output_path: ${{ env.CFN_NAG_REPORT_FILE }}
+
+      - name: Upload cfn_nag scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: success() || failure()
+        with:
+          sarif_file: "${{ env.CFN_NAG_REPORT_FILE }}"
+
+      - name: Save report results as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.CFN_NAG_REPORT_FILE }}
+          path: ${{ env.CFN_NAG_REPORT_FILE }}

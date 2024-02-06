@@ -3,7 +3,53 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
-module "dynamodb_table" {
+module "htc_dynamodb_table_kms_key" {
+  source  = "terraform-aws-modules/kms/aws"
+  version = "~> 2.0"
+
+  description             = "CMK KMS Key used to encrypt HTC DynamoDB tables"
+  deletion_window_in_days = var.kms_deletion_window
+  enable_key_rotation     = true
+
+  key_administrators = local.kms_key_admin_arns
+
+  key_statements = [
+    {
+      sid    = "Allow CMK KMS Key Access via SQS Service"
+      effect = "Allow"
+      actions = [
+        "kms:Encrypt*",
+        "kms:Decrypt*",
+        "kms:ReEncrypt*",
+        "kms:GenerateDataKey*",
+        "kms:Describe*"
+      ]
+      resources = ["*"]
+
+      principals = [
+        {
+          type        = "AWS"
+          identifiers = local.kms_key_admin_arns
+        }
+      ]
+
+      conditions = [
+        {
+          test     = "StringEquals"
+          variable = "kms:ViaService"
+          values = [
+            "dynamodb.${var.region}.${local.dns_suffix}"
+          ]
+        }
+      ]
+    }
+  ]
+
+  aliases = ["dynamodb/${var.ddb_state_table}"]
+}
+
+
+module "htc_dynamodb_table" {
   source  = "terraform-aws-modules/dynamodb-table/aws"
   version = "~> 3.0"
 
@@ -13,6 +59,11 @@ module "dynamodb_table" {
   billing_mode        = var.dynamodb_billing_mode
   read_capacity       = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_read_capacity : null
   write_capacity      = var.dynamodb_billing_mode == "PROVISIONED" ? var.dynamodb_table_write_capacity : null
+
+  point_in_time_recovery_enabled = true
+
+  server_side_encryption_enabled     = true
+  server_side_encryption_kms_key_arn = module.htc_dynamodb_table_kms_key.key_arn
 
   hash_key = "task_id"
   attributes = [

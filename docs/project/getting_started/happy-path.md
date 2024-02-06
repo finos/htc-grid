@@ -120,7 +120,7 @@ The deployment of HTC-Grid takes about 20 Mins.
 If `make apply-custom-runtime` is successful then in the `deployment/grid/terraform` folder two files are created:
 
     * `kubeconfig_htc_$TAG`: this file give access to the EKS cluster through kubectl (example: kubeconfig_htc_aws_my_project)
-    * `Agent_config.json`: this file contains all the parameters, so the agent can run in the infrastructure
+    * `agent_config.json`: this file contains all the parameters, so the agent can run in the infrastructure
 
 
 
@@ -190,7 +190,7 @@ Replace `<my_cognito_user>` and `<my_cognito_password>` with your own username a
    ```
 3. Create the user
    ```bash
-   aws cognito-idp admin-create-user --user-pool-id $userpoolid --username $USERNAME --temporary-password $PASSWORD
+   aws cognito-idp admin-create-user --user-pool-id $userpoolid --username $USERNAME --temporary-password $PASSWORD --region $HTCGRID_REGION
    ```
 
 ## Accessing Grafana

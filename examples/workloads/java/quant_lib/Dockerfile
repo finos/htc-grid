@@ -3,6 +3,11 @@
 # // FROM ${HTCGRID_ACCOUNT}.dkr.ecr.${HTCGRID_REGION}.amazonaws.com/ecr-public/lambda/java:17
 FROM public.ecr.aws/lambda/java:17
 
+# Run as user nobody:nobody
+ARG USER=99 #nobody
+ARG GROUP=99 #nobody
+
+USER ${USER}:${GROUP}
 
 # //# Copy function code and runtime dependencies from Maven layout
 COPY target/classes ${LAMBDA_TASK_ROOT}
@@ -13,5 +18,3 @@ COPY ql/libQuantLib.so.0 ${LAMBDA_TASK_ROOT}/lib/libQuantLib.so.0
 
 # // Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)
 CMD [ "com.htcgrid.quantlib.Bonds::handleRequest" ]
-
-

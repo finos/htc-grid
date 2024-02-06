@@ -17,9 +17,9 @@ do
   echo "Event HEADERS : [$HEADERS]"
   # Extract request ID by scraping response headers received above
   REQUEST_ID=$(grep -Fi Lambda-Runtime-Aws-Request-Id "$HEADERS" | tr -d '[:space:]' | cut -d: -f2)
-  ARG_0=$(echo $EVENT_DATA | $LAMBDA_TASK_ROOT/jq  -r '.worker_arguments[0]')
-  ARG_1=$(echo $EVENT_DATA | $LAMBDA_TASK_ROOT/jq  -r '.worker_arguments[1]')
-  ARG_2=$(echo $EVENT_DATA | $LAMBDA_TASK_ROOT/jq  -r '.worker_arguments[2]')
+  ARG_0=$(echo $EVENT_DATA | jq -r '.worker_arguments[0]')
+  ARG_1=$(echo $EVENT_DATA | jq -r '.worker_arguments[1]')
+  ARG_2=$(echo $EVENT_DATA | jq -r '.worker_arguments[2]')
   # Execute the handler function from the script
   # RESPONSE=$($(echo "$_HANDLER" | cut -d. -f2) "$EVENT_DATA")
   if ! RESPONSE=$($LAMBDA_TASK_ROOT/mock_compute_engine $ARG_0 $ARG_1 $ARG_2)

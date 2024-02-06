@@ -16,6 +16,53 @@ locals {
 }
 
 
+module "eks_cloudwatch_kms_key" {
+  source  = "terraform-aws-modules/kms/aws"
+  version = "~> 2.0"
+
+  description             = "CMK KMS Key used to encrypt EKS Cluster CloudWatch Logs"
+  deletion_window_in_days = var.kms_deletion_window
+  enable_key_rotation     = true
+
+  key_administrators = local.kms_key_admin_arns
+
+  key_statements = [
+    {
+      sid = "Allow EKS to encrypt/decrypt CloudWatch Logs"
+      actions = [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey",
+        "kms:Decrypt",
+      ]
+      effect = "Allow"
+      principals = [
+        {
+          type = "Service"
+          identifiers = [
+            "logs.${var.region}.${local.dns_suffix}"
+          ]
+        }
+      ]
+      resources = ["*"]
+      conditions = [
+        {
+          test     = "ArnEquals"
+          variable = "kms:EncryptionContext:aws:logs:arn"
+          values   = ["arn:${local.partition}:logs:${var.region}:${local.account_id}:log-group:/aws/eks/${var.cluster_name}/cluster"]
+        }
+      ]
+    }
+  ]
+
+  aliases = ["cloudwatch/eks/${var.cluster_name}"]
+}
+
+#trivy:ignore:AVD-AWS-0040 Allow Public EKS API Access
+#trivy:ignore:AVD-AWS-0041 Allow API Access from 0.0.0.0/0
+#trivy:ignore:AVD-AWS-0104 Allow ALL Egress CIDR ranges
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 19.0"
@@ -23,8 +70,19 @@ module "eks" {
   cluster_name    = var.cluster_name
   cluster_version = var.kubernetes_version
 
-  cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = var.enable_private_subnet
+  cluster_endpoint_public_access  = true
+  # cluster_endpoint_public_access_cidrs = var.allowed_access_cidr_blocks
+
+  create_kms_key                  = true
+  enable_kms_key_rotation         = true
+  kms_key_enable_default_policy   = true
+  kms_key_description             = "CMK KMS Key used to encrypt/decrypt EKS Secrets"
+  kms_key_deletion_window_in_days = var.kms_deletion_window
+  kms_key_administrators          = local.kms_key_admin_arns
+
+  create_cloudwatch_log_group     = true
+  cloudwatch_log_group_kms_key_id = module.eks_cloudwatch_kms_key.key_arn
   cluster_enabled_log_types       = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 
   vpc_id     = var.vpc_id
@@ -38,6 +96,11 @@ module "eks" {
     ami_type                              = "AL2_x86_64"
     instance_types                        = ["m6i.xlarge", "m6id.xlarge", "m6a.xlarge", "m6in.xlarge", "m5.xlarge", "m5d.xlarge", "m5a.xlarge", "m5ad.xlarge", "m5n.xlarge"]
     attach_cluster_primary_security_group = false
+    iam_role_additional_policies = {
+      AmazonEC2ContainerRegistryReadOnly = "arn:${local.partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+      CloudWatchAgentServerPolicy        = "arn:${local.partition}:iam::aws:policy/CloudWatchAgentServerPolicy",
+      EKSPullThroughCachePolicy          = var.ecr_pull_through_cache_policy_arn,
+    }
   }
 
   eks_managed_node_groups = local.eks_worker_group_map
@@ -46,7 +109,7 @@ module "eks" {
   manage_aws_auth_configmap = true
   aws_auth_roles = concat(var.input_role, [
     {
-      rolearn  = aws_iam_role.role_lambda_drainer.arn
+      rolearn  = var.node_drainer_lambda_role_arn
       username = "lambda"
       groups   = ["system:masters"]
     }

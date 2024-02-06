@@ -1,20 +1,28 @@
-ARG HTCGRID_ACCOUNT 
-ARG HTCGRID_REGION
-FROM ${HTCGRID_ACCOUNT}.dkr.ecr.${HTCGRID_REGION}.amazonaws.com/ecr-public/lambda/provided:al2
-RUN yum install -d1 -y  make gcc-c++ zip
-RUN mkdir -p /app
+ARG HTCGRID_ECR_REPO
+FROM ${HTCGRID_ECR_REPO}/ecr-public/lambda/provided:al2
+
+# Run as user nobody:nobody
+ARG USER=99 #nobody
+ARG GROUP=99 #nobody
+
+RUN yum update -y && \
+    yum install -y \
+      make \
+      gcc-c++ \
+      zip && \
+    yum clean all && \
+    rm -rf /var/cache/yum && \
+    mkdir -p /app/build
+
 WORKDIR /app
-
-COPY mock_compute_engine.cpp .
-
-COPY Makefile .
-
+COPY mock_compute_engine.cpp Makefile /app/
 RUN make main
-RUN mkdir -p /app/build
-ADD https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 jq
-RUN chmod a+x ./jq
-COPY bootstrap .
-RUN zip -9yr lambda.zip .
-ENTRYPOINT cp lambda.zip /app/build
 
+COPY bootstrap.sh /app/
+RUN zip -9yr lambda.zip .  && \
+    chmod +x /app/bootstrap.sh && \
+    chown -R $USER:$GROUP /app
 
+USER ${USER}:${GROUP}
+
+ENTRYPOINT ["cp", "lambda.zip", "/app/build"]

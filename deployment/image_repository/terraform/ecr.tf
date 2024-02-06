@@ -3,6 +3,52 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
+module "ecr_kms_key" {
+  source  = "terraform-aws-modules/kms/aws"
+  version = "~> 2.0"
+
+  description             = "CMK KMS Key used to encrypt ECR Repositories"
+  deletion_window_in_days = var.kms_deletion_window
+  enable_key_rotation     = true
+
+  key_administrators = local.kms_key_admin_arns
+
+  key_statements = [
+    {
+      sid    = "Allow CMK KMS Key Access via SQS Service"
+      effect = "Allow"
+      actions = [
+        "kms:Encrypt*",
+        "kms:Decrypt*",
+        "kms:ReEncrypt*",
+        "kms:GenerateDataKey*",
+        "kms:Describe*"
+      ]
+      resources = ["*"]
+
+      principals = [
+        {
+          type        = "AWS"
+          identifiers = local.kms_key_admin_arns
+        }
+      ]
+
+      conditions = [
+        {
+          test     = "StringEquals"
+          variable = "kms:ViaService"
+          values = [
+            "ecr.${var.region}.${local.dns_suffix}"
+          ]
+        }
+      ]
+    }
+  ]
+
+  aliases = ["ecr/htc"]
+}
+
+
 # Create the ECR repositories
 resource "aws_ecr_repository" "third_party" {
   for_each = toset(var.repository)
@@ -12,6 +58,11 @@ resource "aws_ecr_repository" "third_party" {
 
   image_scanning_configuration {
     scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "KMS"
+    kms_key         = module.ecr_kms_key.key_arn
   }
 }
 

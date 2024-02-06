@@ -1,0 +1,18 @@
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
+framework:
+  - all
+
+quiet: true
+soft-fail: true 
+
+skip-check:
+  - CKV_TF_1 # "Ensure Terraform module sources use a commit hash"
+  - CKV_K8S_21 # "The default namespace should not be used"
+  - CKV_AWS_18 # "Ensure the S3 bucket has access logging enabled"
+  - CKV_AWS_51 # "Ensure ECR Image Tags are immutable"
+  - CKV_DOCKER_2 # "Ensure that HEALTHCHECK instructions have been added to container images"
+  - CKV_DOCKER_7 # "Ensure the base image uses a non latest version tag"
+  - CKV_OPENAPI_21 # "Ensure that arrays have a maximum number of items"

@@ -7,7 +7,7 @@ LOCAL_AGENT_IMAGE_NAME=awshpc-local
 TAG=mainline
 ACCOUNT_ID?=$(shell aws sts get-caller-identity | jq -r '.Account')
 REGION=eu-west-1
-DOCKER_REGISTRY=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com
+HTCGRID_ECR_REPO=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com
 CONTEXT_DIR=../../../..
 SRCS=agent.py
 
@@ -18,16 +18,16 @@ lambda: build-lambda push-lambda
 local: build-local push-local
 
 build-lambda: Dockerfile.Lambda
-	docker build  --platform linux/amd64 $(CONTEXT_DIR) -t $(DOCKER_REGISTRY)/$(LAMBDA_AGENT_IMAGE_NAME):$(TAG) -f ./Dockerfile.Lambda
+	docker build --platform linux/amd64 $(CONTEXT_DIR) --build-arg HTCGRID_ECR_REPO=$(HTCGRID_ECR_REPO) -t $(HTCGRID_ECR_REPO)/$(LAMBDA_AGENT_IMAGE_NAME):$(TAG) -f ./Dockerfile.Lambda
 
 push-lambda: build-lambda
-	docker push $(DOCKER_REGISTRY)/$(LAMBDA_AGENT_IMAGE_NAME):$(TAG)
+	docker push $(HTCGRID_ECR_REPO)/$(LAMBDA_AGENT_IMAGE_NAME):$(TAG)
 
 build-local: Dockerfile.Local
-	docker build $(CONTEXT_DIR) -t $(DOCKER_REGISTRY)/$(LOCAL_AGENT_IMAGE_NAME):$(TAG) -f ./Dockerfile.Local
+	docker build $(CONTEXT_DIR) --build-arg HTCGRID_ECR_REPO=$(HTCGRID_ECR_REPO) -t $(HTCGRID_ECR_REPO)/$(LOCAL_AGENT_IMAGE_NAME):$(TAG) -f ./Dockerfile.Local
 
 push-local: build-local
-	docker push $(DOCKER_REGISTRY)/$(LOCAL_AGENT_IMAGE_NAME):$(TAG)
+	docker push $(HTCGRID_ECR_REPO)/$(LOCAL_AGENT_IMAGE_NAME):$(TAG)
 
 test: $(SRCS)
 	flake8  --ignore  E501,W503 --statistic --exclude build $(SRCS)

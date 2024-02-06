@@ -7,28 +7,40 @@ import sys
 import io
 import logging
 
-logging.basicConfig(format="%(asctime)s - %(levelname)s - %(filename)s - %(funcName)s  - %(lineno)d - %(message)s",
-                    datefmt='%H:%M:%S', level=logging.INFO)
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(filename)s - %(funcName)s  - %(lineno)d - %(message)s",
+    datefmt="%H:%M:%S",
+    level=logging.INFO,
+)
 logger = logging.getLogger(__name__)
 
 
-INPUT_POSTFIX = '-input'
-OUTPUT_POSTFIX = '-output'
-ERROR_POSTFIX = '-error'
-PAYLOAD_POSTFIX = '-payload'
+INPUT_POSTFIX = "-input"
+OUTPUT_POSTFIX = "-output"
+ERROR_POSTFIX = "-error"
+PAYLOAD_POSTFIX = "-payload"
 
 
 class InOutS3:
-    """ Simple S3 based handler for putting and retreiving large values associated with taskIDs """
+    """Simple S3 based handler for putting and retreiving large values associated with taskIDs"""
 
     # For S3 implementation , namespace is a bucketname
     namespace = None
     # For S3 implementation , subnamespace is a directory
     subnamespace = None
+    # S3 KMS Key ID
+    s3_kms_key_id = None
 
     s3 = None
 
-    def __init__(self, namespace, region, subnamespace=None, s3_custom_resource=None):
+    def __init__(
+        self,
+        namespace,
+        region,
+        s3_kms_key_id,
+        subnamespace=None,
+        s3_custom_resource=None,
+    ):
         """Initialize a dataplane backed by an S3 bucket
 
         Args:
@@ -40,13 +52,15 @@ class InOutS3:
 
         self.namespace = namespace
         self.subnamespace = subnamespace
+
         if s3_custom_resource is None:
-            self.s3 = boto3.resource('s3', region_name=region)
-            logger.warning('using s3 resource from AWS')
+            self.s3 = boto3.resource("s3", region_name=region)
+            logger.warning("using s3 resource from AWS")
         else:
             self.s3 = s3_custom_resource
-            logger.warning('using s3 resource from other provider')
+            logger.warning("using s3 resource from other provider")
         self.bucket = self.s3.Bucket(self.namespace)
+        self.s3_kms_key_id = s3_kms_key_id
 
     def put_input_from_file(self, task_id, file_name):
         return self.__put_from_file(task_id, file_name, INPUT_POSTFIX)
@@ -114,37 +128,55 @@ class InOutS3:
 
     def __put_from_file(self, task_id, file_name, postfix):
         try:
-            self.bucket.upload_file(Filename=file_name, Key=self.__get_full_key(task_id, postfix))
+            self.bucket.upload_file(
+                Filename=file_name,
+                Key=self.__get_full_key(task_id, postfix),
+                ExtraArgs={
+                    "ServerSideEncryption": "AES256",
+                    "SSEKMSKeyId": self.s3_kms_key_id,
+                },
+            )
         except Exception as e:
             print(e, file=sys.stderr)
             raise e
 
     def __get_to_file(self, task_id, file_name, postfix):
         try:
-            self.bucket.download_file(Key=self.__get_full_key(task_id, postfix), Filename=file_name)
+            self.bucket.download_file(
+                Key=self.__get_full_key(task_id, postfix), Filename=file_name
+            )
         except Exception as e:
             print(e, file=sys.stderr)
             raise e
 
     def __put_from_bytes(self, task_id, data, postfix):
         try:
-            with (io.BytesIO(data)) as f_data:
-                self.bucket.upload_fileobj(Fileobj=f_data, Key=self.__get_full_key(task_id, postfix))
+            with io.BytesIO(data) as f_data:
+                self.bucket.upload_fileobj(
+                    Fileobj=f_data,
+                    Key=self.__get_full_key(task_id, postfix),
+                    ExtraArgs={
+                        "ServerSideEncryption": "AES256",
+                        "SSEKMSKeyId": self.s3_kms_key_id,
+                    },
+                )
         except Exception as e:
             print(e, file=sys.stderr)
             raise e
 
     def __get_to_utf8_string(self, task_id, postfix):
         try:
-            return self.__get_to_bytes(task_id, postfix).decode('utf-8')
+            return self.__get_to_bytes(task_id, postfix).decode("utf-8")
         except Exception as e:
             print(e, file=sys.stderr)
             raise e
 
     def __get_to_bytes(self, task_id, postfix):
         try:
-            with (io.BytesIO()) as f_data:
-                self.bucket.download_fileobj(Key=self.__get_full_key(task_id, postfix), Fileobj=f_data)
+            with io.BytesIO() as f_data:
+                self.bucket.download_fileobj(
+                    Key=self.__get_full_key(task_id, postfix), Fileobj=f_data
+                )
                 return f_data.getvalue()
         except Exception as e:
             print(e, file=sys.stderr)
@@ -152,18 +184,20 @@ class InOutS3:
 
     def __get_full_key(self, key, postfix):
         if self.subnamespace is not None:
-            return str(self.subnamespace) + '/' + str(key) + str(postfix)
+            return str(self.subnamespace) + "/" + str(key) + str(postfix)
         else:
             return str(key) + str(postfix)
 
-    def mv_to_another_namespace(self, key, new_namespace, new_subnamespace=None, new_key=None):
+    def mv_to_another_namespace(
+        self, key, new_namespace, new_subnamespace=None, new_key=None
+    ):
         # S3 implmentation: namespace is a bucket, subnamespace a directory
         try:
-            copy_source = {'Bucket': self.namespace, 'Key': str(key)}
+            copy_source = {"Bucket": self.namespace, "Key": str(key)}
             # no renaming by default
-            full_new_key = ''
+            full_new_key = ""
             if new_subnamespace is not None:
-                full_new_key += str(new_subnamespace) + '/'
+                full_new_key += str(new_subnamespace) + "/"
             if new_key is not None:
                 full_new_key += str(new_key)
             else:
@@ -172,7 +206,14 @@ class InOutS3:
             print(full_new_key)
             print(copy_source)
             target_bucket = self.s3.Bucket(new_namespace)
-            target_bucket.copy(CopySource=copy_source, Key=full_new_key)
+            target_bucket.copy(
+                CopySource=copy_source,
+                Key=full_new_key,
+                ExtraArgs={
+                    "ServerSideEncryption": "AES256",
+                    "SSEKMSKeyId": self.s3_kms_key_id,
+                },
+            )
         except Exception as e:
             print(e, file=sys.stderr)
             raise e

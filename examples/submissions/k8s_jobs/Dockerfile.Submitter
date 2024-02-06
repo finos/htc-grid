@@ -1,20 +1,22 @@
-FROM python:3.7.7-slim-buster
+ARG HTCGRID_ECR_REPO
+FROM ${HTCGRID_ECR_REPO}/ecr-public/docker/library/python:3.8-slim
 
-RUN mkdir -p /app/py_connector
-RUN mkdir -p /dist/python
-RUN apt-get update ; apt-get install -y gcc
+# Run as user nobody:nogroup
+ARG USER=65534 #nobody
+ARG GROUP=65534 #nogroup
+
+RUN apt-get update && \
+    apt-get install -y \
+      --no-install-recommends \
+      gcc && \
+    mkdir -p /dist/python/ /app/py_connector
+
 COPY ./dist/python/* /dist/python/
-COPY ./examples/client/python/requirements.txt /app/py_connector/
+COPY ./examples/client/python/* /app/py_connector/
 
 WORKDIR /app/py_connector
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    chown -R $USER:$GROUP /app /dist
 
-RUN pip install -r requirements.txt
-
-COPY ./examples/client/python/client.py .
-COPY ./examples/client/python/simple_client.py .
-COPY ./examples/client/python/cancel_tasks.py .
-COPY ./examples/client/python/portfolio_pricing_client.py .
-COPY ./examples/client/python/sample_portfolio.json .
-
-
-
+USER ${USER}:${GROUP}

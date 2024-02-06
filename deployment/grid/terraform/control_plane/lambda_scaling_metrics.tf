@@ -3,6 +3,51 @@
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
 
+module "scaling_metrics_cloudwatch_kms_key" {
+  source  = "terraform-aws-modules/kms/aws"
+  version = "~> 2.0"
+
+  description             = "CMK KMS Key used to encrypt scaling_metrics CloudWatch Logs"
+  deletion_window_in_days = var.kms_deletion_window
+  enable_key_rotation     = true
+
+  key_administrators = local.kms_key_admin_arns
+
+  key_statements = [
+    {
+      sid = "Allow Lambda functions to encrypt/decrypt CloudWatch Logs"
+      actions = [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey",
+        "kms:Decrypt",
+      ]
+      effect = "Allow"
+      principals = [
+        {
+          type = "Service"
+          identifiers = [
+            "logs.${var.region}.${local.dns_suffix}"
+          ]
+        }
+      ]
+      resources = ["*"]
+      conditions = [
+        {
+          test     = "ArnEquals"
+          variable = "kms:EncryptionContext:aws:logs:arn"
+          values   = ["arn:${local.partition}:logs:${var.region}:${local.account_id}:log-group:/aws/lambda/${var.lambda_name_scaling_metrics}"]
+        }
+      ]
+    }
+  ]
+
+  aliases = ["cloudwatch/lambda/${var.lambda_name_scaling_metrics}"]
+}
+
+
 module "scaling_metrics" {
   source  = "terraform-aws-modules/lambda/aws"
   version = "~> 5.0"
@@ -36,13 +81,27 @@ module "scaling_metrics" {
   docker_additional_options = [
     "--platform", "linux/amd64",
   ]
-  handler                           = "scaling_metrics.lambda_handler"
-  memory_size                       = 1024
-  timeout                           = 60
-  runtime                           = var.lambda_runtime
-  create_role                       = false
-  lambda_role                       = aws_iam_role.role_scaling_metrics.arn
-  use_existing_cloudwatch_log_group = false
+  handler     = "scaling_metrics.lambda_handler"
+  memory_size = 1024
+  timeout     = 60
+  runtime     = var.lambda_runtime
+
+  role_name             = "role_scaling_metrics_${local.suffix}"
+  role_description      = "Lambda role for scaling_metrics-${local.suffix}"
+  attach_network_policy = true
+
+  attach_policies    = true
+  number_of_policies = 2
+  policies = [
+    aws_iam_policy.lambda_data_policy.arn,
+    aws_iam_policy.scaling_metrics_cloudwatch_policy.arn
+  ]
+
+  attach_cloudwatch_logs_policy = true
+  cloudwatch_logs_kms_key_id    = module.scaling_metrics_cloudwatch_kms_key.key_arn
+
+  attach_tracing_policy = true
+  tracing_mode          = "Active"
 
   environment_variables = {
     STATE_TABLE_CONFIG   = var.ddb_state_table,
@@ -67,7 +126,7 @@ module "scaling_metrics" {
 
 
 resource "aws_cloudwatch_event_rule" "scaling_metrics_event_rule" {
-  name                = "scaling_metrics_event_rule-${local.suffix}"
+  name                = "scaling_metrics_event_rule_${local.suffix}"
   description         = "Fires event rule to put metrics"
   schedule_expression = var.metrics_event_rule_time
 }
@@ -80,74 +139,26 @@ resource "aws_cloudwatch_event_target" "check_scaling_metrics_lambda" {
 }
 
 
-resource "aws_lambda_permission" "allow_cloudwatch_to_call_check_scaling_metrics_lambda" {
+resource "aws_lambda_permission" "allow_cloudwatch_to_call_scaling_metrics_lambda" {
   statement_id  = "AllowExecutionFromCloudWatch"
   action        = "lambda:InvokeFunction"
   function_name = module.scaling_metrics.lambda_function_name
-  principal     = "events.amazonaws.com"
+  principal     = "events.${local.dns_suffix}"
   source_arn    = aws_cloudwatch_event_rule.scaling_metrics_event_rule.arn
 }
 
 
-# Lambda Scaling Metrics IAM Role & Permissions
-resource "aws_iam_role" "role_scaling_metrics" {
-  name               = "role_scaling_metrics-${local.suffix}"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
-}
-EOF
-}
-
-
-resource "aws_iam_policy" "scaling_metrics_logging_policy" {
-  name        = "scaling_metrics_logging_policy-${local.suffix}"
+resource "aws_iam_policy" "scaling_metrics_cloudwatch_policy" {
+  name        = "scaling_metrics_data_policy_${local.suffix}"
   path        = "/"
-  description = "IAM policy for logging from the scaling_metrics lambda"
+  description = "IAM policy for publishing CloudWatch Metrics from Scaling Metrics Lambda"
   policy      = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
     {
       "Action": [
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
-      ],
-      "Resource": "arn:${local.partition}:logs:*:*:*",
-      "Effect": "Allow"
-    }
-  ]
-}
-EOF
-}
-
-
-resource "aws_iam_policy" "scaling_metrics_data_policy" {
-  name        = "scaling_metrics_data_policy-${local.suffix}"
-  path        = "/"
-  description = "IAM policy for accessing DDB and SQS from a lambda"
-  policy      = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": [
-        "dynamodb:*",
-        "sqs:*",
-        "cloudwatch:PutMetricData",
-        "ec2:CreateNetworkInterface",
-        "ec2:DeleteNetworkInterface",
-        "ec2:DescribeNetworkInterfaces"
+        "cloudwatch:PutMetricData"
       ],
       "Resource": "*",
       "Effect": "Allow"
@@ -155,16 +166,4 @@ resource "aws_iam_policy" "scaling_metrics_data_policy" {
   ]
 }
 EOF
-}
-
-
-resource "aws_iam_role_policy_attachment" "scaling_metrics_logs_attachment" {
-  role       = aws_iam_role.role_scaling_metrics.name
-  policy_arn = aws_iam_policy.scaling_metrics_logging_policy.arn
-}
-
-
-resource "aws_iam_role_policy_attachment" "scaling_metrics_data_attachment" {
-  role       = aws_iam_role.role_scaling_metrics.name
-  policy_arn = aws_iam_policy.scaling_metrics_data_policy.arn
 }

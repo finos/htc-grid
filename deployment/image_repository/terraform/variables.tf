@@ -4,11 +4,13 @@
 
 variable "region" {
   description = "the region where the ECR repository will be created"
+  type        = string
   default     = "eu-west-1"
 }
 
 variable "aws_htc_ecr" {
   description = "URL of Amazon ECR image repostiories"
+  type        = string
   default     = ""
 }
 
@@ -32,4 +34,16 @@ variable "rebuild_runtimes" {
   description = "Enforce a local rebuild of the runtime images"
   type        = string
   default     = "false"
+}
+
+variable "kms_deletion_window" {
+  description = "Number of days after which KMS key will be permanently deleted"
+  type        = number
+  default     = 7
+}
+
+variable "kms_key_admin_roles" {
+  description = "List of roles to assign KMS Key Administrator permissions"
+  type        = list(string)
+  default     = []
 }

@@ -18,7 +18,7 @@ Metadata:
             limitations under the License.nse.'
 Parameters:
   C9InstanceType:
-    Description: Cloud9 instance type
+    Description: Cloud9 Instance Type
     Type: String
     Default: m5.large
     AllowedValues:
@@ -26,145 +26,137 @@ Parameters:
       - t3.medium
       - m4.large
       - m5.large
-    ConstraintDescription: Must be a valid Cloud9 instance type
+    ConstraintDescription: Must be a valid Cloud9 instance type.
   C9KubectlVersion:
-    Description: kubectl Version to install on Cloud9
+    Description: kubectl version to install on Cloud9
     Type: String
     Default: 1.25.12
-    ConstraintDescription: Must be a valid kubectl version
+    ConstraintDescription: Must be a valid kubectl version.
   C9TerraformVersion:
-    Description: Terraform Version to install on Cloud9
+    Description: Terraform version to install on Cloud9
     Type: String
     Default: 1.5.4
-    ConstraintDescription: Must be a valid terraform version
+    ConstraintDescription: Must be a valid Terraform version.
   C9EKSctlVersion:
-    Description: Cloud9 instance eksctl version
+    Description: eksctl version to install on Cloud9
     Type: String
     Default: 0.151.0
-    ConstraintDescription: Must be a valid eksctl version
+    ConstraintDescription: Must be a valid eksctl version.
   C9HelmVersion:
-    Description: Helm Version to install on Cloud9
+    Description: Helm version to install on Cloud9
     Type: String
     Default: 3.12.2
-    ConstraintDescription: Must be a valid helm version
+    ConstraintDescription: Must be a valid Helm version
   HTCGridVersion:
-    Description: HTC Grid Version to install on Cloud9
+    Description: HTC Grid version to install on Cloud9
     Type: String
     Default: latest
-    ConstraintDescription: Must be a valid HTC Grid version
-  #Used only by Event Engine, if you are self-deploying the stack leave the default value to NONE
-  EETeamRoleArn:
-    Description: "ARN of the Team Role"
+    ConstraintDescription: Must be a valid HTC Grid version.
+  HTCGridRepo:
+    Description: HTC Grid repo to pull on Cloud9
+    Type: String
+    Default: https://github.com/awslabs/aws-htc-grid
+    ConstraintDescription: Must be a valid HTC Grid version.
+  ParticipantRoleARN:
+    Description: "ARN of the Participant Role"
     Default: NONE
     Type: String
-    ConstraintDescription: This is ONLY used Event Engine, dont change this if you are self-deploying the stack
+    ConstraintDescription: This is ONLY used via AWS WorkshopStudio. DON'T change this if you are self-deploying the stack.
 
 Conditions:
-  NotEventEngine: !Equals [!Ref EETeamRoleArn, NONE]
+  NotWSParticipant: !Equals [!Ref ParticipantRoleARN, NONE]
 
 Resources:
 
   ################## PERMISSIONS AND ROLES #################
   C9Role:
     Type: AWS::IAM::Role
-    Condition: NotEventEngine
     Properties:
       Tags:
-        - Key: Environment
-          Value: AWS Example
+      - Key: Environment
+        Value: !Ref 'AWS::StackName'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - ec2.amazonaws.com
-                - ssm.amazonaws.com
-            Action:
-              - sts:AssumeRole
+        - Effect: Allow
+          Principal:
+            Service:
+            - !Sub 'ec2.${AWS::URLSuffix}'
+            - !Sub 'ssm.${AWS::URLSuffix}'
+          Action:
+          - sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess
+      - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess'
       Path: "/"
+
   C9LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
+        - Effect: Allow
+          Principal:
+            Service:
+            - !Sub 'lambda.${AWS::URLSuffix}'
+          Action:
+          - sts:AssumeRole
       Path: "/"
       Policies:
-        - PolicyName:
-            Fn::Join:
-              - ''
-              - - C9LambdaPolicy-
-                - Ref: AWS::Region
+        - PolicyName: !Sub 'C9LambdaPolicy-${AWS::Region}'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: arn:aws:logs:*:*:*
-              - Effect: Allow
-                Action:
-                  - cloudformation:DescribeStacks
-                  - cloudformation:DescribeStackEvents
-                  - cloudformation:DescribeStackResource
-                  - cloudformation:DescribeStackResources
-                  - ec2:DescribeInstances
-                  - ec2:DescribeVolumes
-                  - ec2:AssociateIamInstanceProfile
-                  - ec2:DescribeIamInstanceProfileAssociations
-                  - ec2:ModifyInstanceAttribute
-                  - ec2:ModifyVolume
-                  - ec2:ReplaceIamInstanceProfileAssociation
-                  - iam:ListInstanceProfiles
-                  - iam:PassRole
-                Resource: "*"
+            - Effect: Allow
+              Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              Resource: !Sub 'arn:${AWS::Partition}:logs:*:*:*'
+            - Effect: Allow
+              Action:
+              - cloudformation:DescribeStacks
+              - cloudformation:DescribeStackEvents
+              - cloudformation:DescribeStackResource
+              - cloudformation:DescribeStackResources
+              - ec2:DescribeInstances
+              - ec2:DescribeVolumes
+              - ec2:AssociateIamInstanceProfile
+              - ec2:DescribeIamInstanceProfileAssociations
+              - ec2:ModifyInstanceAttribute
+              - ec2:ModifyVolume
+              - ec2:ReplaceIamInstanceProfileAssociation
+              - ec2:RebootInstances
+              - iam:ListInstanceProfiles
+              - iam:PassRole
+              Resource: "*"
 
   ################## LAMBDA BOOTSTRAP FUNCTION ################
 
-  C9BootstrapInstanceLambda:
-    Description: Bootstrap Cloud9 instance
-    Type: Custom::C9BootstrapInstanceLambda
-    DependsOn:
-      - C9BootstrapInstanceLambdaFunction
-      - C9Instance
-      - C9LambdaExecutionRole
+  C9BootstrapInstanceLambdaExecution:
+    # Description: Bootstrap Cloud9 Instance
+    Type: Custom::C9BootstrapInstanceLambdaExecution
     Properties:
       Tags:
-        - Key: Environment
-          Value: AWS Example
-      ServiceToken:
-        Fn::GetAtt:
-          - C9BootstrapInstanceLambdaFunction
-          - Arn
-      REGION:
-        Ref: AWS::Region
-      StackName:
-        Ref: AWS::StackName
-      EnvironmentId:
-        Ref: C9Instance
-      LabIdeInstanceProfileArn: !If [ NotEventEngine, !GetAtt C9InstanceProfile.Arn, !Sub 'arn:aws:iam::${AWS::AccountId}:instance-profile/TeamRoleInstanceProfile' ]
+      - Key: Environment
+        Value: !Ref 'AWS::StackName'
+      ServiceToken: !GetAtt C9BootstrapInstanceLambdaFunction.Arn
+      REGION: !Ref 'AWS::Region'
+      StackName: !Ref 'AWS::StackName'
+      EnvironmentId: !Ref C9Instance
+      LabIdeInstanceProfileArn: !GetAtt C9InstanceProfile.Arn
+
   C9BootstrapInstanceLambdaFunction:
     Type: AWS::Lambda::Function
+    #checkov:skip=CKV_AWS_116:C9BootstrapInstanceLambdaFunction is used for bootstrapping and doesnt require DLQ
+    #checkov:skip=CKV_AWS_117:C9BootstrapInstanceLambdaFunction runs inside the default VPC
+    #checkov:skip=CKV_AWS_115:C9BootstrapInstanceLambdaFunction is triggered by CFN and doesnt require concurrency
     Properties:
       Tags:
-        - Key: Environment
-          Value: AWS Example
+      - Key: Environment
+        Value: !Ref 'AWS::StackName'
       Handler: index.lambda_handler
-      Role:
-        Fn::GetAtt:
-          - C9LambdaExecutionRole
-          - Arn
+      Role: !GetAtt C9LambdaExecutionRole.Arn
       Runtime: python3.7
       MemorySize: 256
       Timeout: '600'
@@ -195,7 +187,6 @@ Resources:
                 # Open AWS clients
                 ec2 = boto3.client('ec2')
 
-
                 # Get the InstanceId from Cloud9 IDE
                 print('tag:aws:cloud9:environment : {}'.format(event['ResourceProperties']['EnvironmentId']))
                 instance = ec2.describe_instances(Filters=[{'Name': 'tag:aws:cloud9:environment','Values': [event['ResourceProperties']['EnvironmentId']]}])['Reservations'][0]['Instances'][0]
@@ -225,7 +216,7 @@ Resources:
 
                 # attach instance profile
                 print(f'Instance is running , about to associate iam_instance_profile: {iam_instance_profile}')
-            
+
                 print(f'Check if there is already an Associated instance profile')
                 try:
                   associationID = ec2.describe_iam_instance_profile_associations(
@@ -263,6 +254,17 @@ Resources:
                   except Exception as e:
                       print(e)
 
+                print(f'Reboot instance to enforce registration with SSM')
+                try:
+                  response = ec2.reboot_instances(
+                      InstanceIds=[
+                          instance['InstanceId'],
+                      ],
+                      DryRun=False
+                  )
+                  print(f'response - reboot_instances: {response}')
+                except Exception as e:
+                    print(e)
 
                 responseData = {'Success': 'Started bootstrapping for instance: '+instance['InstanceId']}
                 cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, 'CustomResourcePhysicalID')
@@ -276,15 +278,72 @@ Resources:
   ################## SSM BOOTSRAP HANDLER ###############
   C9OutputBucket:
     Type: AWS::S3::Bucket
+    #checkov:skip=AVD-AWS-0088:C9OutputBucket is a logging bucket and doesnt require encryption
+    #checkov:skip=AVD-AWS-0132:C9OutputBucket is a logging bucket and doesnt require encryption
+    #checkov:skip=CKV_AWS_21:C9OutputBucket is a logging bucket and doesnt require versioning
     DeletionPolicy: Delete
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  C9OutputBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref C9OutputBucket
+      PolicyDocument:
+        Statement:
+          - Action:
+              - 's3:GetObject'
+              - 's3:PutObject'
+            Condition:
+              Bool:
+                'aws:SecureTransport': false
+            Effect: Deny
+            Principal: '*'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${C9OutputBucket}/*'
+            Sid: DenyUnencryptedConnections
+          - Action:
+              - 's3:PutBucketAcl'
+              - 's3:PutObject'
+              - 's3:PutObjectAcl'
+            Condition:
+              StringEquals:
+                's3:x-amz-acl':
+                  - authenticated-read
+                  - public-read
+                  - public-read-write
+            Effect: Deny
+            Principal: '*'
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3:::${C9OutputBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${C9OutputBucket}/*'
+            Sid: DenyPublicReadAcl
+          - Action:
+              - 's3:PutBucketAcl'
+              - 's3:PutObject'
+              - 's3:PutObjectAcl'
+            Condition:
+              StringLike:
+                's3:x-amz-grant-read':
+                  - !Sub '*http://acs.${AWS::URLSuffix}/groups/global/AllUsers*'
+                  - !Sub '*http://acs.${AWS::URLSuffix}/groups/global/AuthenticatedUsers*'
+            Effect: Deny
+            Principal: '*'
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3:::${C9OutputBucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${C9OutputBucket}/*'
+            Sid: DenyGrantingPublicRead
 
   C9SSMDocument:
     Type: AWS::SSM::Document
     Properties:
       Tags:
-        - Key: Environment
-          Value: AWS Example
-      Content: Yaml
+      - Key: Environment
+        Value: !Ref 'AWS::StackName'
+      DocumentFormat: YAML
       DocumentType: Command
       Content:
         schemaVersion: '2.2'
@@ -301,21 +360,22 @@ Resources:
                 - !Sub 'export TERRAFORM_VERSION="${C9TerraformVersion}"'
                 - !Sub 'export HELM_VERSION="${C9HelmVersion}"'
                 - !Sub 'export HTCGRID_VERSION="${HTCGridVersion}"'
+                - !Sub 'export HTCGRID_REPO="${HTCGridRepo}"'
 
                 - |
-                  #source /home/ec2-user/.bashrc
+                  # set -x
 
                   echo -e "========================================================"
                   echo -e " Starting the Cloud9 instance boostrap at: $(date)"
                   echo -e "========================================================"
                   echo -e "\n"
-  
+
                   echo -e "========================================================"
                   echo -e "                 Checking user identity"
                   echo -e "========================================================"
                   echo -e "[INFO] Running as OS user: $(whoami)"
                   echo -e "[INFO] Running with the following IAM Role:"
-                  sudo -H -u ec2-user aws sts get-caller-identity
+                  sudo -i -u ec2-user aws sts get-caller-identity
                   echo -e "========================================================"
                   echo -e "\n\n"
 
@@ -325,7 +385,6 @@ Resources:
                   if sudo growpart /dev/nvme0n1 1; then sudo xfs_growfs -d /; fi
                   echo -e "========================================================"
                   echo -e "\n\n"
-
 
                   echo -e "========================================================"
                   echo -e "            Setting up temporary directory"
@@ -339,6 +398,13 @@ Resources:
                   echo -e "\n\n"
 
                   echo -e "========================================================"
+                  echo -e "                 Installing virtualenv"
+                  echo -e "========================================================"
+                  sudo pip3 install --upgrade --force-reinstall virtualenv
+                  echo -e "========================================================"
+                  echo -e "\n\n"
+
+                  echo -e "========================================================"
                   echo -e "                  Installing kubectl"
                   echo -e "========================================================"
                   sudo curl --silent --location \
@@ -348,26 +414,24 @@ Resources:
                   sudo chmod +x "${TMP_DIR}/kubectl"
                   sudo mv "${TMP_DIR}/kubectl" "/usr/local/bin/kubectl"
                   if kubectl > /dev/null 2>&1; then
-                    echo -e "[INFO] Successfully installed [$(which kubectl)] with version:\n$(kubectl version --client=true)"; 
-                  else 
-                    echo -e "[ERROR] Failed to install kubectl.."; 
+                    echo -e "[INFO] Successfully installed [$(which kubectl)] with version:\n$(kubectl version --client=true)";
+                  else
+                    echo -e "[ERROR] Failed to install kubectl..";
                   fi
                   echo -e "========================================================"
                   echo -e "\n\n"
 
-
                   echo -e "========================================================"
-                  echo -e "                 Installing jq and envsubst"
+                  echo -e "              Installing pre-requisite tools"
                   echo -e "========================================================"
-                  sudo yum -y install jq gettext unzip
+                  sudo yum -y install git jq gettext unzip
                   echo -e "========================================================"
                   echo -e "\n\n"
-
 
                   echo -e "========================================================"
                   echo -e "          Updating AWS CLI to the latest version"
                   echo -e "========================================================"
-                  sudo -H -u ec2-user aws --version
+                  sudo -i -u ec2-user aws --version
                   curl --silent --location \
                         -o "${TMP_DIR}/awscliv2.zip" \
                         "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
@@ -391,22 +455,22 @@ Resources:
                   export ACCOUNT_ID="$(aws sts get-caller-identity --output text --query Account)"
                   export AWS_REGION="$(curl -s 169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')"
 
-                  if ! grep -q 'ACCOUNT_ID' ~/.bash_profile; then
+                  if ! grep -q 'ACCOUNT_ID' /home/ec2-user/.bash_profile; then
                     echo -e "export ACCOUNT_ID=\"${ACCOUNT_ID}\"" >> /home/ec2-user/.bash_profile;
                   else
                     echo -e "ACCOUNT_ID already exists in the file;
                   fi
 
-                  if ! grep -q 'AWS_REGION' ~/.bash_profile; then
+                  if ! grep -q 'AWS_REGION' /home/ec2-user/.bash_profile; then
                     echo -e "export AWS_REGION=\"${AWS_REGION}\"" >> /home/ec2-user/.bash_profile;
                   else
                     echo -e "AWS_REGION already exists in the file;
                   fi
 
-                  sudo -H -u ec2-user aws configure set default.region "${AWS_REGION}" > /dev/null 2>&1
-                  sudo -H -u ec2-user aws configure get default.region
+                  sudo -i -u ec2-user aws configure set default.region "${AWS_REGION}" > /dev/null 2>&1
+                  sudo -i -u ec2-user aws configure get default.region
                   echo -e "[INFO] Running with the following IAM Role:"
-                  sudo -H -u ec2-user aws sts get-caller-identity
+                  sudo -i -u ec2-user aws sts get-caller-identity
                   echo -e "========================================================"
                   echo -e "\n\n"
 
@@ -472,31 +536,59 @@ Resources:
                   echo -e "========================================================"
                   echo -e "                   Downloading HTC-Grid"
                   echo -e "========================================================"
-                  export HTC_GRID_REPO="https://github.com/awslabs/aws-htc-grid"
-
-                  if [ "${HTCGRID_VERSION}" == "latest" ]; then
-                    export HTCGRID_VERSION="$(curl -Ls -o /dev/null -w %{url_effective} ${HTC_GRID_REPO}/releases/latest | awk -F '/v' '{ print $NF }')";
-                    echo -e "[INFO] The value for HTCGRID_VERSION is 'latest'. Discovered the latest release as: ${HTCGRID_VERSION}"
+                  export DEFAULT_HTCGRID_REPO="https://github.com/awslabs/aws-htc-grid"
+                  export HTCGRID_HOME="/home/ec2-user/environment"
+                  cd "${HTCGRID_HOME}"
+                  if [ -e "aws-htc-grid" ]; then
+                    export OLD_HTCGRID_DIR="aws-htc-grid.$(date "+%F-%T" | sed 's|:|_|g')"
+                    mv aws-htc-grid "${OLD_HTCGRID_DIR}"
+                    if [ $? -eq 0 ]; then
+                      echo -e "[WARN] Found existing aws-htc-grid directory. Renaming to:\n${OLD_HTCGRID_DIR}"
+                    else
+                      echo -e "[ERROR] Found existing aws-htc-grid directory, however failed to rename it as:\n${OLD_HTCGRID_DIR}"
+                    fi
                   fi
 
-                  if [ "${HTCGRID_VERSION}" == "main" ]; then 
-                    export HTCGRID_URI_REF="heads/main";
+                  if [ "${HTCGRID_REPO}" == "${DEFAULT_HTCGRID_REPO}" ]; then
+                    echo -e "[INFO] Downloading HTC Grid release ${HTCGRID_VERSION} from default repo:\n${HTCGRID_REPO}"
+                    if [ "${HTCGRID_VERSION}" == "latest" ]; then
+                      export HTCGRID_VERSION="$(curl -Ls -o /dev/null -w %{url_effective} ${HTCGRID_REPO}/releases/latest | awk -F '/v' '{ print $NF }')";
+                      echo -e "[INFO] The value for HTCGRID_VERSION is 'latest'. Discovered the latest release as: ${HTCGRID_VERSION}"
+                    fi
+
+                    if [ "${HTCGRID_VERSION}" == "main" ]; then
+                      export HTCGRID_URI_REF="heads/main";
+                    else
+                      export HTCGRID_URI_REF="tags/v${HTCGRID_VERSION}";
+                    fi
+
+                    curl --silent --location \
+                          -o "${HTCGRID_HOME}/aws-htc-grid.tar.gz" \
+                          "${HTCGRID_REPO}/archive/refs/${HTCGRID_URI_REF}.tar.gz"
+
+                    cd "${HTCGRID_HOME}"; tar -zxf aws-htc-grid.tar.gz; rm -fr aws-htc-grid.tar.gz
+                    mv "aws-htc-grid-${HTCGRID_VERSION}" "aws-htc-grid"
+
+                    if [ $? -eq 0 ]; then
+                      echo -e "[INFO] Successfully downloaded HTC-Grid to [${HTCGRID_HOME}/aws-htc-grid] with version:\n${HTCGRID_VERSION}"
+                    else
+                      echo -e "[ERROR] Failed to rename aws-htc-grid-${HTCGRID_VERSION} to aws-htc-grid .."
+                    fi
                   else
-                    export HTCGRID_URI_REF="tags/v${HTCGRID_VERSION}";
-                  fi
+                    echo -e "[INFO] Cloning HTC-Grid from:\n${HTCGRID_REPO}/tree/${HTCGRID_VERSION}"
+                    mkdir -p "${HTCGRID_HOME}/aws-htc-grid"; cd "${HTCGRID_HOME}/aws-htc-grid"
+                    git init && git branch -m main || true && \
+                    git remote add origin "${HTCGRID_REPO}.git" -f && git reset --hard origin/main && \
+                    git checkout "${HTCGRID_VERSION}"
 
-                  curl --silent --location \
-                        -o "/home/ec2-user/environment/aws-htc-grid.tar.gz" \
-                        "${HTC_GRID_REPO}/archive/refs/${HTCGRID_URI_REF}.tar.gz"
-
-                  cd /home/ec2-user/environment; tar -zxf aws-htc-grid.tar.gz
-                  if [ ! -e "aws-htc-grid" ]; then
-                    mv "aws-htc-grid-${HTCGRID_VERSION}" "aws-htc-grid";
-                    echo -e "[INFO] Successfully downloaded HTC-Grid to [~/environment/aws-htc-grid] with version:\n${HTCGRID_VERSION}"
-                  else
-                    echo -e "[ERROR] Directory [~/environment/aws-htc-grid] already exists! Skipping the rename ...";
+                    if [ $? -eq 0 ]; then
+                      echo -e "[INFO] Successfully downloaded HTC-Grid to [${HTCGRID_HOME}/aws-htc-grid] with version:\n${HTCGRID_VERSION}"
+                    else
+                      echo -e "[ERROR] Failed to clone ${HTCGRID_REPO}.git with version ${HTCGRID_VERSION}. Exiting ...";
+                      exit 254
+                    fi
                   fi
-                  sudo chown -R ec2-user:ec2-user "/home/ec2-user/environment/"
+                  sudo chown -R ec2-user:ec2-user "${HTCGRID_HOME}"
                   echo -e "========================================================"
                   echo -e "\n\n"
 
@@ -506,8 +598,6 @@ Resources:
 
   C9BootstrapAssociation:
     Type: AWS::SSM::Association
-    DependsOn:
-      - C9OutputBucket
     Properties:
       Name: !Ref C9SSMDocument
       OutputLocation:
@@ -515,47 +605,36 @@ Resources:
           OutputS3BucketName: !Ref C9OutputBucket
           OutputS3KeyPrefix: bootstrapoutput
       Targets:
-        - Key: tag:SSMBootstrap
-          Values:
-            - Active
+      - Key: tag:SSMBootstrap
+        Values:
+        - Active
+      - Key: tag:Environment
+        Values:
+        - !Ref 'AWS::StackName'
 
   ################## INSTANCE #####################
   C9InstanceProfile:
     Type: AWS::IAM::InstanceProfile
-    Condition: NotEventEngine
     Properties:
       Path: "/"
       Roles:
-        - Ref: C9Role
+      - !Ref C9Role
+
   C9Instance:
-    Description: "-"
-    DependsOn: C9BootstrapAssociation
     Type: AWS::Cloud9::EnvironmentEC2
     Properties:
-      Description: AWS Cloud9 instance for Examples
-      AutomaticStopTimeMinutes: 3600
-      ImageId: amazonlinux-2-x86_64
-      InstanceType:
-        Ref: C9InstanceType
-      Name:
-        Ref: AWS::StackName
-      OwnerArn: !If [NotEventEngine , !Ref AWS::NoValue , !Sub 'arn:aws:sts::${AWS::AccountId}:assumed-role/TeamRole/MasterKey']
       Tags:
-        -
-          Key: SSMBootstrap
+        - Key: SSMBootstrap
           Value: Active
-        -
-          Key: Environment
-          Value:
-            Ref: AWS::StackName
+        - Key: Environment
+          Value: !Ref 'AWS::StackName'
+      Name: !Ref 'AWS::StackName'
+      Description: AWS Cloud9 Instance used to deploy HTC Grid
+      AutomaticStopTimeMinutes: 3600
+      InstanceType: !Ref C9InstanceType
+      ImageId: amazonlinux-2-x86_64
+      OwnerArn: !If [NotWSParticipant , !Ref 'AWS::NoValue' , !Ref ParticipantRoleARN]
+
 Outputs:
   Cloud9IDE:
-    Value:
-      Fn::Join:
-        - ''
-        - - https://
-          - Ref: AWS::Region
-          - ".console.aws.amazon.com/cloud9/ide/"
-          - Ref: C9Instance
-          - "?region="
-          - Ref: AWS::Region
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloud9/ide/${C9Instance}?region=${AWS::Region}'

@@ -6,4 +6,3 @@
 
 trap -- '' SIGTERM
 /lambda-entrypoint.sh $1
-

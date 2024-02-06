@@ -17,25 +17,19 @@ output "private_api_endpoint" {
   value       = module.control_plane.private_api_gateway_url
 }
 
-output "user_pool_arn" {
-  description = "ARN of the user pool created"
-  value       = module.compute_plane.cognito_userpool_arn
-}
-
-output "grafana_admin_password" {
-  description = "The password for the admin user for Grafana"
-  value       = local.grafana_admin_password
-  sensitive   = true
-}
-
 output "user_pool_id" {
   description = "UserPoolID of the Cognito User Pool created"
-  value       = module.compute_plane.cognito_userpool_id
+  value       = module.control_plane.cognito_userpool_id
+}
+
+output "user_pool_arn" {
+  description = "ARN of the user pool created"
+  value       = module.control_plane.cognito_userpool_arn
 }
 
 output "user_pool_client_id" {
   description = "ClientID of the Cognito User Pool created"
-  value       = module.compute_plane.cognito_userpool_client_id
+  value       = module.control_plane.cognito_userpool_client_id
 }
 
 output "grafana_ingress_domain" {
@@ -43,7 +37,8 @@ output "grafana_ingress_domain" {
   value       = module.compute_plane.grafana_ingress_domain
 }
 
-# output "compute_plane_outputs" {
-#   description = "Compute Plans Outputs"
-#   value       = module.compute_plane
-# }
+output "grafana_admin_password" {
+  description = "The password for the admin user for Grafana"
+  value       = local.grafana_admin_password
+  sensitive   = true
+}

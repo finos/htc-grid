@@ -8,7 +8,6 @@ from ql_common import construct_date
 
 
 def evaluate_american_option(input_dict):
-
     tparams = input_dict["tradeParameters"]
 
     # Option Construction
@@ -22,9 +21,15 @@ def evaluate_american_option(input_dict):
 
     # Market Data
     underlying = ql.SimpleQuote(tparams["underlying"])
-    dividendYield = ql.FlatForward(todaysDate, tparams["dividendYield"], ql.Actual365Fixed())
-    volatility = ql.BlackConstantVol(todaysDate, ql.TARGET(), tparams["volatility"], ql.Actual365Fixed())
-    riskFreeRate = ql.FlatForward(todaysDate, tparams["riskFreeRate"], ql.Actual365Fixed())
+    dividendYield = ql.FlatForward(
+        todaysDate, tparams["dividendYield"], ql.Actual365Fixed()
+    )
+    volatility = ql.BlackConstantVol(
+        todaysDate, ql.TARGET(), tparams["volatility"], ql.Actual365Fixed()
+    )
+    riskFreeRate = ql.FlatForward(
+        todaysDate, tparams["riskFreeRate"], ql.Actual365Fixed()
+    )
 
     process = ql.BlackScholesMertonProcess(
         ql.QuoteHandle(underlying),
@@ -42,7 +47,9 @@ def evaluate_american_option(input_dict):
     elif input_dict["engineName"] == "FdBlackScholesVanillaEngine":
         timeSteps = input_dict["engineParameters"]["timeSteps"]
         gridPoints = input_dict["engineParameters"]["gridPoints"]
-        option.setPricingEngine(ql.FdBlackScholesVanillaEngine(process, timeSteps, gridPoints))
+        option.setPricingEngine(
+            ql.FdBlackScholesVanillaEngine(process, timeSteps, gridPoints)
+        )
 
     elif input_dict["engineName"] == "BinomialVanillaEngine":
         timeSteps = input_dict["engineParameters"]["timeSteps"]
@@ -50,7 +57,9 @@ def evaluate_american_option(input_dict):
         tree = input_dict["engineParameters"]["tree"]
         option.setPricingEngine(ql.BinomialVanillaEngine(process, tree, timeSteps))
     else:
-        raise Exception("Unimplemented engineName [{}]".format(input_dict["engineName"]))
+        raise Exception(
+            "Unimplemented engineName [{}]".format(input_dict["engineName"])
+        )
 
     value = option.NPV()
     return value

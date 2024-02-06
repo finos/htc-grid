@@ -77,9 +77,9 @@ Details:
     ```Makefile
     SUBMITTER_IMAGE_NAME=submitter
     TAG=<the tag specified during the HTC-Grid deployment>
-    DOCKER_REGISTRY=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com
+    HTCGRID_ECR_REPO=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com
 
-    docker push $(DOCKER_REGISTRY)/$(SUBMITTER_IMAGE_NAME):$(TAG)
+    docker push $(HTCGRID_ECR_REPO)/$(SUBMITTER_IMAGE_NAME):$(TAG)
     ```
 2. Create a deployment .yaml file. For example:
 

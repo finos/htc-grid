@@ -19,7 +19,7 @@ def queue_manager(task_queue_service, task_queue_config, tasks_queue_name, regio
     # TODO due to the way variables are propagated from terraform to AWS Lambda and to Agent file
     # double quotes can not be escaped during the deployment. As a way around, task queue configuration is
     # passed with the single quotes and then converted into double quotes here.
-    task_queue_config = task_queue_config.replace("'", "\"")
+    task_queue_config = task_queue_config.replace("'", '"')
 
     if task_queue_service == "SQS":
         logging.debug("Initializing Tasks Queue using single SQS ")
@@ -29,6 +29,8 @@ def queue_manager(task_queue_service, task_queue_config, tasks_queue_name, regio
     elif task_queue_service == "PrioritySQS":
         logging.debug("Initializing Tasks Tasks Queue using SQS Priority")
         endpoint_url = f"https://sqs.{region}.amazonaws.com"
-        return QueuePrioritySQS(endpoint_url, task_queue_config, tasks_queue_name, region)
+        return QueuePrioritySQS(
+            endpoint_url, task_queue_config, tasks_queue_name, region
+        )
     else:
         raise NotImplementedError()

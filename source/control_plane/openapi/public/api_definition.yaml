@@ -157,3 +157,5 @@ components:
           type: string
     PostCancelResponse:
       type: object
+security:
+  - htc_cognito_authorizer: []

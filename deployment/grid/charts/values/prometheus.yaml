@@ -27,10 +27,8 @@ server:
   nodeSelector:
     htc/node-type: "core"
 
-
 alertmanager:
   enabled: false
-
 
 kube-state-metrics:
   enabled: true
@@ -53,10 +51,8 @@ kube-state-metrics:
   nodeSelector:
     htc/node-type: "core"
 
-
 prometheus-pushgateway:
   enabled: false
-
 
 prometheus-node-exporter:
   image:
@@ -76,7 +72,6 @@ prometheus-node-exporter:
       effect: "NoSchedule"
   nodeSelector:
     htc/node-type: "core"
-
 
 configmapReload:
   prometheus:

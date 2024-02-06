@@ -2,13 +2,25 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: batch-task
+  annotations:
+    seccomp.security.alpha.kubernetes.io/pod: "runtime/default"
 spec:
   template:
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: generator
         securityContext:
-            {}
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - NET_RAW
+            - ALL
         image: {{account_id}}.dkr.ecr.{{region}}.amazonaws.com/{{image_name}}:{{image_tag}}
         imagePullPolicy: Always
         resources:

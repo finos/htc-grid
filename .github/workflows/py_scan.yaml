@@ -1,0 +1,81 @@
+# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
+name: Python Code Scanning
+on: [push, pull_request]
+permissions:
+  contents: read
+
+jobs:
+
+#################
+# Bandit Checks #
+#################
+  bandit:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+    runs-on: ubuntu-latest
+    env:
+      BANDIT_REPORT_FILE: bandit_report.sarif
+
+    steps:
+      - name: Checkout the branch
+        uses: actions/checkout@v3
+
+      - name: Install bandit and bandit-sarif-formatter
+        run: |-
+          pip3 install bandit bandit-sarif-formatter
+
+      - name: Run bandit and generate report
+        run: |-
+          bandit --configfile .github/conf/bandit.conf \
+                 --format sarif --exit-zero --recursive \
+                 --output ${{ env.BANDIT_REPORT_FILE }} .
+
+      - name: Upload bandit scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: success() || failure()
+        with:
+          sarif_file: "${{ env.BANDIT_REPORT_FILE }}"
+
+      - name: Save report results as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.BANDIT_REPORT_FILE }}
+          path: ${{ env.BANDIT_REPORT_FILE }}
+
+#################
+# Flake8 Checks #
+#################
+  flake8:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+    runs-on: ubuntu-latest
+    env:
+      FLAKE8_REPORT_FILE: flake8_report.sarif
+
+    steps:
+      - name: Checkout the branch
+        uses: actions/checkout@v3
+
+      - name: Run flake8 and generate report
+        uses: py-actions/flake8@v2
+        with:
+          args: --config .github/conf/flake8.conf --output-file ${{ env.FLAKE8_REPORT_FILE }}
+          plugins: 'flake8-sarif'
+        continue-on-error: true
+
+      - name: Upload flake8 scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: success() || failure()
+        with:
+          sarif_file: "${{ env.FLAKE8_REPORT_FILE }}"
+
+      - name: Save report results as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.FLAKE8_REPORT_FILE }}
+          path: ${{ env.FLAKE8_REPORT_FILE }}

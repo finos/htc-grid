@@ -29,8 +29,8 @@ module "htc-agent" {
       value = var.lambda_configuration_storage_type
     },
     {
-      name  = "lambda.s3Location"
-      value = var.lambda_configuration_location
+      name  = "lambda.s3Source"
+      value = var.lambda_configuration_s3_source
     },
     {
       name  = "lambda.functionName"
@@ -164,7 +164,7 @@ module "htc-agent" {
   create_role = true
   role_name   = "role_htc_agent_sa-${local.suffix}"
   role_policies = {
-    agent_permissions = var.agent_permissions_policy_arn
+    agent_permissions = var.htc_agent_permissions_policy_arn
   }
 
   oidc_providers = {

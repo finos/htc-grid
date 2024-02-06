@@ -6,17 +6,17 @@ SUBMITTER_IMAGE_NAME=submitter
 TAG=mainline
 ACCOUNT_ID?=$(shell aws sts get-caller-identity | jq -r '.Account')
 REGION=eu-west-1
-DOCKER_REGISTRY=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com
+HTCGRID_ECR_REPO=$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com
 GENERATED?=generated
 
 .PHONY: push push clean generated
 all: push generated
 
 build: Dockerfile.Submitter
-	docker build  --platform linux/amd64 ../../.. -t $(DOCKER_REGISTRY)/$(SUBMITTER_IMAGE_NAME):$(TAG) -f ./Dockerfile.Submitter
+	docker build --platform linux/amd64 ../../.. --build-arg HTCGRID_ECR_REPO=$(HTCGRID_ECR_REPO) -t $(HTCGRID_ECR_REPO)/$(SUBMITTER_IMAGE_NAME):$(TAG) -f ./Dockerfile.Submitter
 
 push: build
-	docker push $(DOCKER_REGISTRY)/$(SUBMITTER_IMAGE_NAME):$(TAG)
+	docker push $(HTCGRID_ECR_REPO)/$(SUBMITTER_IMAGE_NAME):$(TAG)
 
 generated:
 	mkdir -p $(GENERATED) && cat single-task-test.yaml.tpl | sed "s/{{account_id}}/$(ACCOUNT_ID)/;s/{{region}}/$(REGION)/;s/{{image_name}}/$(SUBMITTER_IMAGE_NAME)/;s/{{image_tag}}/$(TAG)/" > $(GENERATED)/single-task-test.yaml

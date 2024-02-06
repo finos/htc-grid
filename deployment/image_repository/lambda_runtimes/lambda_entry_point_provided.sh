@@ -16,5 +16,5 @@ if [ $# -ne 1 ]; then
 fi
 export _HANDLER="$1"
 
-RUNTIME_ENTRYPOINT=/var/task/bootstrap
+RUNTIME_ENTRYPOINT=/var/task/bootstrap.sh
 /usr/local/bin/aws-lambda-rie $RUNTIME_ENTRYPOINT

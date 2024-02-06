@@ -4,6 +4,7 @@
 
 variable "region" {
   description = "AWS region"
+  type        = string
 }
 
 variable "input_role" {
@@ -17,109 +18,32 @@ variable "input_role" {
 
 variable "kubernetes_version" {
   description = "Name of EKS cluster in AWS"
-}
-
-variable "htc_agent_namespace" {
-  description = "kubernetes namespace for the deployment of the agent"
-  default     = "default"
+  type        = string
 }
 
 variable "aws_htc_ecr" {
   description = "URL of Amazon ECR image repostiories"
-}
-
-variable "lambda_runtime" {
-  description = "Python version"
-  default     = "python3.7"
-}
-
-variable "cwa_version" {
-  description = "CloudWatch Adapter for Kubernetes version"
-}
-
-variable "aws_node_termination_handler_version" {
-  description = "version of the deployment managing node termination"
-}
-
-variable "cw_agent_version" {
-  description = "CloudWatch Agent version"
-}
-
-variable "fluentbit_version" {
-  description = "Fluentbit version"
+  type        = string
 }
 
 variable "cluster_name" {
   description = "Name of EKS cluster in AWS"
+  type        = string
 }
 
 variable "k8s_ca_version" {
   description = "Cluster autoscaler version"
+  type        = string
 }
 
 variable "k8s_keda_version" {
   description = "Keda version"
-}
-
-variable "ddb_state_table" {
-  description = "HTC DynamoDB table name"
-}
-
-variable "sqs_queue" {
-  description = "HTC SQS queue name"
-}
-
-variable "tasks_queue_name" {
-  description = "HTC queue name"
-}
-
-variable "task_queue_service" {
-  description = "Configuration string for the type of queuing service to use"
-}
-
-variable "task_queue_config" {
-  description = "Dictionary configuration of the tasks queue"
-}
-
-# variable "dimension_value_metrics" {
-#   default  = "[{DimensionName=cluster_name,DimensionValue=htc-aws}, {DimensionName=env,DimensionValue=dev}]"
-#   description = "Dimensions name/value for the CloudWatch metrics"
-# }
-
-variable "lambda_name_scaling_metrics" {
-  description = "Lambda function name for metrics"
-}
-
-variable "namespace_metrics" {
-  description = "NameSpace for metrics"
-}
-
-variable "dimension_name_metrics" {
-  description = "Dimensions name/value for the CloudWatch metrics"
-}
-
-variable "period_metrics" {
-  description = "Period for metrics in minutes"
-}
-
-variable "metric_name" {
-  description = "Metrics name"
-}
-
-variable "error_log_group" {
-  description = "Log group for errors"
-}
-
-variable "error_logging_stream" {
-  description = "Log stream for errors"
-}
-
-variable "metrics_event_rule_time" {
-  description = "Fires event rule to put metrics"
+  type        = string
 }
 
 variable "suffix" {
   description = "suffix for generating unique name for AWS resource"
+  type        = string
   default     = ""
 }
 
@@ -129,38 +53,16 @@ variable "eks_worker_groups" {
 
 variable "vpc_private_subnet_ids" {
   description = "Private subnet IDs"
-}
-
-variable "graceful_termination_delay" {
-  description = "graceful termination delay for scaled in action"
+  type        = list(string)
 }
 
 variable "vpc_public_subnet_ids" {
   description = "Public subnet IDs"
-}
-
-variable "vpc_default_security_group_id" {
-  description = "Default SG ID"
+  type        = list(string)
 }
 
 variable "vpc_id" {
   description = "Default VPC ID"
-}
-
-variable "vpc_cidr" {
-  description = "Default VPC CIDR"
-}
-
-variable "state_table_service" {
-  description = "State Table service type"
-}
-
-variable "state_table_config" {
-  description = "Status Table configuration"
-}
-
-variable "aws_xray_daemon_version" {
-  description = "version for the XRay daemon"
   type        = string
 }
 
@@ -173,4 +75,52 @@ variable "grafana_admin_password" {
   description = "Holds the default/initial password that will be used for authenticating with Grafana"
   type        = string
   sensitive   = true
+}
+
+variable "kms_deletion_window" {
+  description = "Number of days after which KMS key will be permanently deleted"
+  type        = number
+  default     = 7
+}
+
+variable "kms_key_admin_roles" {
+  description = "List of roles to assign KMS Key Administrator permissions"
+  type        = list(string)
+  default     = []
+}
+
+variable "ecr_pull_through_cache_policy_arn" {
+  description = "ECR Pull Through Cache Permissions Policy ARN"
+  type        = string
+}
+
+variable "node_drainer_lambda_role_arn" {
+  description = "Node Drainer Lambda Role ARN"
+  type        = string
+}
+
+# variable "allowed_access_cidr_blocks" {
+#   description = "List of CIDR blocks which are allowed ingress/egress access from/to the VPC"
+#   type        = list(string)
+# }
+
+variable "cognito_domain_name" {
+  description = "Cognito Domain Name"
+  type        = string
+}
+
+variable "cognito_userpool_arn" {
+  description = "Cognito User Pool ARN"
+  type        = string
+}
+
+variable "cognito_userpool_id" {
+  description = "Cognito User Pool ID"
+  type        = string
+}
+
+variable "eks_node_volume_size" {
+  description = "Size in GB for EKS Worker Nodes"
+  type        = number
+  default     = 50
 }
