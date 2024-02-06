@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file. Dates are d
 
 #### [v0.4.3](https://github.com/awslabs/aws-htc-grid/compare/v0.4.2...v0.4.3)
 
-> 6 December 2023
+> 6 February 2024
 
 ### Terraform State:
 - Encrypt and secure `init_grid` state and Lambda buckets.
@@ -46,6 +46,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - Standardize the naming of TF resources.
 - Fix docs and `random_password` to align with pipelines.
 - Add auto deploy & destroy stages for images.
+- Change all Copyright notices to reflect the current year (2024).
 
 ### Cloud9:
 - Fix Cloud9 deployment script to target correct instances.

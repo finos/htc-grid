@@ -13,6 +13,9 @@ permissions:
 jobs:
   build:
     name: Deploy docs
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for creating github pages
     runs-on: ubuntu-latest
 
     steps:
