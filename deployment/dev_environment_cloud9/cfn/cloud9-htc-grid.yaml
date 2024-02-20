@@ -157,7 +157,7 @@ Resources:
         Value: !Ref 'AWS::StackName'
       Handler: index.lambda_handler
       Role: !GetAtt C9LambdaExecutionRole.Arn
-      Runtime: python3.7
+      Runtime: python3.12
       MemorySize: 256
       Timeout: '600'
       Code:
