@@ -15,7 +15,7 @@ variable "aws_htc_ecr" {
 variable "lambda_runtime" {
   description = "Python version"
   type        = string
-  default     = "python3.12"
+  default     = "python3.11"
 }
 
 variable "ddb_state_table" {
