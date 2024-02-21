@@ -157,7 +157,7 @@ Resources:
         Value: !Ref 'AWS::StackName'
       Handler: index.lambda_handler
       Role: !GetAtt C9LambdaExecutionRole.Arn
-      Runtime: python3.12
+      Runtime: python3.11
       MemorySize: 256
       Timeout: '600'
       Code:
@@ -632,7 +632,7 @@ Resources:
       Description: AWS Cloud9 Instance used to deploy HTC Grid
       AutomaticStopTimeMinutes: 3600
       InstanceType: !Ref C9InstanceType
-      ImageId: amazonlinux-2-x86_64
+      ImageId: amazonlinux-2023-x86_64
       OwnerArn: !If [NotWSParticipant , !Ref 'AWS::NoValue' , !Ref ParticipantRoleARN]
 
 Outputs:
