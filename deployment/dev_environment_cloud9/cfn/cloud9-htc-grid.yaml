@@ -424,7 +424,7 @@ Resources:
                   echo -e "========================================================"
                   echo -e "              Installing pre-requisite tools"
                   echo -e "========================================================"
-                  sudo yum -y install git jq gettext unzip
+                  sudo yum -y install git jq gettext unzip python python3.11
                   echo -e "========================================================"
                   echo -e "\n\n"
 
