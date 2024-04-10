@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout the branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Run trivy in fs mode and generate report
         uses: aquasecurity/trivy-action@master
@@ -66,7 +66,7 @@ jobs:
 
     steps:
       - name: Checkout the branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Run checkov and generate report
         uses: bridgecrewio/checkov-action@v12
@@ -100,7 +100,7 @@ jobs:
 
     steps:
       - name: Checkout the branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup tflint
         uses: terraform-linters/setup-tflint@v3
@@ -145,7 +145,7 @@ jobs:
 
     steps:
       - name: Checkout the branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check Terraform fmt for grid
         uses: dflook/terraform-fmt-check@v1
