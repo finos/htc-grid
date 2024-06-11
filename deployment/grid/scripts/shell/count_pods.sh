@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-# Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2024 Amazon.com, Inc. or its affiliates. 
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
