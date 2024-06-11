@@ -1,3 +1,3 @@
-# Code of Conduct for {project name}
+# Code of Conduct for HTC Grid
 
-Please see the [Community Code of Conduct](https://www.finos.org/code-of-conduct).
+Please see the [FINOS Community Code of Conduct](https://www.finos.org/code-of-conduct).

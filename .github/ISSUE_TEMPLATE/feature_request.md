@@ -14,4 +14,4 @@ about: I have a suggestion (and may want to implement it 🙂)!
 ### Potential Solutions:
 ...clearly and concisely describe what you want to happen. Add any considered drawbacks.
 
-... if you've considered alternatives, clearly and concisely describe those too.
+...if you've considered alternatives, clearly and concisely describe those too.
