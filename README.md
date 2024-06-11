@@ -23,8 +23,7 @@ The full documentation of the HTC grid can be accessed here [https://awslabs.git
 
 ## Contributing
 
-For any questions, bugs or feature requests please open an [issue](https://github.com/finos/{htc-grid/issues)
-For anything else please send an email to {project mailing list}.
+For any questions, bugs or feature requests please open an [issue](https://github.com/finos/{htc-grid/issues).
 
 To submit a contribution:
 1. Fork it (<https://github.com/finos/{htc-grid/fork>)
