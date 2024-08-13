@@ -23,10 +23,10 @@ The full documentation of the HTC grid can be accessed here [https://awslabs.git
 
 ## Contributing
 
-For any questions, bugs or feature requests please open an [issue](https://github.com/finos/{htc-grid/issues).
+For any questions, bugs or feature requests please open an [issue](https://github.com/finos/htc-grid/issues).
 
 To submit a contribution:
-1. Fork it (<https://github.com/finos/{htc-grid/fork>)
+1. Fork it (<https://github.com/finos/htc-grid/fork>)
 2. Create your feature branch (`git checkout -b feature/fooBar`)
 3. Read our [contribution guidelines](.github/CONTRIBUTING.md) and [Community Code of Conduct](https://www.finos.org/code-of-conduct)
 4. Commit your changes (`git commit -am 'Add some fooBar'`)
