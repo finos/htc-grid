@@ -17,6 +17,6 @@ HTC-Grid might not be the best choice if :
 
 ### How do I use HTC-Grid ?
 
-The full documentation of the HTC grid can be accessed here [https://awslabs.github.io/aws-htc-grid/](https://awslabs.github.io/aws-htc-grid/)
+The full documentation of the HTC grid can be accessed here [https://finos.github.io/htc-grid/](https://finos.github.io/htc-grid/)
 
 
