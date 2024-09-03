@@ -1,4 +1,4 @@
-## AWS HTC-Grid Workshop
+## HTC-Grid Workshop
 
 Contains the content to drive users through a guided workshop. The content in this folder uses [https://gohugo.io/] structure to deliver the HTC-Grid Workshop static site.
 

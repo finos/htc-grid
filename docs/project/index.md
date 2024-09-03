@@ -23,4 +23,4 @@ If you want to use the HTC-Grid, please visit the following pages:
 * [Getting Started](./getting_started/prerequisite.md)
 * [User Guide](./user_guide/creating_your_a_client.md)
 * [Developer Guide](./api/index.md) 
-* [The workshop](https://main.d5fll76yf0v34.amplifyapp.com/)
+* [The workshop](https://catalog.us-east-1.prod.workshops.aws/workshops/6b17d1f3-419d-4c05-821f-1dd2c3488d6f)
