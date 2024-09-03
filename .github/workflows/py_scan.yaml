@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout the branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install bandit and bandit-sarif-formatter
         run: |-
@@ -35,13 +35,13 @@ jobs:
                  --output ${{ env.BANDIT_REPORT_FILE }} .
 
       - name: Upload bandit scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: success() || failure()
         with:
           sarif_file: "${{ env.BANDIT_REPORT_FILE }}"
 
       - name: Save report results as an artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.BANDIT_REPORT_FILE }}
           path: ${{ env.BANDIT_REPORT_FILE }}
@@ -59,7 +59,7 @@ jobs:
 
     steps:
       - name: Checkout the branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Run flake8 and generate report
         uses: py-actions/flake8@v2
@@ -69,13 +69,13 @@ jobs:
         continue-on-error: true
 
       - name: Upload flake8 scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: success() || failure()
         with:
           sarif_file: "${{ env.FLAKE8_REPORT_FILE }}"
 
       - name: Save report results as an artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.FLAKE8_REPORT_FILE }}
           path: ${{ env.FLAKE8_REPORT_FILE }}
