@@ -9,7 +9,7 @@ format: sarif
 scan:
   scanners:
     - vuln
-    - config
+    - misconfig
     # - secret
     # - license
 
@@ -29,5 +29,5 @@ scan:
 #   - CRITICAL
 #   - UNKNOWN
 
-# vulnerability:
-#   ignore-unfixed: true
+vulnerability:
+  ignore-unfixed: true

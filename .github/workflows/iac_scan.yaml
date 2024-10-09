@@ -25,30 +25,33 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run trivy in fs mode and generate report
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.20.0
         with:
           scan-type: 'fs'
-          ignore-unfixed: true
+          # ignore-unfixed: true
           trivy-config: ".github/conf/trivy.yaml"
           trivyignores: ".github/conf/.trivyignore"
+          exit-code: '0'
           # severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          # format: 'sarif'
           # output: ${{ env.TRIVY_REPORT_FILE }} # This flag doesnt seem to be working.
         env:
           TRIVY_OUTPUT: ${{ env.TRIVY_REPORT_FILE }}
 
       # As per the following issue/solution: https://github.com/aquasecurity/trivy/issues/5003
-      - name: Fix trivy SARIF report for URI scheme
-        run: |-
-          sed -i 's#git::https:/##g' ${{ env.TRIVY_REPORT_FILE }}
+      # - name: Fix trivy SARIF report for URI scheme
+      #   run: |-
+      #     sed -i 's#git::https:/##g' ${{ env.TRIVY_REPORT_FILE }}
 
       - name: Upload trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
-        if: success() || failure()
+        # if: success() || failure()
         with:
           sarif_file: "${{ env.TRIVY_REPORT_FILE }}"
 
       - name: Save report results as an artifact
         uses: actions/upload-artifact@v4
+        if: success() || failure()
         with:
           name: ${{ env.TRIVY_REPORT_FILE }}
           path: ${{ env.TRIVY_REPORT_FILE }}
