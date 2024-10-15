@@ -25,7 +25,7 @@ Replace `<my_cognito_user>` and `<my_cognito_password>` with your own username a
 
 Choose a Cognito username and password, making sure they follow the [Amazon Cognito Default Policy](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html):
 ```bash
-cd ~/environment/aws-htc-grid
+cd ~/environment/htc-grid
 export USERNAME=<my_cognito_user>
 export PASSWORD=<my_grafana_admin_password>
 ```
@@ -79,5 +79,3 @@ Leave the terminal running. Then in your Cloud9 environment, click **Tools** / *
 {{< img "prometheus_preview.png" "prometheus_preview" >}}
 
 Prometheus has a set of targets that it takes metrics from using. You can check the targets by clicking on the **Status** / **Apiserver** 
-
-

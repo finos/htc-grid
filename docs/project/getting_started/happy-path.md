@@ -55,7 +55,7 @@ The HTC-Grid project has external software dependencies that are deployed as con
     make ecr-login REGION=$HTCGRID_REGION
     ```
 
-2. The following command will go to the `~/environment/aws-htc-grid/deployment/image_repository/terraform` and initialize the  project:
+2. The following command will go to the `~/environment/htc-grid/deployment/image_repository/terraform` and initialize the  project:
     ```bash
     make init-images TAG=$TAG REGION=$HTCGRID_REGION
     ```

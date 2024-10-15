@@ -9,7 +9,7 @@ weight: 40
 The current release of HTC requires python3.7, and the documentation assumes the use of virtualenv. Set this up as follows:
 
 ```
-cd aws-htc-grid
+cd htc-grid
 virtualenv venv
 ```
 
@@ -17,10 +17,10 @@ This will create a virtual environment for python execution with dependencies an
 
 ```
 source ./venv/bin/activate
-echo "source ~/environment/aws-htc-grid/venv/bin/activate" >> ~/.bashrc
+echo "source ~/environment/htc-grid/venv/bin/activate" >> ~/.bashrc
 ```
 
-To validate the version of python we are using is the one from the virtual environment we just created you can run, and it should point to `~/environment/aws-htc-grid/venv/bin/python`
+To validate the version of python we are using is the one from the virtual environment we just created you can run, and it should point to `~/environment/htc-grid/venv/bin/python`
 
 ```
 which python
@@ -37,7 +37,7 @@ export HTCGRID_REGION=$(curl -s 169.254.169.254/latest/dynamic/instance-identity
 
 for var in TAG HTCGRID_REGION  ; do echo "export $var=$(eval "echo \"\$$var\"")" >> load_variables.sh ; done
 echo -e "===\nYour variables and configuration have been setup as follows\n===\n$(cat load_variables.sh)"
-echo "source ~/environment/aws-htc-grid/load_variables.sh" >> ~/.bashrc
+echo "source ~/environment/htc-grid/load_variables.sh" >> ~/.bashrc
 ```
 
 The code above first set the variables and then, saves all of them within the file `load_variables.sh` file. Finally it creates a line within the `bashrc` file so that whenever we create new terminal the variables get pre-loaded.

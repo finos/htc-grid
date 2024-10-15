@@ -11,7 +11,7 @@ Now we understand what will be deployed, let's deploy the worker components and 
 The first step we will need to run is the set of makefiles that create the new worker container instance.
 
 ```
-cd ~/environment/aws-htc-grid
+cd ~/environment/htc-grid
 make python-quant-lib-path TAG=$TAG REGION=$HTCGRID_REGION
 ```
 
@@ -19,7 +19,7 @@ The following command will build up the lambda and worker code that we just expl
 
 ### Applying HTC-Grid Changes
 
-The previous step has so generated a new file named `~/environment/aws-htc-gridgenerated/python_runtime_grid_config.json`. This file is pretty much exactly like the file we used during HTC-Grid installation except for a few sections of the file.
+The previous step has so generated a new file named `~/environment/htc-grid/generated/python_runtime_grid_config.json`. This file is pretty much exactly like the file we used during HTC-Grid installation except for a few sections of the file.
 
 {{< highlight json "linenos=table,hl_lines=8-10,linenostart=30" >}}
   "agent_configuration": {
@@ -49,7 +49,3 @@ The execution of this command will prompt for `yes` to continue. Just type yes, 
 
 Keep in mind that the value for `GRAFANA_ADMIN_PASSWORD` should be the same as the one used in the section [Deploy HTC-Grid]({{< ref "20_deploy_htc/70_deploying_htc/_index.en.md" >}}), unless you would like to change it.
 {{% /notice %}}
-
-
-
-

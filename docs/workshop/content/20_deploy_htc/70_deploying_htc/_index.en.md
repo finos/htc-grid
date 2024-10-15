@@ -4,7 +4,7 @@ chapter: false
 weight: 80
 ---
 
-We are now ready to deploy HTC-Grid using the terraform stack provided by the project. The terraform stack uses `~/environment/aws-htc-grid/generated/grid_config.json` to drive the configuration of the deployment.
+We are now ready to deploy HTC-Grid using the terraform stack provided by the project. The terraform stack uses `~/environment/htc-grid/generated/grid_config.json` to drive the configuration of the deployment.
 
 Before we deploy the project, we need to initialize the terraform state. Remember we will be using the `$S3_TFSTATE_HTCGRID_BUCKET_NAME` bucket to hold the state. You can read more about the S3 terraform backend [here](https://www.terraform.io/docs/language/settings/backends/s3.html).
 
@@ -33,7 +33,7 @@ If `terraform apply` is successful then in the terraform folder two files are cr
 Let's validate that the Compute Plane has been set up accordingly. First of all, we need to configure our environment with [Kubectl](https://kubernetes.io/docs/tasks/tools/) configuration pointing to our cluster. We will also read from the terraform output the Agent config file and prepare our environment to select the configuration on newly created terminals.
 
   ```
-  cd ~/environment/aws-htc-grid/deployment/grid/terraform
+  cd ~/environment/htc-grid/deployment/grid/terraform
   export AGENT_CONFIG_FILE=$(terraform output -raw agent_config)
   echo "export AGENT_CONFIG_FILE=$AGENT_CONFIG_FILE" >> ~/.bashrc
   ```
