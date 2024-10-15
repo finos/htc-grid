@@ -47,7 +47,7 @@ We assume that all previous steps have been successfully completed, there is at 
     pip3 install -r requirements.txt
     ```
 
-6. Sample client and workload generator is located here [`./examples/client/python/client.py`](https://github.com/awslabs/aws-htc-grid/blob/main/examples/client/python/client.py). Read help and browse through the code to be able to submit tasks and sessions, see examples below:
+6. Sample client and workload generator is located here [`./examples/client/python/client.py`](https://github.com/finos/htc-grid/blob/main/examples/client/python/client.py). Read help and browse through the code to be able to submit tasks and sessions, see examples below:
 
     To show the example client application help
 

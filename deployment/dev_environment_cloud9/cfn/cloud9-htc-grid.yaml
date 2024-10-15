@@ -3,7 +3,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: AWS CloudFormation template to create a Cloud9 environment and prepare the HTC-Grid setup
 Metadata:
   Author:
-    Description: Pierre-Louis Gounod <gpilouis@amazon.com>
+    Description: Flamur Gogolli <flamurg@amazon.co.uk>
   License:
     Description: 'Copyright 2024 Amazon.com, Inc. and its affiliates. 
 
@@ -55,7 +55,7 @@ Parameters:
   HTCGridRepo:
     Description: HTC Grid repo to pull on Cloud9
     Type: String
-    Default: https://github.com/awslabs/aws-htc-grid
+    Default: https://github.com/finos/htc-grid
     ConstraintDescription: Must be a valid HTC Grid version.
   ParticipantRoleARN:
     Description: "ARN of the Participant Role"
@@ -536,16 +536,16 @@ Resources:
                   echo -e "========================================================"
                   echo -e "                   Downloading HTC-Grid"
                   echo -e "========================================================"
-                  export DEFAULT_HTCGRID_REPO="https://github.com/awslabs/aws-htc-grid"
+                  export DEFAULT_HTCGRID_REPO="https://github.com/finos/htc-grid"
                   export HTCGRID_HOME="/home/ec2-user/environment"
                   cd "${HTCGRID_HOME}"
-                  if [ -e "aws-htc-grid" ]; then
-                    export OLD_HTCGRID_DIR="aws-htc-grid.$(date "+%F-%T" | sed 's|:|_|g')"
-                    mv aws-htc-grid "${OLD_HTCGRID_DIR}"
+                  if [ -e "htc-grid" ]; then
+                    export OLD_HTCGRID_DIR="htc-grid.$(date "+%F-%T" | sed 's|:|_|g')"
+                    mv htc-grid "${OLD_HTCGRID_DIR}"
                     if [ $? -eq 0 ]; then
-                      echo -e "[WARN] Found existing aws-htc-grid directory. Renaming to:\n${OLD_HTCGRID_DIR}"
+                      echo -e "[WARN] Found existing htc-grid directory. Renaming to:\n${OLD_HTCGRID_DIR}"
                     else
-                      echo -e "[ERROR] Found existing aws-htc-grid directory, however failed to rename it as:\n${OLD_HTCGRID_DIR}"
+                      echo -e "[ERROR] Found existing htc-grid directory, however failed to rename it as:\n${OLD_HTCGRID_DIR}"
                     fi
                   fi
 
@@ -563,26 +563,26 @@ Resources:
                     fi
 
                     curl --silent --location \
-                          -o "${HTCGRID_HOME}/aws-htc-grid.tar.gz" \
+                          -o "${HTCGRID_HOME}/htc-grid.tar.gz" \
                           "${HTCGRID_REPO}/archive/refs/${HTCGRID_URI_REF}.tar.gz"
 
-                    cd "${HTCGRID_HOME}"; tar -zxf aws-htc-grid.tar.gz; rm -fr aws-htc-grid.tar.gz
-                    mv "aws-htc-grid-${HTCGRID_VERSION}" "aws-htc-grid"
+                    cd "${HTCGRID_HOME}"; tar -zxf htc-grid.tar.gz; rm -fr htc-grid.tar.gz
+                    mv "htc-grid-${HTCGRID_VERSION}" "htc-grid"
 
                     if [ $? -eq 0 ]; then
-                      echo -e "[INFO] Successfully downloaded HTC-Grid to [${HTCGRID_HOME}/aws-htc-grid] with version:\n${HTCGRID_VERSION}"
+                      echo -e "[INFO] Successfully downloaded HTC-Grid to [${HTCGRID_HOME}/htc-grid] with version:\n${HTCGRID_VERSION}"
                     else
-                      echo -e "[ERROR] Failed to rename aws-htc-grid-${HTCGRID_VERSION} to aws-htc-grid .."
+                      echo -e "[ERROR] Failed to rename htc-grid-${HTCGRID_VERSION} to htc-grid .."
                     fi
                   else
                     echo -e "[INFO] Cloning HTC-Grid from:\n${HTCGRID_REPO}/tree/${HTCGRID_VERSION}"
-                    mkdir -p "${HTCGRID_HOME}/aws-htc-grid"; cd "${HTCGRID_HOME}/aws-htc-grid"
+                    mkdir -p "${HTCGRID_HOME}/htc-grid"; cd "${HTCGRID_HOME}/htc-grid"
                     git init && git branch -m main || true && \
                     git remote add origin "${HTCGRID_REPO}.git" -f && git reset --hard origin/main && \
                     git checkout "${HTCGRID_VERSION}"
 
                     if [ $? -eq 0 ]; then
-                      echo -e "[INFO] Successfully downloaded HTC-Grid to [${HTCGRID_HOME}/aws-htc-grid] with version:\n${HTCGRID_VERSION}"
+                      echo -e "[INFO] Successfully downloaded HTC-Grid to [${HTCGRID_HOME}/htc-grid] with version:\n${HTCGRID_VERSION}"
                     else
                       echo -e "[ERROR] Failed to clone ${HTCGRID_REPO}.git with version ${HTCGRID_VERSION}. Exiting ...";
                       exit 254

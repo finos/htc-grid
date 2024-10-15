@@ -16,7 +16,7 @@ HTC-Grid uses a few open source project with container images stored at Dockerhu
     make ecr-login
     ```
 
-1. Go into the terraform image deployment directory. This contains the terraform project that will help to create a copy of the required images to your ECR repository. The following command will go to the `~/environment/aws-htc-grid/deployment/image_repository/terraform` and initialize the terraform project using the bucket `$S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME` as the bucket that will hold the terraform state:
+1. Go into the terraform image deployment directory. This contains the terraform project that will help to create a copy of the required images to your ECR repository. The following command will go to the `~/environment/htc-grid/deployment/image_repository/terraform` and initialize the terraform project using the bucket `$S3_IMAGE_TFSTATE_HTCGRID_BUCKET_NAME` as the bucket that will hold the terraform state:
 
     ```
     make init-images TAG=$TAG REGION=$HTCGRID_REGION

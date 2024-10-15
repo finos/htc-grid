@@ -52,7 +52,7 @@ Just follow the process below in your account to deploy the Cloud9 Cloudformatio
 If you would like to use the current version of the project, change the value of the `HTCGridVersion` field to `main` in step 4 below.
 {{% /notice %}}
 
-1. Download the latest HTC-Grid Cloud9 Cloudformation Stack. **[The stack is available on this link](https://raw.githubusercontent.com/awslabs/aws-htc-grid/main/deployment/dev_environment_cloud9/cfn/cloud9-htc-grid.yaml)**.
+1. Download the latest HTC-Grid Cloud9 Cloudformation Stack. **[The stack is available on this link](https://raw.githubusercontent.com/finos/htc-grid/main/deployment/dev_environment_cloud9/cfn/cloud9-htc-grid.yaml)**.
 
 1. On the AWS Console, select **CloudFormation** and **Create a Stack**. Select the (with new resources, Standard)
 
@@ -70,7 +70,7 @@ If you would like to use the current version of the project, change the value of
 
     {{< img "Cloud9-stack-creation-3.png" "Cloud9 stack creation 3" >}}
 
-1. Finally wait for the CloudFormation Stack to complete. This may take a few minutes (From 10 to 15 minutes) You can use the time to [Read the CloudFormation stack](https://github.com/awslabs/aws-htc-grid/blob/main/deployment/dev_environment_cloud9/cfn/cloud9-htc-grid.yaml) and understand which resources have been deployed.
+1. Finally wait for the CloudFormation Stack to complete. This may take a few minutes (From 10 to 15 minutes) You can use the time to [Read the CloudFormation stack](https://github.com/finos/htc-grid/blob/main/deployment/dev_environment_cloud9/cfn/cloud9-htc-grid.yaml) and understand which resources have been deployed.
 
 
 Once the CloudFormation Stack creation is complete, go to the **[Configure your Workspace]({{< ref "20_deploy_htc/30_configure_your_workspace/_index.en.md" >}})** section

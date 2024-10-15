@@ -11,14 +11,14 @@ So far we have explored a few ways to monitor the cluster, find logs in CloudWat
 Similar to before, we are now going to create a new Kubernetes job, which in this case will generate a total of 10 sessions, with 100 tasks each, where each task should take around 2 seconds to complete. Run the following command:
 
 ```
-cd ~/environment/aws-htc-grid
-kubectl apply -f ~/environment/aws-htc-grid/generated/batch-task-test.yaml
+cd ~/environment/htc-grid
+kubectl apply -f ~/environment/htc-grid/generated/batch-task-test.yaml
 ```
 
 Like in the previous run, we can check what the application is doing by streaming the logs of the Kubernetes deployment.
 
 ```
-kubectl logs job/batch-task -f 
+kubectl logs job/batch-task -f
 ```
 
 {{% notice note %}}
@@ -37,7 +37,7 @@ Running this script will give you an output as below, allowing you to track the 
 ```
 export $HTC_NAMESPACE="default"
 export $HTC_JOB_NAME="batch-task"
-~/environment/aws-htc-grid/deployment/grid/scripts/shell/watch_htc.sh $HTC_NAMESPACE $HTC_JOB_NAME
+~/environment/htc-grid/deployment/grid/scripts/shell/watch_htc.sh $HTC_NAMESPACE $HTC_JOB_NAME
 
 =================================================================================================================================================
 |                 Date | HPA (Desired/Max [Targets]) | Deployment (Ready/Total) | Nodes (Ready [NotReady/Total]) | Job (Completions [Duration]) |
@@ -90,7 +90,7 @@ kubectl logs -n kube-system deployment/cluster-autoscaler-aws-cluster-autoscaler
 Remember, if you want to repeat the same exercise you will need to delete the current completed batch with the following command 
 
 ```
-kubectl delete -f ~/environment/aws-htc-grid/generated/batch-task-test.yaml  
+kubectl delete -f ~/environment/htc-grid/generated/batch-task-test.yaml
 ```
 
 ### Checking the dashboards

@@ -39,4 +39,3 @@ Within the EKS implementation that the project uses by default, the agent provid
 {{% notice info %}}
 At time of writing this, the project is undergoing changes to move from **[lambci](https://github.com/lambci/lambci)** to the **[aws-lambda-runtime-interface-emulator](https://github.com/aws/aws-lambda-runtime-interface-emulator)**. *aws-lambda-runtime-interface-emulator* is an AWS project that simplifies the integration, reduce the code needed and allows us to provide the lambda simulation integrated with other architecture, enabling us in the future to support **[Graviton](https://aws.amazon.com/ec2/graviton/)** instances.
 {{% /notice %}}
-

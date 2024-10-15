@@ -14,7 +14,7 @@ HTC-Grid uses managed services like DynamoDB, SQS, Redis, EKS. All this services
 2. Set **htc-grid** as the name of the dashboard and select **Line** as the first widget to add to the dashboard. In the metric section, select the **CloudGrid/HTC/Scaling** / **cluster_name**, and finally this should take you to the only exising HTC-grid cluster in your account. Select this cluster (tick on the cluster name), and then click on the **Create Widget** at the bottom right side of the screen. Finally click on **Save Dashboard**.
 
 {{% notice info %}}
-The metric that we have created is the metric that HPA will use to drive the scaling activities of the service. It is based on the pending SQS tasks, but [the lambda that drives this metric](https://github.com/awslabs/aws-htc-grid/tree/main/source/compute_plane/python/lambda/scaling_metrics) can be adapted to fit any scaling need.
+The metric that we have created is the metric that HPA will use to drive the scaling activities of the service. It is based on the pending SQS tasks, but [the lambda that drives this metric](https://github.com/finos/htc-grid/tree/main/source/compute_plane/python/lambda/scaling_metrics) can be adapted to fit any scaling need.
 {{% /notice %}}
 
 

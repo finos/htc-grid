@@ -18,4 +18,3 @@ HTC-Grid’s design tenets have been moulded by the requirements of early adopte
 1.	**Simplify re-Platforming**: Support client APIs that are familiar to AWS customers.
 1.	**All compute looks like lambda**: Tasks API’s are lambdas irrespective of the backend compute resource (Lambda Service, Container or EC2) being used.
 1.	**Cloud-native**: Fully leverage operationally hardened AWS core services to optimize robustness and performance while minimizing operational management.
-

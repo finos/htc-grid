@@ -47,5 +47,3 @@ Finally, we will delete CloudFormation stack which manages the S3 buckets that c
 ```
 make delete-grid-state TAG=$TAG REGION=$HTCGRID_REGION
 ```
-
-

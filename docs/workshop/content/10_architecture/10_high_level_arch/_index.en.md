@@ -24,4 +24,3 @@ At the moment HTC-Grid Compute plane does only provide an EKS Implementation. Th
 Inter module communication is implemented using standardized AWS APIs which facilitates independent development and provide further customization options.
 
 Internally, each of the 4 functional components (API, Data & Control Planes, and Compute Resources) are built using exclusively cloud native building blocks such as: serverless functions and fully managed services. These blocks require no human maintenance (zero administration), are highly available by design, and can scale horizontally in response to demand.
-

@@ -18,7 +18,7 @@ A few notes on this command:
  - If `TAG` is omitted then *mainline* will be chosen as the default value.
  - If `REGION` is omitted then eu-west-1 will be used.
 
- Once the command above gets executed, A folder named `generated` will be created at `~/environment/aws-htc-grid/generated`. This folder will contain some important files, like the following:
+ Once the command above gets executed, A folder named `generated` will be created at `~/environment/htc-grid/generated`. This folder will contain some important files, like the following:
 
 * **grid_config.json**: A configuration file that contains the deployment settings for HTC-Grid.
 * **single-task-test.yaml**:  A Kubernetes job that can be used to test the installation and submit a single task.
@@ -26,7 +26,7 @@ A few notes on this command:
 
 ## Configuring HTC-Grid Runtime
 
-The `~/environment/aws-htc-grid/generated/grid_config.json` file contains the configuration file that we will use to deploy HTC-Grid, let's explore a few sections:
+The `~/environment/htc-grid/generated/grid_config.json` file contains the configuration file that we will use to deploy HTC-Grid, let's explore a few sections:
 
 #### Configuration of Data-plane and Control-Plane DynamoDB Read/Write Capacity Modes
 

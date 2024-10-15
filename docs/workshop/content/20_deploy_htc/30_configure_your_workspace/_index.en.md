@@ -80,5 +80,3 @@ If the _Arn_ contains the role name from above and an Instance ID, you may proce
     "Arn": "arn:aws:sts::123456789012:assumed-role/htc-grid-workshop-C9Role-XXXXXXXXXXXXXXXX/i-01234567890abcdef"
 }
 ```
-
-

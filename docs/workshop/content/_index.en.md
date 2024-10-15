@@ -4,7 +4,7 @@ chapter = false
 weight = 10
 +++
 
-# AWS-HTC-Grid
+# HTC-Grid
 
 {{% notice warning %}}
 **Warning:** This is an Open Source (Apache 2.0 License) project and NOT a supported AWS Service offering.
