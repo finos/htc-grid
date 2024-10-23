@@ -1,0 +1,80 @@
+# Copyright 2023 Amazon.com, Inc. or its affiliates. 
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
+
+name: Sonatype SCA Scanning
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  SonatypeUrl: "https://finos.sonatype.app/platform/"
+  SonatypeAppId: "htc-grid"
+  SonatypeScanTarget: "."
+  ExcludeDirectory: "**/docs/ **/.*'"
+
+jobs:
+  build:
+    if: github.repository_owner == 'finos'
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip' # caching pip dependencies
+      
+      - name: Download Python Libraries
+        run : |
+          projRoot=`pwd`
+          list=$(find "." -name 'requirements.txt')
+          
+          for i in $list; do
+              echo ""
+              echo "Found requirements.txt at: $i"
+              j="${i/'requirements.txt'/}" # Remove 'requirements.txt' from path
+              cd $j
+
+              # Remove local dependencies
+              sed -i '/dist/d' requirements.txt 
+              sed -i '/backports.zoneinfo/d' requirements.txt
+              
+              cat requirements.txt
+              echo ""
+              mkdir pip-modules
+              pip install -r requirements.txt
+              # pip freeze > pip-modules/requirements.txt
+              pip download -r requirements.txt -d pip-modules
+              cd $projRoot # Return to project root
+          done
+          
+      ###########################
+      ## Sonatype SCA Scanning ##
+      ###########################
+      - name: Sonatype Lifecycle SCA Scan
+        id: evaluate
+        uses: sonatype/actions/evaluate@v1
+        with:
+          iq-server-url: ${{ env.SonatypeUrl }}
+          username: ${{ secrets.SONATYPE_SCANNER_USERNAME }}
+          password: ${{ secrets.SONATYPE_SCANNER_PASSWORD }}
+          application-id: ${{ env.SonatypeAppId }}
+          stage: "build"
+          scan-targets: ${{ env.SonatypeScanTarget }}
+          module-exclude: ${{ env.ExcludeDirectory }}
+
+      - name: Save Sonatype SBOM
+        uses: sonatype/actions/fetch-sbom@v1
+        if: always() && steps.evaluate.outputs.scan-id
+        with:
+          iq-server-url: ${{ env.SonatypeUrl }}
+          username: ${{ secrets.SONATYPE_SCANNER_USERNAME }}
+          password: ${{ secrets.SONATYPE_SCANNER_PASSWORD }}
+          application-id: ${{ env.SonatypeAppId }}
+          scan-id: ${{ steps.evaluate.outputs.scan-id }}
+          sbom-standard: spdx
+          sbom-version: 2.3
+          artifact-name: ${{ env.SonatypeAppId }}-bom
