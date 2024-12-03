@@ -4,11 +4,10 @@
 
 name: Sonatype SCA Scanning
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
+  pull_request_target: 
+permissions:
+  contents: read
+  
 env:
   SonatypeUrl: "https://finos.sonatype.app/platform/"
   SonatypeAppId: "htc-grid"
@@ -17,7 +16,7 @@ env:
 
 jobs:
   build:
-    if: github.repository_owner == 'finos'
+    # if: github.repository_owner == 'finos'
     name: Build
     runs-on: ubuntu-latest
     steps:
@@ -68,7 +67,7 @@ jobs:
 
       - name: Save Sonatype SBOM
         uses: sonatype/actions/fetch-sbom@v1
-        if: always() && steps.evaluate.outputs.scan-id
+        if: ( success() || failure() ) && steps.evaluate.outputs.scan-id
         with:
           iq-server-url: ${{ env.SonatypeUrl }}
           username: ${{ secrets.SONATYPE_SCANNER_USERNAME }}
