@@ -1,4 +1,4 @@
-# Copyright 2024 Amazon.com, Inc. or its affiliates. 
+# Copyright 2024 Amazon.com, Inc. or its affiliates.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
@@ -638,7 +638,6 @@ async def run_task(task, sqs_msg):
     task_def = json.loads(tast_str)
 
     submit_pre_agent_measurements(task)
-    task_id = task["task_id"]
 
     xray_recorder.end_subsegment()
     execution_is_completed_flag = 0
