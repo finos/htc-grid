@@ -30,7 +30,7 @@ Parameters:
   C9KubectlVersion:
     Description: kubectl version to install on Cloud9
     Type: String
-    Default: 1.25.12
+    Default: 1.31.4
     ConstraintDescription: Must be a valid kubectl version.
   C9TerraformVersion:
     Description: Terraform version to install on Cloud9
