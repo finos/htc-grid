@@ -17,11 +17,11 @@ versioning = s3_client.get_bucket_versioning(Bucket=bucket_name)
 
 if versioning.get("Status") == "Enabled":
     bucket.object_versions.delete()
-    print(f"Succesfully deleted all bucket object versions in bucket: {bucket_name}")
+    print("Succesfully deleted all bucket object versions in bucket: {0}".format(bucket_name))
 else:
     bucket.objects.delete()
-    print(f"Succesfully deleted all bucket objects in bucket: {bucket_name}")
+    print("Succesfully deleted all bucket objects in bucket: {0}".format(bucket_name))
 
 
 s3_client.delete_bucket(Bucket=bucket_name)
-print(f"Succesfully deleted bucket: {bucket_name}")
+print("Succesfully deleted bucket: {0}".format(bucket_name))

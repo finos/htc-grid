@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   hugo:
-    image: awslabs/aws-htc-grid:build
+    image: finos/htc-grid:build
     build:
       context: .
     ports:

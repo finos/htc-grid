@@ -4,7 +4,7 @@ chapter: false
 weight: 90
 ---
 
-Great! HTC-Grid has been deployed and now we can run a few tasks. The default installation of HTC-Grid comes with a [python test client application](https://github.com/ruecarlo/aws-htc-grid/blob/main/examples/client/python/client.py) that runs a [C++ test worker](https://github.com/ruecarlo/aws-htc-grid/tree/main/examples/workloads/c%2B%2B/mock_computation).
+Great! HTC-Grid has been deployed and now we can run a few tasks. The default installation of HTC-Grid comes with a [python test client application](https://github.com/finos/htc-grid/blob/main/examples/client/python/client.py) that runs a [C++ test worker](https://github.com/finos/htc-grid/tree/main/examples/workloads/c%2B%2B/mock_computation).
 
 Before we exectute the job, let's to the following, on your IDE, open two more terminals.
 
@@ -33,8 +33,8 @@ We are ready now to submit a single task. To simplify the execution, HTC-Grid de
 Two out of three of the Cloud9 terminals should be now showing logs (You can stop that process at anytime using `Ctrl-C`). Go to the terminal that is not displaying logs and run the following command:
 
 ```
-cd ~/environment/aws-htc-grid
-kubectl apply -f ~/environment/aws-htc-grid/generated/single-task-test.yaml
+cd ~/environment/htc-grid
+kubectl apply -f ~/environment/htc-grid/generated/single-task-test.yaml
 ```
 
 That will create a new Kubernetes job named `single-task`. You can also check the client logs created by the single task by running the following command:
@@ -70,7 +70,6 @@ Finally there is one more place that we can check how our execution went **Dynam
 If you want to re-run the job, you will need first to delete the kubernetes execution of the previous job, you can do that by running the following command:
 
 ```
-cd ~/environment/aws-htc-grid
-kubectl delete -f ~/environment/aws-htc-grid/generated/single-task-test.yaml
+cd ~/environment/htc-grid
+kubectl delete -f ~/environment/htc-grid/generated/single-task-test.yaml
 ```
-
