@@ -40,7 +40,7 @@
       "maxMemory": "1900",
       "runtime"  : "python3.8",
       "s3_source": "s3://{{workload_bucket_name}}/lambda.zip",
-      "s3_source_kms_key_arn"       : "{{workload_bucket_kms_key_arn}}"
+      "s3_source_kms_key_arn"       : "{{workload_bucket_kms_key_arn}}",
       "lambda_handler_file_name"    : "{{python_file_handler}}",
       "lambda_handler_function_name": "{{python_function_handler}}"
     }
