@@ -53,6 +53,7 @@ locals {
         vpc_public_subnets                = join(",", var.vpc_public_subnet_ids)
         htc_metrics_dashboard_json        = indent(8, file("${path.module}/files/htc-dashboard.json"))
         kubernetes_metrics_dashboard_json = indent(8, file("${path.module}/files/kubernetes-dashboard.json"))
+        filter_metrics_dashboard_json     = indent(8, file("${path.module}/files/filter-dashboard.json"))
       })]
     }
   }

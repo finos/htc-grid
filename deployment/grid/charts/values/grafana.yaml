@@ -114,6 +114,9 @@ dashboards:
     kubernetes-metrics:
       json: |
         ${kubernetes_metrics_dashboard_json}
+    filter-metrics:
+      json: |
+        ${filter_metrics_dashboard_json}
 
 initChownData:
   image:
