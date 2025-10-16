@@ -33,7 +33,7 @@ jobs:
         run: |-
           cfn-lint --config-file .github/conf/cfn_lint.yaml \
                    --format sarif --output-file ${{ env.CFN_LINT_REPORT_FILE }} \
-                   deployment/dev_environment_cloud9/**/*.yaml \
+                   deployment/workshop/**/*.yaml \
                    deployment/init_grid/**/*.yaml
         continue-on-error: true
 

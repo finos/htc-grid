@@ -14,10 +14,13 @@ theme:
     - navigation.tabs
     - navigation.tracking
     - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - content.tabs.link
 
 # Repository
-repo_name: 'awslabs/aws-htc-grid'
-repo_url: 'https://github.com/awslabs/aws-htc-grid'
+repo_name: 'finos/htc-grid'
+repo_url: 'https://github.com/finos/htc-grid'
 
 markdown_extensions:
   - footnotes
@@ -33,12 +36,25 @@ markdown_extensions:
   - pymdownx.magiclink
   - pymdownx.mark
   - pymdownx.smartsymbols
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
+  - pymdownx.tabbed:
+      alternate_style: true
   - toc:
       permalink: true
   - attr_list
 
 copyright: 'Copyright &copy; 2024 Amazon'
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/finos/htc-grid
+    - icon: fontawesome/solid/book
+      link: https://docs.d12sqmpa4c7emq.amplifyapp.com
