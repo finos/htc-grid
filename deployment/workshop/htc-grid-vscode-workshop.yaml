@@ -55,23 +55,19 @@ Parameters:
     Default: 1.5.7
     ConstraintDescription: Must be a valid Terraform version.
   HTCGridVersion:
-    Description: HTC Grid version to install on VSCode server
+    Description: HTC Grid version/branch/tag to checkout on VSCode server
     Type: String
     Default: latest
-    ConstraintDescription: Must be a valid HTC Grid version.
+    ConstraintDescription: Must be a valid HTC Grid version, branch name, or tag.
   HTCGridRepo:
     Description: HTC Grid repo to pull on VSCode server
     Type: String
     Default: https://github.com/finos/htc-grid
     ConstraintDescription: Must be a valid HTC Grid repository URL.
-  InstanceVolumeSize:
+  VSCodeInstanceVolumeSize:
     Type: Number
     Description: The volume size in GB
     Default: 100
-  InstanceName:
-    Type: String
-    Description: VSCode Server EC2 instance name
-    Default: HTCGridVSCodeServer
   KubectlVersion:
     Description: kubectl version to install on VSCode server
     Type: String
@@ -87,18 +83,10 @@ Parameters:
     Default: NONE
     Type: String
     ConstraintDescription: This is ONLY used via AWS WorkshopStudio. DON'T change this if you are self-deploying the stack.
-  InstanceArchitecture:
-    Description: Instance architecture type
-    Type: String
-    Default: amd64
-    AllowedValues:
-      - amd64
-      - arm64
-    ConstraintDescription: Must be amd64 or arm64.
   PythonVersion:
     Description: Python version to install
     Type: String
-    Default: 3.13
+    Default: 3.11
     AllowedValues:
       - 3.9
       - 3.10
@@ -122,6 +110,54 @@ Mappings:
       CIDR: 10.0.3.0/24
     PrivateTwo:
       CIDR: 10.0.4.0/24
+  InstanceTypeToArchitecture:
+    # General Purpose
+    t3.medium:
+      Architecture: amd64
+    t3.large:
+      Architecture: amd64
+    m5.large:
+      Architecture: amd64
+    m5.xlarge:
+      Architecture: amd64
+    m6i.medium:
+      Architecture: amd64
+    m6i.large:
+      Architecture: amd64
+    m6i.xlarge:
+      Architecture: amd64
+    m7i.medium:
+      Architecture: amd64
+    m7i.large:
+      Architecture: amd64
+    m7i.xlarge:
+      Architecture: amd64
+    m8i.medium:
+      Architecture: amd64
+    m8i.large:
+      Architecture: amd64
+    m8i.xlarge:
+      Architecture: amd64
+    # Compute Optimized
+    c5.large:
+      Architecture: amd64
+    c5.xlarge:
+      Architecture: amd64
+    c6i.large:
+      Architecture: amd64
+    c6i.xlarge:
+      Architecture: amd64
+    c7i.large:
+      Architecture: amd64
+    c7i.xlarge:
+      Architecture: amd64
+    # Memory Optimized
+    r5.large:
+      Architecture: amd64
+    r6i.large:
+      Architecture: amd64
+    r7i.large:
+      Architecture: amd64
   ArchitectureMap:
     amd64:
       DownloadArch: amd64
@@ -145,7 +181,7 @@ Resources:
       - Key: Environment
         Value: !Ref 'AWS::StackName'
       - Key: Owner
-        Value: !If [NotWSParticipant, !Ref 'AWS::NoValue', !Ref ParticipantRoleARN]
+        Value: !If [NotWSParticipant, !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root", !Ref ParticipantRoleARN]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -173,7 +209,7 @@ Resources:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
     Properties:
-      Name: !Ref InstanceName
+      Name: !Ref 'AWS::StackName'
       Description: VSCode user details
       GenerateSecretString:
         PasswordLength: 32
@@ -408,15 +444,13 @@ Resources:
         parameters:
           ec2Architecture:
             type: String
-            default: !FindInMap [ArchitectureMap, !Ref InstanceArchitecture, EC2Arch]
+            default: !FindInMap [ArchitectureMap, !FindInMap [InstanceTypeToArchitecture, !Ref VSCodeInstanceType, Architecture], EC2Arch]
             description: EC2 instance architecture type
           downloadArchitecture:
             type: String
-            default: !FindInMap [ArchitectureMap, !Ref InstanceArchitecture, DownloadArch]
+            default: !FindInMap [ArchitectureMap, !FindInMap [InstanceTypeToArchitecture, !Ref VSCodeInstanceType, Architecture], DownloadArch]
             description: Architecture for binary downloads
-          cloudfront:
-            type: String
-            description: CloudFront DNS Name
+
           cfnResponseUrl:
             type: String
             description: CloudFormation wait condition handle URL
@@ -449,51 +483,87 @@ Resources:
                 - |
                   #!/bin/bash
                   set -e
-                  
-                  # Set up error handling
-                  trap 'echo "[ERROR] Script failed" > /tmp/bootstrap_failed' ERR
-                  
+
                   echo -e "========================================================"
                   echo -e " Starting the VSCode server bootstrap at: $(date)"
                   echo -e "========================================================"
-                  
+
                   # Create temporary directory
                   export TMP_DIR="$(mktemp -d)"
                   if [[ "${TMP_DIR}" != "/tmp/"* ]]; then
                     export TMP_DIR="/tmp";
                   fi
                   echo -e "[INFO] All the packages will be temporarily downloaded to ${TMP_DIR}"
-                  
+
                   # Set up environment variables
                   echo -e "[INFO] Setting up environment variables"
-                  echo LANG=en_US.utf-8 >> /etc/environment
-                  echo LC_ALL=en_US.UTF-8 >> /etc/environment
-                  
+
                   # Create workshop directory
                   echo -e "[INFO] Creating workshop directory"
                   mkdir -p "/home/ec2-user/environment"
-                  chown ec2-user:ec2-user "/home/ec2-user/environment"
-                  
+
                   # Add workshop directory to user's profile
                   echo "export WORKSHOP_DIR=/home/ec2-user/environment" >> "/home/ec2-user/.bashrc"
-                  
+
                   # Check identity
                   echo -e "[INFO] Running as OS user: $(whoami)"
                   echo -e "[INFO] Running with the following IAM Role:"
                   aws sts get-caller-identity
-                  
-                  # Increase volume capacity if needed
-                  echo -e "[INFO] Checking and increasing volume capacity if needed"
-                  if growpart /dev/nvme0n1 1; then xfs_growfs -d /; fi
-                  
+
+                  # Expand root filesystem to use full volume
+                  echo -e "[INFO] Expanding root filesystem"
+                  # Install cloud-utils-growpart if not present
+                  dnf install -y cloud-utils-growpart
+
+                  # Find the root device and expand
+                  ROOT_DEVICE=$(findmnt -n -o SOURCE /)
+                  DEVICE_NAME=$(echo $ROOT_DEVICE | sed 's/p\?[0-9]*$//')
+                  PARTITION_NUM=$(echo $ROOT_DEVICE | sed 's/.*[^0-9]//')
+
+                  echo -e "[INFO] Root device: $ROOT_DEVICE, Device: $DEVICE_NAME, Partition: $PARTITION_NUM"
+                  if growpart $DEVICE_NAME $PARTITION_NUM; then
+                    echo -e "[INFO] Expanding filesystem"
+                    xfs_growfs -d /
+                    echo -e "[INFO] Filesystem expanded successfully"
+                  else
+                    echo -e "[WARN] Partition expansion not needed or failed"
+                  fi
+
                   # Update system packages
                   echo -e "[INFO] Updating system packages"
                   dnf update -y
-                  dnf install -y git jq gettext unzip cmake
-                  
+                  dnf install -y git jq gettext unzip cmake docker
+
+                  # Start and enable Docker (optional - don't fail if it doesn't start)
+                  if systemctl start docker; then
+                    systemctl enable docker
+                    usermod -aG docker ec2-user
+                    echo -e "[INFO] Docker service started successfully"
+                  else
+                    echo -e "[WARN] Docker service failed to start, capturing diagnostics:"
+                    echo -e "[DEBUG] Docker service status:"
+                    systemctl status docker.service || true
+                    echo -e "[DEBUG] Docker service logs:"
+                    journalctl -xeu docker.service --no-pager -n 20 || true
+                    echo -e "[DEBUG] Continuing bootstrap without Docker"
+                  fi
+
                   # Install Python {{ pythonVersion }}
                   echo -e "[INFO] Installing Python {{ pythonVersion }}"
-                  dnf install -y python{{ pythonVersion }} python{{ pythonVersion }}-pip python3-virtualenv
+                  dnf install -y python{{ pythonVersion }} python{{ pythonVersion }}-pip python{{ pythonVersion }}-setuptools python3-virtualenv python3-pip python3-wheel
+
+                  # Install/upgrade setuptools globally for Python 3.11 compatibility
+                  python{{ pythonVersion }} -m pip install --upgrade pip setuptools wheel
+
+                  # Create a script to help users create compatible venvs
+                  cat > /home/ec2-user/create_venv.sh << 'EOF'
+                  #!/bin/bash
+                  python3.11 -m venv venv
+                  source venv/bin/activate
+                  python -m pip install --upgrade pip setuptools wheel
+                  echo "Virtual environment created and configured for Python 3.11"
+                  EOF
+                  chmod +x /home/ec2-user/create_venv.sh
 
           - action: aws:runShellScript
             name: InstallAWSCLI
@@ -502,46 +572,94 @@ Resources:
                 - |
                   #!/bin/bash
                   set -e
-                  
-                  # Set up error handling
-                  trap 'echo "[ERROR] AWS CLI installation failed" > /tmp/bootstrap_failed' ERR
-                  
+
                   echo -e "========================================================"
                   echo -e "          Installing/Updating AWS CLI"
                   echo -e "========================================================"
-                  
+
                   # Create temporary directory
                   export TMP_DIR="$(mktemp -d)"
                   if [[ "${TMP_DIR}" != "/tmp/"* ]]; then
                     export TMP_DIR="/tmp";
                   fi
                   echo -e "[INFO] All the packages will be temporarily downloaded to ${TMP_DIR}"
-                  
+
                   # Download and install AWS CLI
                   curl --silent --location -o "${TMP_DIR}/awscliv2.zip" "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip"
                   if [ $? -ne 0 ]; then
                     echo -e "[ERROR] Failed to download AWS CLI"
                     exit 1
                   fi
-                  
+
                   unzip -q "${TMP_DIR}/awscliv2.zip" -d "${TMP_DIR}/awscli"
                   sudo "${TMP_DIR}/awscli/aws/install" --update
                   if [ $? -ne 0 ]; then
                     echo -e "[ERROR] Failed to install AWS CLI"
                     exit 1
                   fi
-                  
+
                   rm -rf "${TMP_DIR}/awscliv2.zip" "${TMP_DIR}/awscli"
-                  
+
                   # Configure AWS
-                  export ACCOUNT_ID="$(aws sts get-caller-identity --output text --query Account)"
-                  export AWS_REGION="$(curl -s 169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')"
-                  
-                  # Set up AWS environment variables
-                  echo "export ACCOUNT_ID=\"${ACCOUNT_ID}\"" >> "/home/ec2-user/.bashrc"
+                  echo -e "[INFO] Configuring AWS CLI and region"
+
+                  # Get IMDSv2 token with retry
+                  for i in {1..3}; do
+                    TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" 2>/dev/null)
+                    if [ -n "$TOKEN" ]; then
+                      break
+                    fi
+                    echo -e "[WARN] Failed to get IMDS token, attempt $i/3"
+                    sleep 2
+                  done
+
+                  if [ -z "$TOKEN" ]; then
+                    echo -e "[ERROR] Failed to get IMDS token after 3 attempts"
+                    exit 1
+                  fi
+
+                  # Get account ID and region with retry
+                  for i in {1..3}; do
+                    AWS_ACCOUNT_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/dynamic/instance-identity/document 2>/dev/null | jq -r '.accountId' 2>/dev/null)
+                    AWS_REGION=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/dynamic/instance-identity/document 2>/dev/null | jq -r '.region' 2>/dev/null)
+
+                    if [ -n "$AWS_ACCOUNT_ID" ] && [ "$AWS_ACCOUNT_ID" != "null" ] && [ -n "$AWS_REGION" ] && [ "$AWS_REGION" != "null" ]; then
+                      break
+                    fi
+                    echo -e "[WARN] Failed to get metadata, attempt $i/3"
+                    sleep 2
+                  done
+
+                  if [ -z "$AWS_ACCOUNT_ID" ] || [ "$AWS_ACCOUNT_ID" = "null" ] || [ -z "$AWS_REGION" ] || [ "$AWS_REGION" = "null" ]; then
+                    echo -e "[ERROR] Failed to get account ID or region from IMDS"
+                    exit 1
+                  fi
+
+                  echo -e "[INFO] Account ID: ${AWS_ACCOUNT_ID}"
+                  echo -e "[INFO] Region: ${AWS_REGION}"
+
+                  # Create global environment file with proper format
+                  echo "LANG=en_US.utf-8" > /etc/environment
+                  echo "LC_ALL=en_US.UTF-8" >> /etc/environment
+                  echo "AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}" >> /etc/environment
+                  echo "AWS_REGION=${AWS_REGION}" >> /etc/environment
+                  echo "AWS_DEFAULT_REGION=${AWS_REGION}" >> /etc/environment
+
+                  # Set up AWS environment variables in user profile
+                  echo "export AWS_ACCOUNT_ID=\"${AWS_ACCOUNT_ID}\"" >> "/home/ec2-user/.bashrc"
                   echo "export AWS_REGION=\"${AWS_REGION}\"" >> "/home/ec2-user/.bashrc"
+                  echo "export AWS_DEFAULT_REGION=\"${AWS_REGION}\"" >> "/home/ec2-user/.bashrc"
+
+                  # Configure AWS CLI
                   aws configure set default.region "${AWS_REGION}"
-                  
+
+                  # Verify AWS credentials are working
+                  if ! aws sts get-caller-identity > /dev/null 2>&1; then
+                    echo "[ERROR] AWS credentials not working" > /tmp/bootstrap_failed
+                    echo "[ERROR] AWS credentials verification failed" >&2
+                    exit 1
+                  fi
+
                   # Verify installation
                   if aws --version > /dev/null 2>&1; then
                     echo -e "[INFO] Successfully installed AWS CLI: $(aws --version)"
@@ -557,21 +675,21 @@ Resources:
                 - |
                   #!/bin/bash
                   set -e
-                  
-                  # Set up error handling
-                  trap 'echo "[ERROR] kubectl installation failed" > /tmp/bootstrap_failed' ERR
-                  
+
+                  # Source environment variables
+                  if [ -f /etc/environment ]; then source /etc/environment || echo "[WARN] Failed to source /etc/environment"; fi
+
                   echo -e "========================================================"
                   echo -e "                  Installing kubectl"
                   echo -e "========================================================"
-                  
+
                   # Create temporary directory
                   export TMP_DIR="$(mktemp -d)"
                   if [[ "${TMP_DIR}" != "/tmp/"* ]]; then
                     export TMP_DIR="/tmp";
                   fi
                   echo -e "[INFO] All the packages will be temporarily downloaded to ${TMP_DIR}"
-                  
+
                   # Check if a specific version is requested
                   if [ "{{ kubectlVersion }}" = "stable" ]; then
                     # Download stable version
@@ -591,22 +709,23 @@ Resources:
                       exit 1
                     fi
                   fi
-                  
+
                   # Verify file exists before chmod
                   if [ ! -f "${TMP_DIR}/kubectl" ]; then
                     echo -e "[ERROR] kubectl binary not found at ${TMP_DIR}/kubectl"
                     exit 1
                   fi
-                  
+
                   chmod +x "${TMP_DIR}/kubectl"
                   mv "${TMP_DIR}/kubectl" "/usr/local/bin/kubectl"
-                  
+
                   # Verify installation
-                  if kubectl version --client 2>/dev/null; then
-                    echo -e "[INFO] Successfully installed kubectl version: $(kubectl version --client --output=yaml | grep gitVersion)"
-                  else
-                    echo -e "[ERROR] Failed to install kubectl"
+                  if ! kubectl version --client > /dev/null 2>&1; then
+                    echo "[ERROR] kubectl installation failed" > /tmp/bootstrap_failed
+                    echo "[ERROR] kubectl installation verification failed" >&2
                     exit 1
+                  else
+                    echo -e "[INFO] Successfully installed kubectl version: $(kubectl version --client --output=yaml | grep gitVersion)"
                   fi
 
           - action: aws:runShellScript
@@ -616,41 +735,41 @@ Resources:
                 - |
                   #!/bin/bash
                   set -e
-                  
-                  # Set up error handling
-                  trap 'echo "[ERROR] Terraform installation failed" > /tmp/bootstrap_failed' ERR
-                  
+
+                  # Source environment variables
+                  if [ -f /etc/environment ]; then source /etc/environment || echo "[WARN] Failed to source /etc/environment"; fi
+
                   echo -e "========================================================"
                   echo -e "                   Installing Terraform"
                   echo -e "========================================================"
-                  
+
                   # Create temporary directory
                   export TMP_DIR="$(mktemp -d)"
                   if [[ "${TMP_DIR}" != "/tmp/"* ]]; then
                     export TMP_DIR="/tmp";
                   fi
                   echo -e "[INFO] All the packages will be temporarily downloaded to ${TMP_DIR}"
-                  
+
                   # Download and install Terraform
                   echo -e "[INFO] Downloading Terraform version {{ terraformVersion }}"
                   curl --silent --location -o "${TMP_DIR}/terraform.zip" \
                     "https://releases.hashicorp.com/terraform/{{ terraformVersion }}/terraform_{{ terraformVersion }}_linux_{{ downloadArchitecture }}.zip"
-                  
+
                   if [ $? -ne 0 ]; then
                     echo -e "[ERROR] Failed to download Terraform"
                     exit 1
                   fi
-                  
+
                   # Verify file exists and has content
                   if [ ! -f "${TMP_DIR}/terraform.zip" ] || [ ! -s "${TMP_DIR}/terraform.zip" ]; then
                     echo -e "[ERROR] Terraform zip file not found or empty at ${TMP_DIR}/terraform.zip"
                     exit 1
                   fi
-                  
+
                   echo -e "[INFO] Extracting Terraform"
                   mkdir -p "${TMP_DIR}/terraform"
                   unzip -q "${TMP_DIR}/terraform.zip" -d "${TMP_DIR}/terraform"
-                  
+
                   if [ $? -ne 0 ]; then
                     echo -e "[ERROR] Failed to extract Terraform zip file"
                     exit 1
@@ -658,13 +777,14 @@ Resources:
                   chmod +x "${TMP_DIR}/terraform/terraform"
                   mv "${TMP_DIR}/terraform/terraform" "/usr/local/bin/terraform"
                   rm -f "${TMP_DIR}/terraform.zip"
-                  
+
                   # Verify installation
-                  if terraform version; then
-                    echo -e "[INFO] Successfully installed Terraform"
-                  else
-                    echo -e "[ERROR] Failed to install Terraform"
+                  if ! terraform version > /dev/null 2>&1; then
+                    echo "[ERROR] Terraform installation failed" > /tmp/bootstrap_failed
+                    echo "[ERROR] Terraform installation verification failed" >&2
                     exit 1
+                  else
+                    echo -e "[INFO] Successfully installed Terraform"
                   fi
 
           - action: aws:runShellScript
@@ -674,21 +794,21 @@ Resources:
                 - |
                   #!/bin/bash
                   set -e
-                  
-                  # Set up error handling
-                  trap 'echo "[ERROR] Helm installation failed" > /tmp/bootstrap_failed' ERR
-                  
+
+                  # Source environment variables
+                  if [ -f /etc/environment ]; then source /etc/environment || echo "[WARN] Failed to source /etc/environment"; fi
+
                   echo -e "========================================================"
                   echo -e "                     Installing Helm"
                   echo -e "========================================================"
-                  
+
                   # Create temporary directory
                   export TMP_DIR="$(mktemp -d)"
                   if [[ "${TMP_DIR}" != "/tmp/"* ]]; then
                     export TMP_DIR="/tmp";
                   fi
                   echo -e "[INFO] All the packages will be temporarily downloaded to ${TMP_DIR}"
-                  
+
                   # Check if a specific version is requested
                   if [ "{{ helmVersion }}" = "stable" ]; then
                     # Use the official installation script
@@ -701,20 +821,21 @@ Resources:
                     echo -e "[INFO] Installing Helm version {{ helmVersion }}"
                     curl --silent --location -o "${TMP_DIR}/helm.tar.gz" \
                       "https://get.helm.sh/helm-v{{ helmVersion }}-linux-{{ downloadArchitecture }}.tar.gz"
-                    
+
                     mkdir -p "${TMP_DIR}/helm"
                     tar -zxf "${TMP_DIR}/helm.tar.gz" -C "${TMP_DIR}/helm/"
                     chmod +x "${TMP_DIR}/helm/linux-{{ downloadArchitecture }}/helm"
                     mv "${TMP_DIR}/helm/linux-{{ downloadArchitecture }}/helm" "/usr/local/bin/"
                     rm -f "${TMP_DIR}/helm.tar.gz"
                   fi
-                  
+
                   # Verify installation
-                  if helm version; then
-                    echo -e "[INFO] Successfully installed Helm"
-                  else
-                    echo -e "[ERROR] Failed to install Helm"
+                  if ! helm version > /dev/null 2>&1; then
+                    echo "[ERROR] Helm installation failed" > /tmp/bootstrap_failed
+                    echo "[ERROR] Helm installation verification failed" >&2
                     exit 1
+                  else
+                    echo -e "[INFO] Successfully installed Helm"
                   fi
 
           - action: aws:runShellScript
@@ -724,35 +845,36 @@ Resources:
                 - |
                   #!/bin/bash
                   set -e
-                  
-                  # Set up error handling
-                  trap 'echo "[ERROR] code-server setup failed" > /tmp/bootstrap_failed' ERR
-                  
+
+                  # Source environment variables
+                  if [ -f /etc/environment ]; then source /etc/environment || echo "[WARN] Failed to source /etc/environment"; fi
+
                   echo -e "========================================================"
                   echo -e "              Setting up code-server"
                   echo -e "========================================================"
-                  
+
                   # Set HOME to prevent unbound variable errors
                   export HOME="/home/ec2-user"
-                  
+
                   # Install dependencies
                   dnf install -y nginx
-                  
+
                   # Install code-server
                   curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --version=4.16.1 --prefix=/usr/local
                   if [ $? -ne 0 ]; then
                     echo -e "[ERROR] Failed to install code-server"
                     exit 1
                   fi
-                  
+
                   # Verify installation
-                  if /usr/local/bin/code-server --version > /dev/null 2>&1; then
-                    echo -e "[INFO] Successfully installed code-server: $(/usr/local/bin/code-server --version)"
-                  else
-                    echo -e "[ERROR] code-server installation verification failed"
+                  if ! /usr/local/bin/code-server --version > /dev/null 2>&1; then
+                    echo "[ERROR] code-server installation failed" > /tmp/bootstrap_failed
+                    echo "[ERROR] code-server installation verification failed" >&2
                     exit 1
+                  else
+                    echo -e "[INFO] Successfully installed code-server: $(/usr/local/bin/code-server --version)"
                   fi
-                  
+
                   # Configure code-server
                   mkdir -p "/home/ec2-user/.config/code-server"
                   cat > "/home/ec2-user/.config/code-server/config.yaml" << EOF
@@ -761,30 +883,30 @@ Resources:
                   password: {{ password }}
                   cert: false
                   EOF
-                  
+
                   # Set up code-server service
                   cat > /etc/systemd/system/code-server.service << EOF
                   [Unit]
                   Description=code-server
                   After=network.target
-                  
+
                   [Service]
                   Type=simple
                   User=ec2-user
                   ExecStart=/usr/local/bin/code-server
                   Restart=always
-                  
+
                   [Install]
                   WantedBy=multi-user.target
                   EOF
-                  
+
                   # Configure nginx
                   cat > /etc/nginx/conf.d/code-server.conf << EOF
                   server {
-                      listen 80;
-                      listen [::]:80;
-                      server_name {{ cloudfront }};
-                      
+                      listen 80 default_server;
+                      listen [::]:80 default_server;
+                      server_name _;
+
                       location / {
                           proxy_pass http://localhost:8080/;
                           proxy_set_header Host \$host;
@@ -794,7 +916,7 @@ Resources:
                       }
                   }
                   EOF
-                  
+
                   # Configure VSCode settings
                   mkdir -p "/home/ec2-user/.local/share/code-server/User/"
                   cat > "/home/ec2-user/.local/share/code-server/User/settings.json" << EOF
@@ -817,16 +939,20 @@ Resources:
                     ]
                   }
                   EOF
-                  
-                  # Set proper ownership
-                  chown -R ec2-user:ec2-user "/home/ec2-user/.config"
-                  chown -R ec2-user:ec2-user "/home/ec2-user/.local"
-                  
+
                   # Start services
                   systemctl enable code-server
-                  systemctl start code-server
+                  if ! systemctl start code-server; then
+                    echo "[ERROR] code-server failed to start" > /tmp/bootstrap_failed
+                    echo "[ERROR] code-server service failed to start" >&2
+                    exit 1
+                  fi
                   systemctl enable nginx
-                  systemctl restart nginx
+                  if ! systemctl restart nginx; then
+                    echo "[ERROR] nginx failed to start" > /tmp/bootstrap_failed
+                    echo "[ERROR] nginx service failed to start" >&2
+                    exit 1
+                  fi
 
           - action: aws:runShellScript
             name: InstallVSCodeExtensions
@@ -834,73 +960,77 @@ Resources:
               runCommand:
                 - |
                   #!/bin/bash
-                  set -e
-                  
-                  # Set up error handling
-                  trap 'echo "[ERROR] VSCode extensions installation failed" > /tmp/bootstrap_failed' ERR
-                  
+                  # Don't exit on errors for extension installation
+                  set +e
+
+                  # Source environment variables
+                  if [ -f /etc/environment ]; then source /etc/environment || echo "[WARN] Failed to source /etc/environment"; fi
+
+                  # No error trap for this step - extensions are optional
                   echo -e "========================================================"
                   echo -e "            Installing VSCode Extensions"
                   echo -e "========================================================"
-                  
+
                   # Install extensions as the correct user
                   echo -e "[INFO] Installing VSCode extensions"
-                  
+
                   # Create a script file for installing extensions
                   cat > "${TMP_DIR}/install_extensions.sh" << 'EOF'
                   #!/bin/bash
-                  set -e
-                  
+                  # Don't exit on extension installation failures
+                  set +e
+
+                  echo "Installing VSCode extensions..."
+
                   # AWS extensions
                   /usr/local/bin/code-server --install-extension AmazonWebServices.aws-toolkit-vscode
                   /usr/local/bin/code-server --install-extension AmazonWebServices.amazon-q-vscode
-                  
+
                   # Kubernetes extensions
                   /usr/local/bin/code-server --install-extension ms-kubernetes-tools.vscode-kubernetes-tools
-                  
+
                   # Terraform extensions
                   /usr/local/bin/code-server --install-extension HashiCorp.terraform
-                  
+
                   # Python extensions
                   /usr/local/bin/code-server --install-extension ms-python.python
-                  
+
                   # Development tools
                   /usr/local/bin/code-server --install-extension ms-vscode.makefile-tools
                   /usr/local/bin/code-server --install-extension redhat.vscode-yaml
-                  /usr/local/bin/code-server --install-extension mohsen1.prettify-json
-                  /usr/local/bin/code-server --install-extension ms-vscode-remote.remote-containers
                   /usr/local/bin/code-server --install-extension esbenp.prettier-vscode
                   /usr/local/bin/code-server --install-extension ms-azuretools.vscode-docker
+
+                  echo "Extension installation completed"
                   EOF
-                  
+
                   # Make the script executable
                   chmod +x "${TMP_DIR}/install_extensions.sh"
-                  
-                  # Run the script as the correct user
-                  sudo -H -u "ec2-user" bash "${TMP_DIR}/install_extensions.sh"
-                  
-                  if [ $? -ne 0 ]; then
-                    echo -e "[WARN] Some extensions may have failed to install. This is not critical and the server will still function."
-                  fi
+
+                  # Run the script as the correct user - don't let extension failures break the flow
+                  sudo -H -u "ec2-user" bash "${TMP_DIR}/install_extensions.sh" || echo "[WARN] Some extensions failed to install, but continuing..."
+
+                  # Extension failures are not critical - don't fail the bootstrap
+                  echo -e "[INFO] VSCode extensions installation completed (some extensions may have failed, but this is not critical)"
 
           - action: aws:runShellScript
-            name: DownloadHTCGrid
+            name: CloneHTCGrid
             inputs:
               runCommand:
                 - |
                   #!/bin/bash
                   set -e
-                  
-                  # Set up error handling
-                  trap 'echo "[ERROR] HTC-Grid download failed" > /tmp/bootstrap_failed' ERR
-                  
+
+                  # Source environment variables
+                  if [ -f /etc/environment ]; then source /etc/environment || echo "[WARN] Failed to source /etc/environment"; fi
+
                   echo -e "========================================================"
-                  echo -e "                   Downloading HTC-Grid"
+                  echo -e "                   Cloning HTC-Grid"
                   echo -e "========================================================"
-                  
+
                   export HTCGRID_HOME="/home/ec2-user/environment"
                   cd "${HTCGRID_HOME}"
-                  
+
                   # Check if htc-grid directory already exists
                   if [ -e "htc-grid" ]; then
                     export OLD_HTCGRID_DIR="htc-grid.$(date "+%F-%T" | sed 's|:|_|g')"
@@ -912,73 +1042,53 @@ Resources:
                       exit 1
                     fi
                   fi
-                  
-                  # Download HTC Grid
+
+                  # Clone HTC Grid repository
+                  echo -e "[INFO] Cloning HTC Grid from repo:\n{{ htcGridRepo }}"
+                  if ! git clone "{{ htcGridRepo }}" htc-grid; then
+                    echo "[ERROR] Failed to clone HTC Grid repository" > /tmp/bootstrap_failed
+                    echo "[ERROR] Git clone operation failed" >&2
+                    exit 1
+                  fi
+
+                  cd htc-grid
+
+                  # Handle version/branch/tag selection
                   if [ "{{ htcGridVersion }}" == "latest" ]; then
-                    export HTCGRID_VERSION="$(curl -Ls -o /dev/null -w %{url_effective} {{ htcGridRepo }}/releases/latest | awk -F '/v' '{ print $NF }')";
-                    echo -e "[INFO] The value for HTCGRID_VERSION is 'latest'. Discovered the latest release as: ${HTCGRID_VERSION}"
+                    export HTCGRID_VERSION="main"
+                    echo -e "[INFO] The value for HTCGRID_VERSION is 'latest'. Using main branch: ${HTCGRID_VERSION}"
+                    if ! git checkout "${HTCGRID_VERSION}"; then
+                      echo "[ERROR] Failed to checkout ${HTCGRID_VERSION}" > /tmp/bootstrap_failed
+                      echo "[ERROR] Git checkout operation failed for ${HTCGRID_VERSION}" >&2
+                      exit 1
+                    fi
+                  elif [ "{{ htcGridVersion }}" == "main" ]; then
+                    export HTCGRID_VERSION="main"
+                    echo -e "[INFO] Using main branch"
+                    if ! git checkout main; then
+                      echo "[ERROR] Failed to checkout main branch" > /tmp/bootstrap_failed
+                      echo "[ERROR] Git checkout operation failed for main branch" >&2
+                      exit 1
+                    fi
                   else
                     export HTCGRID_VERSION="{{ htcGridVersion }}"
+                    echo -e "[INFO] Checking out version: ${HTCGRID_VERSION}"
+                    if ! git checkout "${HTCGRID_VERSION}"; then
+                      echo "[ERROR] Failed to checkout ${HTCGRID_VERSION}" > /tmp/bootstrap_failed
+                      echo "[ERROR] Git checkout operation failed for ${HTCGRID_VERSION}" >&2
+                      exit 1
+                    fi
                   fi
-                  
-                  if [ "${HTCGRID_VERSION}" == "main" ]; then
-                    export HTCGRID_URI_REF="heads/main";
-                  else
-                    export HTCGRID_URI_REF="tags/v${HTCGRID_VERSION}";
-                  fi
-                  
-                  echo -e "[INFO] Downloading HTC Grid release ${HTCGRID_VERSION} from repo:\n{{ htcGridRepo }}"
-                  
-                  # Create a temporary file for the download
-                  export DOWNLOAD_FILE="${TMP_DIR}/htc-grid.tar.gz"
-                  
-                  curl --silent --location \
-                    -o "${DOWNLOAD_FILE}" \
-                    "{{ htcGridRepo }}/archive/refs/${HTCGRID_URI_REF}.tar.gz"
-                  
+
+                  # Set proper ownership for all ec2-user files
+                  chown -R ec2-user:ec2-user "/home/ec2-user"
+
                   if [ $? -ne 0 ]; then
-                    echo -e "[ERROR] Failed to download HTC Grid from {{ htcGridRepo }}"
+                    echo -e "[ERROR] Failed to set ownership on /home/ec2-user"
                     exit 1
                   fi
-                  
-                  # Verify file exists and has content
-                  if [ ! -f "${DOWNLOAD_FILE}" ] || [ ! -s "${DOWNLOAD_FILE}" ]; then
-                    echo -e "[ERROR] HTC Grid tar.gz file not found or empty at ${DOWNLOAD_FILE}"
-                    exit 1
-                  fi
-                  
-                  echo -e "[INFO] Extracting HTC Grid"
-                  cd "${HTCGRID_HOME}"
-                  tar -zxf "${DOWNLOAD_FILE}"
-                  
-                  if [ $? -ne 0 ]; then
-                    echo -e "[ERROR] Failed to extract htc-grid.tar.gz"
-                    exit 1
-                  fi
-                  
-                  rm -f htc-grid.tar.gz
-                  
-                  # Rename the directory to htc-grid
-                  if [ "${HTCGRID_VERSION}" == "main" ]; then
-                    mv "htc-grid-main" "htc-grid"
-                  else
-                    mv "htc-grid-${HTCGRID_VERSION}" "htc-grid"
-                  fi
-                  
-                  if [ $? -ne 0 ]; then
-                    echo -e "[ERROR] Failed to rename htc-grid directory"
-                    exit 1
-                  fi
-                  
-                  # Set proper ownership
-                  chown -R ec2-user:ec2-user "${HTCGRID_HOME}"
-                  
-                  if [ $? -ne 0 ]; then
-                    echo -e "[ERROR] Failed to set ownership on ${HTCGRID_HOME}"
-                    exit 1
-                  fi
-                  
-                  echo -e "[INFO] Successfully downloaded HTC-Grid to [${HTCGRID_HOME}/htc-grid] with version: ${HTCGRID_VERSION}"
+
+                  echo -e "[INFO] Successfully cloned HTC-Grid to [${HTCGRID_HOME}/htc-grid] with version: ${HTCGRID_VERSION}"
 
           - action: aws:runShellScript
             name: NotifyCloudFormation
@@ -987,49 +1097,57 @@ Resources:
                 - |
                   #!/bin/bash
                   set -e
-                  
-                  # Set up error handling
-                  trap 'echo "[ERROR] CloudFormation notification failed" > /tmp/bootstrap_failed' ERR
-                  
+
+                  # Source environment variables
+                  if [ -f /etc/environment ]; then source /etc/environment || echo "[WARN] Failed to source /etc/environment"; fi
+
                   echo -e "========================================================"
                   echo -e "            Notifying CloudFormation"
                   echo -e "========================================================"
-                  
+
                   # Generate a unique ID for the signal
                   export UNIQUE_ID=$(uuidgen | sed 's/[-]//g')
                   echo "[INFO] Generated unique ID: ${UNIQUE_ID}"
-                  
+
+                  # Debug: Check what created the failure file
+                  if [ -f "/tmp/bootstrap_failed" ]; then
+                    echo "[DEBUG] Found /tmp/bootstrap_failed file. Contents:"
+                    cat /tmp/bootstrap_failed
+                    echo "[DEBUG] File creation time:"
+                    ls -la /tmp/bootstrap_failed
+                  fi
+
                   # Check if any previous steps failed
                   if [ -f "/tmp/bootstrap_failed" ]; then
                     echo "[ERROR] Previous bootstrap steps failed. Sending failure signal to CloudFormation."
-                    
+
                     # Send failure signal to CloudFormation
                     export CFN_RESPONSE_URL="{{ cfnResponseUrl }}"
-                    
+
                     if [ -z "${CFN_RESPONSE_URL}" ]; then
                       echo "[ERROR] CloudFormation response URL is empty"
                       exit 1
                     fi
-                    
+
                     curl -v -X PUT -H 'Content-Type:' \
                       --data-binary '{"Status":"FAILURE","Reason":"VSCode Server Setup Failed. Check SSM logs for details.","UniqueId":"'${UNIQUE_ID}'","Data":"VSCode Server setup failed"}' \
                       "${CFN_RESPONSE_URL}"
-                    
+
                     exit 1
                   else
                     # Send success signal to CloudFormation
                     export CFN_RESPONSE_URL="{{ cfnResponseUrl }}"
                     echo "[INFO] Sending success signal to CloudFormation"
-                    
+
                     if [ -z "${CFN_RESPONSE_URL}" ]; then
                       echo "[ERROR] CloudFormation response URL is empty"
                       exit 1
                     fi
-                    
+
                     curl -v -X PUT -H 'Content-Type:' \
                       --data-binary '{"Status":"SUCCESS","Reason":"VSCode Server Setup Complete","UniqueId":"'${UNIQUE_ID}'","Data":"VSCode Server is ready"}' \
                       "${CFN_RESPONSE_URL}"
-                    
+
                     if [ $? -eq 0 ]; then
                       echo "[INFO] Successfully notified CloudFormation"
                     else
@@ -1045,14 +1163,16 @@ Resources:
       Targets:
         - Key: tag:SSMBootstrap
           Values: 
-          - !FindInMap [ArchitectureMap, !Ref InstanceArchitecture, EC2Arch]
+          - !FindInMap [ArchitectureMap, !FindInMap [InstanceTypeToArchitecture, !Ref VSCodeInstanceType, Architecture], EC2Arch]
+        - Key: tag:StackName
+          Values:
+          - !Ref 'AWS::StackName'
       Parameters:
         ec2Architecture: 
-        - !FindInMap [ArchitectureMap, !Ref InstanceArchitecture, EC2Arch]
+        - !FindInMap [ArchitectureMap, !FindInMap [InstanceTypeToArchitecture, !Ref VSCodeInstanceType, Architecture], EC2Arch]
         downloadArchitecture:
-        - !FindInMap [ArchitectureMap, !Ref InstanceArchitecture, DownloadArch]
-        cloudfront: 
-        - !GetAtt CloudFrontDistribution.DomainName
+        - !FindInMap [ArchitectureMap, !FindInMap [InstanceTypeToArchitecture, !Ref VSCodeInstanceType, Architecture], DownloadArch]
+
         cfnResponseUrl:
         - !Ref WaitForVSCodeStackCreationHandle
         password:
@@ -1078,16 +1198,16 @@ Resources:
       LaunchTemplateData:
         BlockDeviceMappings:
           - Ebs:
-              VolumeSize: !Ref InstanceVolumeSize
+              VolumeSize: !Ref VSCodeInstanceVolumeSize
               VolumeType: gp3
               DeleteOnTermination: true
               Encrypted: true
-            DeviceName: /dev/sda1
+            DeviceName: /dev/xvda
         Monitoring: 
           Enabled: true
         ImageId: !Sub 
           - '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-${AMISuffix}:1}}'
-          - AMISuffix: !FindInMap [ArchitectureMap, !Ref InstanceArchitecture, AMISuffix]
+          - AMISuffix: !FindInMap [ArchitectureMap, !FindInMap [InstanceTypeToArchitecture, !Ref VSCodeInstanceType, Architecture], AMISuffix]
         InstanceType: !Ref VSCodeInstanceType
         SecurityGroupIds:
           - !Ref SecurityGroup
@@ -1101,9 +1221,11 @@ Resources:
           - ResourceType: instance
             Tags:
               - Key: SSMBootstrap
-                Value: !FindInMap [ArchitectureMap, !Ref InstanceArchitecture, EC2Arch]
+                Value: !FindInMap [ArchitectureMap, !FindInMap [InstanceTypeToArchitecture, !Ref VSCodeInstanceType, Architecture], EC2Arch]
+              - Key: StackName
+                Value: !Ref 'AWS::StackName'
               - Key: Name
-                Value: !Ref InstanceName
+                Value: !Ref 'AWS::StackName'
               - Key: Environment
                 Value: !Ref 'AWS::StackName'
 
@@ -1128,7 +1250,7 @@ Resources:
       HealthCheckGracePeriod: 300
       Tags:
         - Key: Name
-          Value: !Ref InstanceName
+          Value: !Ref 'AWS::StackName'
           PropagateAtLaunch: true
         - Key: Environment
           Value: !Ref 'AWS::StackName'
@@ -1223,7 +1345,7 @@ Resources:
           Value: !Sub ${AWS::StackName}-TG
         - Key: Environment
           Value: !Ref 'AWS::StackName'
-  
+
   Listener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
