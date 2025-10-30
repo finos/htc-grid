@@ -1,5 +1,8 @@
 nav:
+  - index.md
+  - workshop-setup.md
+  - self-paced-setup.md
   - prerequisite.md
-  - configurations.md
   - happy-path.md
+  - configurations.md
   - portfolio_example.md

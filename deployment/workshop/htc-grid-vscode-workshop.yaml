@@ -1,0 +1,1367 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CloudFormation template to create a VSCode environment and prepare the HTC-Grid setup
+Metadata:
+  Author:
+    Description: Flamur Gogolli <flamurg@amazon.co.uk>
+  License:
+    Description: 'Copyright 2025 Amazon.com, Inc. and its affiliates. All Rights Reserved.
+
+            Licensed under the Apache License, Version 2.0 (the "License");
+            you may not use this file except in compliance with the License.
+            You may obtain a copy of the License at
+                     http://www.apache.org/licenses/LICENSE-2.0
+            Unless required by applicable law or agreed to in writing, software
+            distributed under the License is distributed on an "AS IS" BASIS,
+            WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+            See the License for the specific language governing permissions and
+            limitations under the License.'
+
+Parameters:
+  VSCodeInstanceType:
+    Description: Instance type for the VSCode server
+    Type: String
+    Default: m6i.large
+    AllowedValues:
+      # General Purpose
+      - t3.medium
+      - t3.large
+      - m5.large
+      - m5.xlarge
+      - m6i.medium
+      - m6i.large
+      - m6i.xlarge
+      - m7i.medium
+      - m7i.large
+      - m7i.xlarge
+      - m8i.medium
+      - m8i.large
+      - m8i.xlarge
+      # Compute Optimized
+      - c5.large
+      - c5.xlarge
+      - c6i.large
+      - c6i.xlarge
+      - c7i.large
+      - c7i.xlarge
+      # Memory Optimized
+      - r5.large
+      - r6i.large
+      - r7i.large
+    ConstraintDescription: Must be a valid EC2 instance type.
+  TerraformVersion:
+    Description: Terraform version to install on VSCode server
+    Type: String
+    Default: 1.5.7
+    ConstraintDescription: Must be a valid Terraform version.
+  HTCGridVersion:
+    Description: HTC Grid version/branch/tag to checkout on VSCode server
+    Type: String
+    Default: latest
+    ConstraintDescription: Must be a valid HTC Grid version, branch name, or tag.
+  HTCGridRepo:
+    Description: HTC Grid repo to pull on VSCode server
+    Type: String
+    Default: https://github.com/finos/htc-grid
+    ConstraintDescription: Must be a valid HTC Grid repository URL.
+  VSCodeInstanceVolumeSize:
+    Type: Number
+    Description: The volume size in GB
+    Default: 100
+  KubectlVersion:
+    Description: kubectl version to install on VSCode server
+    Type: String
+    Default: stable
+    ConstraintDescription: Must be a valid kubectl version.
+  HelmVersion:
+    Description: Helm version to install on VSCode server
+    Type: String
+    Default: stable
+    ConstraintDescription: Must be a valid Helm version.
+  ParticipantRoleARN:
+    Description: "ARN of the Participant Role"
+    Default: NONE
+    Type: String
+    ConstraintDescription: This is ONLY used via AWS WorkshopStudio. DON'T change this if you are self-deploying the stack.
+  PythonVersion:
+    Description: Python version to install
+    Type: String
+    Default: 3.11
+    AllowedValues:
+      - 3.9
+      - 3.10
+      - 3.11
+      - 3.12
+      - 3.13
+    ConstraintDescription: Must be a valid Python version.
+
+Conditions:
+  NotWSParticipant: !Equals [!Ref ParticipantRoleARN, NONE]
+
+Mappings:
+  Subnets:
+    VPC:
+      CIDR: 10.0.0.0/16
+    PublicOne:
+      CIDR: 10.0.1.0/24
+    PublicTwo:
+      CIDR: 10.0.2.0/24
+    PrivateOne:
+      CIDR: 10.0.3.0/24
+    PrivateTwo:
+      CIDR: 10.0.4.0/24
+  InstanceTypeToArchitecture:
+    # General Purpose
+    t3.medium:
+      Architecture: amd64
+    t3.large:
+      Architecture: amd64
+    m5.large:
+      Architecture: amd64
+    m5.xlarge:
+      Architecture: amd64
+    m6i.medium:
+      Architecture: amd64
+    m6i.large:
+      Architecture: amd64
+    m6i.xlarge:
+      Architecture: amd64
+    m7i.medium:
+      Architecture: amd64
+    m7i.large:
+      Architecture: amd64
+    m7i.xlarge:
+      Architecture: amd64
+    m8i.medium:
+      Architecture: amd64
+    m8i.large:
+      Architecture: amd64
+    m8i.xlarge:
+      Architecture: amd64
+    # Compute Optimized
+    c5.large:
+      Architecture: amd64
+    c5.xlarge:
+      Architecture: amd64
+    c6i.large:
+      Architecture: amd64
+    c6i.xlarge:
+      Architecture: amd64
+    c7i.large:
+      Architecture: amd64
+    c7i.xlarge:
+      Architecture: amd64
+    # Memory Optimized
+    r5.large:
+      Architecture: amd64
+    r6i.large:
+      Architecture: amd64
+    r7i.large:
+      Architecture: amd64
+  ArchitectureMap:
+    amd64:
+      DownloadArch: amd64
+      EC2Arch: x86_64
+      AMISuffix: x86_64
+    arm64:
+      DownloadArch: arm64
+      EC2Arch: arm64
+      AMISuffix: arm64
+  Constants:
+    System:
+      OSUser: ec2-user
+      HomeFolder: /home/ec2-user/environment
+
+Resources:
+  ################## PERMISSIONS AND ROLES #################
+  VSCodeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Tags:
+      - Key: Environment
+        Value: !Ref 'AWS::StackName'
+      - Key: Owner
+        Value: !If [NotWSParticipant, !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root", !Ref ParticipantRoleARN]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - !Sub 'ec2.${AWS::URLSuffix}'
+            - !Sub 'ssm.${AWS::URLSuffix}'
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+      - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess'
+      Path: "/"
+
+  VSCodeInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - !Ref VSCodeRole
+
+  ################## SECRETS MANAGEMENT #################
+  VSCodeSecret:
+    Type: AWS::SecretsManager::Secret
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      Name: !Ref 'AWS::StackName'
+      Description: VSCode user details
+      GenerateSecretString:
+        PasswordLength: 32
+        SecretStringTemplate: '{"username":"ec2-user"}'
+        GenerateStringKey: 'password'
+        ExcludePunctuation: true
+
+  SecretPlaintextLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - !Sub lambda.${AWS::URLSuffix}
+          Action:
+          - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: AwsSecretsManager
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Ref VSCodeSecret
+
+  SecretPlaintextLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Return the value of the secret
+      Handler: index.lambda_handler
+      Runtime: python3.11
+      MemorySize: 128
+      Timeout: 10
+      Architectures:
+        - arm64
+      Role: !GetAtt SecretPlaintextLambdaRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import json
+          import cfnresponse
+          import logging
+
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+
+          def is_valid_json(json_string):
+            logger.debug('Calling is_valid_jason: %s', json_string)
+            try:
+              json.loads(json_string)
+              logger.info('Secret is in json format')
+              return True
+            except json.JSONDecodeError:
+              logger.info('Secret is in string format')
+              return False
+          def lambda_handler(event, context):
+            try:
+              if event['RequestType'] == 'Delete':
+                cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData={}, reason='No action to take')
+              else:
+                secret_name = (event['ResourceProperties']['SecretArn'])
+                secrets_mgr = boto3.client('secretsmanager')
+                secret = secrets_mgr.get_secret_value(SecretId = secret_name)
+                logger.info('Getting secret from %s', secret_name)
+                secret_value = secret['SecretString']
+                logger.debug('secret_value: %s', secret_value)
+                responseData = {}
+                if is_valid_json(secret_value):
+                  responseData = secret_value
+                else:
+                  responseData = {'secret': secret_value}
+                logger.debug('responseData: %s', responseData)
+                logger.debug('type(responseData): %s', type(responseData))
+                cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData=json.loads(responseData), reason='OK', noEcho=True)
+            except Exception as e:
+              cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(e))
+
+  SecretPlaintext:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt SecretPlaintextLambda.Arn
+      ServiceTimeout: 20
+      SecretArn: !Ref VSCodeSecret
+
+  ################## NETWORKING RESOURCES #################
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !FindInMap [Subnets, VPC, CIDR]
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-VPC
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-IGW
+
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnetOne:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !FindInMap [Subnets, PublicOne, CIDR]
+      VpcId: !Ref VPC
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PublicSubnet1
+
+  PublicOneRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PublicRT1
+
+  PublicOneRoute:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicOneRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicOneRouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicOneRouteTable
+      SubnetId: !Ref PublicSubnetOne
+
+  PublicSubnetTwo:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !FindInMap [Subnets, PublicTwo, CIDR]
+      VpcId: !Ref VPC
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PublicSubnet2
+
+  PublicTwoRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PublicRT2
+
+  PublicTwoRoute:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicTwoRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicTwoRouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicTwoRouteTable
+      SubnetId: !Ref PublicSubnetTwo
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group for VSCode Server
+      SecurityGroupIngress:
+        - Description: Allow HTTP from everywhere
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - Description: Allow SSH from the same VPC
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !FindInMap [Subnets, VPC, CIDR]
+        - Description: Allow 8080-8085 from the same VPC
+          IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8085
+          CidrIp: !FindInMap [Subnets, VPC, CIDR]
+      SecurityGroupEgress:
+        - Description: Allow all outbound traffic
+          IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-SG
+
+  ################## WAIT CONDITION RESOURCES #################
+  WaitForVSCodeStackCreationHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+
+  WaitConditionVSCode:
+    Type: AWS::CloudFormation::WaitCondition
+    Properties:
+      Handle: !Ref WaitForVSCodeStackCreationHandle
+      # wait for 60 minutes before giving up
+      Timeout: 3600
+      # success or failure signal count
+      Count: 1
+
+  ################## VSCODE SERVER SETUP #################
+  VSCodeInstanceSSMDoc:  
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Command
+      Content:
+        schemaVersion: '2.2'
+        description: Bootstrap VSCode code-server instance
+        parameters:
+          ec2Architecture:
+            type: String
+            default: !FindInMap [ArchitectureMap, !FindInMap [InstanceTypeToArchitecture, !Ref VSCodeInstanceType, Architecture], EC2Arch]
+            description: EC2 instance architecture type
+          downloadArchitecture:
+            type: String
+            default: !FindInMap [ArchitectureMap, !FindInMap [InstanceTypeToArchitecture, !Ref VSCodeInstanceType, Architecture], DownloadArch]
+            description: Architecture for binary downloads
+
+          cfnResponseUrl:
+            type: String
+            description: CloudFormation wait condition handle URL
+          password:
+            type: String
+            default: !Sub "${SecretPlaintext.password}"
+          terraformVersion:
+            type: String
+            default: !Sub "${TerraformVersion}"
+          kubectlVersion:
+            type: String
+            default: !Sub "${KubectlVersion}"
+          helmVersion:
+            type: String
+            default: !Sub "${HelmVersion}"
+          htcGridVersion:
+            type: String
+            default: !Sub "${HTCGridVersion}"
+          htcGridRepo:
+            type: String
+            default: !Sub "${HTCGridRepo}"
+          pythonVersion:
+            type: String
+            default: !Sub "${PythonVersion}"
+        mainSteps:
+          - action: aws:runShellScript
+            name: SetupEnvironment
+            inputs:
+              runCommand:
+                - |
+                  #!/bin/bash
+                  set -e
+
+                  echo -e "========================================================"
+                  echo -e " Starting the VSCode server bootstrap at: $(date)"
+                  echo -e "========================================================"
+
+                  # Create temporary directory
+                  export TMP_DIR="$(mktemp -d)"
+                  if [[ "${TMP_DIR}" != "/tmp/"* ]]; then
+                    export TMP_DIR="/tmp";
+                  fi
+                  echo -e "[INFO] All the packages will be temporarily downloaded to ${TMP_DIR}"
+
+                  # Set up environment variables
+                  echo -e "[INFO] Setting up environment variables"
+
+                  # Create workshop directory
+                  echo -e "[INFO] Creating workshop directory"
+                  mkdir -p "/home/ec2-user/environment"
+
+                  # Add workshop directory to user's profile
+                  echo "export WORKSHOP_DIR=/home/ec2-user/environment" >> "/home/ec2-user/.bashrc"
+
+                  # Check identity
+                  echo -e "[INFO] Running as OS user: $(whoami)"
+                  echo -e "[INFO] Running with the following IAM Role:"
+                  aws sts get-caller-identity
+
+                  # Expand root filesystem to use full volume
+                  echo -e "[INFO] Expanding root filesystem"
+                  # Install cloud-utils-growpart if not present
+                  dnf install -y cloud-utils-growpart
+
+                  # Find the root device and expand
+                  ROOT_DEVICE=$(findmnt -n -o SOURCE /)
+                  DEVICE_NAME=$(echo $ROOT_DEVICE | sed 's/p\?[0-9]*$//')
+                  PARTITION_NUM=$(echo $ROOT_DEVICE | sed 's/.*[^0-9]//')
+
+                  echo -e "[INFO] Root device: $ROOT_DEVICE, Device: $DEVICE_NAME, Partition: $PARTITION_NUM"
+                  if growpart $DEVICE_NAME $PARTITION_NUM; then
+                    echo -e "[INFO] Expanding filesystem"
+                    xfs_growfs -d /
+                    echo -e "[INFO] Filesystem expanded successfully"
+                  else
+                    echo -e "[WARN] Partition expansion not needed or failed"
+                  fi
+
+                  # Update system packages
+                  echo -e "[INFO] Updating system packages"
+                  dnf update -y
+                  dnf install -y git jq gettext unzip cmake docker
+
+                  # Start and enable Docker (optional - don't fail if it doesn't start)
+                  if systemctl start docker; then
+                    systemctl enable docker
+                    usermod -aG docker ec2-user
+                    echo -e "[INFO] Docker service started successfully"
+                  else
+                    echo -e "[WARN] Docker service failed to start, capturing diagnostics:"
+                    echo -e "[DEBUG] Docker service status:"
+                    systemctl status docker.service || true
+                    echo -e "[DEBUG] Docker service logs:"
+                    journalctl -xeu docker.service --no-pager -n 20 || true
+                    echo -e "[DEBUG] Continuing bootstrap without Docker"
+                  fi
+
+                  # Install Python {{ pythonVersion }}
+                  echo -e "[INFO] Installing Python {{ pythonVersion }}"
+                  dnf install -y python{{ pythonVersion }} python{{ pythonVersion }}-pip python{{ pythonVersion }}-setuptools python3-virtualenv python3-pip python3-wheel
+
+                  # Install/upgrade setuptools globally for Python 3.11 compatibility
+                  python{{ pythonVersion }} -m pip install --upgrade pip setuptools wheel
+
+                  # Create a script to help users create compatible venvs
+                  cat > /home/ec2-user/create_venv.sh << 'EOF'
+                  #!/bin/bash
+                  python3.11 -m venv venv
+                  source venv/bin/activate
+                  python -m pip install --upgrade pip setuptools wheel
+                  echo "Virtual environment created and configured for Python 3.11"
+                  EOF
+                  chmod +x /home/ec2-user/create_venv.sh
+
+          - action: aws:runShellScript
+            name: InstallAWSCLI
+            inputs:
+              runCommand:
+                - |
+                  #!/bin/bash
+                  set -e
+
+                  echo -e "========================================================"
+                  echo -e "          Installing/Updating AWS CLI"
+                  echo -e "========================================================"
+
+                  # Create temporary directory
+                  export TMP_DIR="$(mktemp -d)"
+                  if [[ "${TMP_DIR}" != "/tmp/"* ]]; then
+                    export TMP_DIR="/tmp";
+                  fi
+                  echo -e "[INFO] All the packages will be temporarily downloaded to ${TMP_DIR}"
+
+                  # Download and install AWS CLI
+                  curl --silent --location -o "${TMP_DIR}/awscliv2.zip" "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip"
+                  if [ $? -ne 0 ]; then
+                    echo -e "[ERROR] Failed to download AWS CLI"
+                    exit 1
+                  fi
+
+                  unzip -q "${TMP_DIR}/awscliv2.zip" -d "${TMP_DIR}/awscli"
+                  sudo "${TMP_DIR}/awscli/aws/install" --update
+                  if [ $? -ne 0 ]; then
+                    echo -e "[ERROR] Failed to install AWS CLI"
+                    exit 1
+                  fi
+
+                  rm -rf "${TMP_DIR}/awscliv2.zip" "${TMP_DIR}/awscli"
+
+                  # Configure AWS
+                  echo -e "[INFO] Configuring AWS CLI and region"
+
+                  # Get IMDSv2 token with retry
+                  for i in {1..3}; do
+                    TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" 2>/dev/null)
+                    if [ -n "$TOKEN" ]; then
+                      break
+                    fi
+                    echo -e "[WARN] Failed to get IMDS token, attempt $i/3"
+                    sleep 2
+                  done
+
+                  if [ -z "$TOKEN" ]; then
+                    echo -e "[ERROR] Failed to get IMDS token after 3 attempts"
+                    exit 1
+                  fi
+
+                  # Get account ID and region with retry
+                  for i in {1..3}; do
+                    AWS_ACCOUNT_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/dynamic/instance-identity/document 2>/dev/null | jq -r '.accountId' 2>/dev/null)
+                    AWS_REGION=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/dynamic/instance-identity/document 2>/dev/null | jq -r '.region' 2>/dev/null)
+
+                    if [ -n "$AWS_ACCOUNT_ID" ] && [ "$AWS_ACCOUNT_ID" != "null" ] && [ -n "$AWS_REGION" ] && [ "$AWS_REGION" != "null" ]; then
+                      break
+                    fi
+                    echo -e "[WARN] Failed to get metadata, attempt $i/3"
+                    sleep 2
+                  done
+
+                  if [ -z "$AWS_ACCOUNT_ID" ] || [ "$AWS_ACCOUNT_ID" = "null" ] || [ -z "$AWS_REGION" ] || [ "$AWS_REGION" = "null" ]; then
+                    echo -e "[ERROR] Failed to get account ID or region from IMDS"
+                    exit 1
+                  fi
+
+                  echo -e "[INFO] Account ID: ${AWS_ACCOUNT_ID}"
+                  echo -e "[INFO] Region: ${AWS_REGION}"
+
+                  # Create global environment file with proper format
+                  echo "LANG=en_US.utf-8" > /etc/environment
+                  echo "LC_ALL=en_US.UTF-8" >> /etc/environment
+                  echo "AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}" >> /etc/environment
+                  echo "AWS_REGION=${AWS_REGION}" >> /etc/environment
+                  echo "AWS_DEFAULT_REGION=${AWS_REGION}" >> /etc/environment
+
+                  # Set up AWS environment variables in user profile
+                  echo "export AWS_ACCOUNT_ID=\"${AWS_ACCOUNT_ID}\"" >> "/home/ec2-user/.bashrc"
+                  echo "export AWS_REGION=\"${AWS_REGION}\"" >> "/home/ec2-user/.bashrc"
+                  echo "export AWS_DEFAULT_REGION=\"${AWS_REGION}\"" >> "/home/ec2-user/.bashrc"
+
+                  # Configure AWS CLI
+                  aws configure set default.region "${AWS_REGION}"
+
+                  # Verify AWS credentials are working
+                  if ! aws sts get-caller-identity > /dev/null 2>&1; then
+                    echo "[ERROR] AWS credentials not working" > /tmp/bootstrap_failed
+                    echo "[ERROR] AWS credentials verification failed" >&2
+                    exit 1
+                  fi
+
+                  # Verify installation
+                  if aws --version > /dev/null 2>&1; then
+                    echo -e "[INFO] Successfully installed AWS CLI: $(aws --version)"
+                  else
+                    echo -e "[ERROR] AWS CLI installation verification failed"
+                    exit 1
+                  fi
+
+          - action: aws:runShellScript
+            name: InstallKubectl
+            inputs:
+              runCommand:
+                - |
+                  #!/bin/bash
+                  set -e
+
+                  # Source environment variables
+                  if [ -f /etc/environment ]; then source /etc/environment || echo "[WARN] Failed to source /etc/environment"; fi
+
+                  echo -e "========================================================"
+                  echo -e "                  Installing kubectl"
+                  echo -e "========================================================"
+
+                  # Create temporary directory
+                  export TMP_DIR="$(mktemp -d)"
+                  if [[ "${TMP_DIR}" != "/tmp/"* ]]; then
+                    export TMP_DIR="/tmp";
+                  fi
+                  echo -e "[INFO] All the packages will be temporarily downloaded to ${TMP_DIR}"
+
+                  # Check if a specific version is requested
+                  if [ "{{ kubectlVersion }}" = "stable" ]; then
+                    # Download stable version
+                    echo -e "[INFO] Installing stable kubectl version"
+                    curl -L -o "${TMP_DIR}/kubectl" "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/{{ downloadArchitecture }}/kubectl"
+                    if [ $? -ne 0 ]; then
+                      echo -e "[ERROR] Failed to download kubectl"
+                      exit 1
+                    fi
+                  else
+                    # Download specific version
+                    echo -e "[INFO] Installing kubectl version {{ kubectlVersion }}"
+                    curl --silent --location -o "${TMP_DIR}/kubectl" \
+                      "https://storage.googleapis.com/kubernetes-release/release/v{{ kubectlVersion }}/bin/linux/{{ downloadArchitecture }}/kubectl"
+                    if [ $? -ne 0 ]; then
+                      echo -e "[ERROR] Failed to download kubectl"
+                      exit 1
+                    fi
+                  fi
+
+                  # Verify file exists before chmod
+                  if [ ! -f "${TMP_DIR}/kubectl" ]; then
+                    echo -e "[ERROR] kubectl binary not found at ${TMP_DIR}/kubectl"
+                    exit 1
+                  fi
+
+                  chmod +x "${TMP_DIR}/kubectl"
+                  mv "${TMP_DIR}/kubectl" "/usr/local/bin/kubectl"
+
+                  # Verify installation
+                  if ! kubectl version --client > /dev/null 2>&1; then
+                    echo "[ERROR] kubectl installation failed" > /tmp/bootstrap_failed
+                    echo "[ERROR] kubectl installation verification failed" >&2
+                    exit 1
+                  else
+                    echo -e "[INFO] Successfully installed kubectl version: $(kubectl version --client --output=yaml | grep gitVersion)"
+                  fi
+
+          - action: aws:runShellScript
+            name: InstallTerraform
+            inputs:
+              runCommand:
+                - |
+                  #!/bin/bash
+                  set -e
+
+                  # Source environment variables
+                  if [ -f /etc/environment ]; then source /etc/environment || echo "[WARN] Failed to source /etc/environment"; fi
+
+                  echo -e "========================================================"
+                  echo -e "                   Installing Terraform"
+                  echo -e "========================================================"
+
+                  # Create temporary directory
+                  export TMP_DIR="$(mktemp -d)"
+                  if [[ "${TMP_DIR}" != "/tmp/"* ]]; then
+                    export TMP_DIR="/tmp";
+                  fi
+                  echo -e "[INFO] All the packages will be temporarily downloaded to ${TMP_DIR}"
+
+                  # Download and install Terraform
+                  echo -e "[INFO] Downloading Terraform version {{ terraformVersion }}"
+                  curl --silent --location -o "${TMP_DIR}/terraform.zip" \
+                    "https://releases.hashicorp.com/terraform/{{ terraformVersion }}/terraform_{{ terraformVersion }}_linux_{{ downloadArchitecture }}.zip"
+
+                  if [ $? -ne 0 ]; then
+                    echo -e "[ERROR] Failed to download Terraform"
+                    exit 1
+                  fi
+
+                  # Verify file exists and has content
+                  if [ ! -f "${TMP_DIR}/terraform.zip" ] || [ ! -s "${TMP_DIR}/terraform.zip" ]; then
+                    echo -e "[ERROR] Terraform zip file not found or empty at ${TMP_DIR}/terraform.zip"
+                    exit 1
+                  fi
+
+                  echo -e "[INFO] Extracting Terraform"
+                  mkdir -p "${TMP_DIR}/terraform"
+                  unzip -q "${TMP_DIR}/terraform.zip" -d "${TMP_DIR}/terraform"
+
+                  if [ $? -ne 0 ]; then
+                    echo -e "[ERROR] Failed to extract Terraform zip file"
+                    exit 1
+                  fi
+                  chmod +x "${TMP_DIR}/terraform/terraform"
+                  mv "${TMP_DIR}/terraform/terraform" "/usr/local/bin/terraform"
+                  rm -f "${TMP_DIR}/terraform.zip"
+
+                  # Verify installation
+                  if ! terraform version > /dev/null 2>&1; then
+                    echo "[ERROR] Terraform installation failed" > /tmp/bootstrap_failed
+                    echo "[ERROR] Terraform installation verification failed" >&2
+                    exit 1
+                  else
+                    echo -e "[INFO] Successfully installed Terraform"
+                  fi
+
+          - action: aws:runShellScript
+            name: InstallHelm
+            inputs:
+              runCommand:
+                - |
+                  #!/bin/bash
+                  set -e
+
+                  # Source environment variables
+                  if [ -f /etc/environment ]; then source /etc/environment || echo "[WARN] Failed to source /etc/environment"; fi
+
+                  echo -e "========================================================"
+                  echo -e "                     Installing Helm"
+                  echo -e "========================================================"
+
+                  # Create temporary directory
+                  export TMP_DIR="$(mktemp -d)"
+                  if [[ "${TMP_DIR}" != "/tmp/"* ]]; then
+                    export TMP_DIR="/tmp";
+                  fi
+                  echo -e "[INFO] All the packages will be temporarily downloaded to ${TMP_DIR}"
+
+                  # Check if a specific version is requested
+                  if [ "{{ helmVersion }}" = "stable" ]; then
+                    # Use the official installation script
+                    echo -e "[INFO] Installing stable Helm version"
+                    curl -fsSL -o "${TMP_DIR}/get_helm.sh" https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+                    chmod 700 "${TMP_DIR}/get_helm.sh"
+                    "${TMP_DIR}/get_helm.sh"
+                  else
+                    # Download specific version
+                    echo -e "[INFO] Installing Helm version {{ helmVersion }}"
+                    curl --silent --location -o "${TMP_DIR}/helm.tar.gz" \
+                      "https://get.helm.sh/helm-v{{ helmVersion }}-linux-{{ downloadArchitecture }}.tar.gz"
+
+                    mkdir -p "${TMP_DIR}/helm"
+                    tar -zxf "${TMP_DIR}/helm.tar.gz" -C "${TMP_DIR}/helm/"
+                    chmod +x "${TMP_DIR}/helm/linux-{{ downloadArchitecture }}/helm"
+                    mv "${TMP_DIR}/helm/linux-{{ downloadArchitecture }}/helm" "/usr/local/bin/"
+                    rm -f "${TMP_DIR}/helm.tar.gz"
+                  fi
+
+                  # Verify installation
+                  if ! helm version > /dev/null 2>&1; then
+                    echo "[ERROR] Helm installation failed" > /tmp/bootstrap_failed
+                    echo "[ERROR] Helm installation verification failed" >&2
+                    exit 1
+                  else
+                    echo -e "[INFO] Successfully installed Helm"
+                  fi
+
+          - action: aws:runShellScript
+            name: SetupCodeServer
+            inputs:
+              runCommand:
+                - |
+                  #!/bin/bash
+                  set -e
+
+                  # Source environment variables
+                  if [ -f /etc/environment ]; then source /etc/environment || echo "[WARN] Failed to source /etc/environment"; fi
+
+                  echo -e "========================================================"
+                  echo -e "              Setting up code-server"
+                  echo -e "========================================================"
+
+                  # Set HOME to prevent unbound variable errors
+                  export HOME="/home/ec2-user"
+
+                  # Install dependencies
+                  dnf install -y nginx
+
+                  # Install code-server
+                  curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --version=4.16.1 --prefix=/usr/local
+                  if [ $? -ne 0 ]; then
+                    echo -e "[ERROR] Failed to install code-server"
+                    exit 1
+                  fi
+
+                  # Verify installation
+                  if ! /usr/local/bin/code-server --version > /dev/null 2>&1; then
+                    echo "[ERROR] code-server installation failed" > /tmp/bootstrap_failed
+                    echo "[ERROR] code-server installation verification failed" >&2
+                    exit 1
+                  else
+                    echo -e "[INFO] Successfully installed code-server: $(/usr/local/bin/code-server --version)"
+                  fi
+
+                  # Configure code-server
+                  mkdir -p "/home/ec2-user/.config/code-server"
+                  cat > "/home/ec2-user/.config/code-server/config.yaml" << EOF
+                  bind-addr: 127.0.0.1:8080
+                  auth: password
+                  password: {{ password }}
+                  cert: false
+                  EOF
+
+                  # Set up code-server service
+                  cat > /etc/systemd/system/code-server.service << EOF
+                  [Unit]
+                  Description=code-server
+                  After=network.target
+
+                  [Service]
+                  Type=simple
+                  User=ec2-user
+                  ExecStart=/usr/local/bin/code-server
+                  Restart=always
+
+                  [Install]
+                  WantedBy=multi-user.target
+                  EOF
+
+                  # Configure nginx
+                  cat > /etc/nginx/conf.d/code-server.conf << EOF
+                  server {
+                      listen 80 default_server;
+                      listen [::]:80 default_server;
+                      server_name _;
+
+                      location / {
+                          proxy_pass http://localhost:8080/;
+                          proxy_set_header Host \$host;
+                          proxy_set_header Upgrade \$http_upgrade;
+                          proxy_set_header Connection upgrade;
+                          proxy_set_header Accept-Encoding gzip;
+                      }
+                  }
+                  EOF
+
+                  # Configure VSCode settings
+                  mkdir -p "/home/ec2-user/.local/share/code-server/User/"
+                  cat > "/home/ec2-user/.local/share/code-server/User/settings.json" << EOF
+                  {
+                    "extensions.autoUpdate": false,
+                    "extensions.autoCheckUpdates": false,
+                    "terminal.integrated.cwd": "/home/ec2-user/environment",
+                    "telemetry.telemetryLevel": "off",
+                    "security.workspace.trust.startupPrompt": "never",
+                    "security.workspace.trust.enabled": false,
+                    "security.workspace.trust.banner": "never",
+                    "security.workspace.trust.emptyWindow": false,
+                    "editor.indentSize": "tabSize",
+                    "editor.tabSize": 2,
+                    "python.testing.pytestEnabled": true,
+                    "auto-run-command.rules": [
+                      {
+                        "command": "workbench.action.terminal.new"
+                      }
+                    ]
+                  }
+                  EOF
+
+                  # Start services
+                  systemctl enable code-server
+                  if ! systemctl start code-server; then
+                    echo "[ERROR] code-server failed to start" > /tmp/bootstrap_failed
+                    echo "[ERROR] code-server service failed to start" >&2
+                    exit 1
+                  fi
+                  systemctl enable nginx
+                  if ! systemctl restart nginx; then
+                    echo "[ERROR] nginx failed to start" > /tmp/bootstrap_failed
+                    echo "[ERROR] nginx service failed to start" >&2
+                    exit 1
+                  fi
+
+          - action: aws:runShellScript
+            name: InstallVSCodeExtensions
+            inputs:
+              runCommand:
+                - |
+                  #!/bin/bash
+                  # Don't exit on errors for extension installation
+                  set +e
+
+                  # Source environment variables
+                  if [ -f /etc/environment ]; then source /etc/environment || echo "[WARN] Failed to source /etc/environment"; fi
+
+                  # No error trap for this step - extensions are optional
+                  echo -e "========================================================"
+                  echo -e "            Installing VSCode Extensions"
+                  echo -e "========================================================"
+
+                  # Install extensions as the correct user
+                  echo -e "[INFO] Installing VSCode extensions"
+
+                  # Create a script file for installing extensions
+                  cat > "${TMP_DIR}/install_extensions.sh" << 'EOF'
+                  #!/bin/bash
+                  # Don't exit on extension installation failures
+                  set +e
+
+                  echo "Installing VSCode extensions..."
+
+                  # AWS extensions
+                  /usr/local/bin/code-server --install-extension AmazonWebServices.aws-toolkit-vscode
+                  /usr/local/bin/code-server --install-extension AmazonWebServices.amazon-q-vscode
+
+                  # Kubernetes extensions
+                  /usr/local/bin/code-server --install-extension ms-kubernetes-tools.vscode-kubernetes-tools
+
+                  # Terraform extensions
+                  /usr/local/bin/code-server --install-extension HashiCorp.terraform
+
+                  # Python extensions
+                  /usr/local/bin/code-server --install-extension ms-python.python
+
+                  # Development tools
+                  /usr/local/bin/code-server --install-extension ms-vscode.makefile-tools
+                  /usr/local/bin/code-server --install-extension redhat.vscode-yaml
+                  /usr/local/bin/code-server --install-extension esbenp.prettier-vscode
+                  /usr/local/bin/code-server --install-extension ms-azuretools.vscode-docker
+
+                  echo "Extension installation completed"
+                  EOF
+
+                  # Make the script executable
+                  chmod +x "${TMP_DIR}/install_extensions.sh"
+
+                  # Run the script as the correct user - don't let extension failures break the flow
+                  sudo -H -u "ec2-user" bash "${TMP_DIR}/install_extensions.sh" || echo "[WARN] Some extensions failed to install, but continuing..."
+
+                  # Extension failures are not critical - don't fail the bootstrap
+                  echo -e "[INFO] VSCode extensions installation completed (some extensions may have failed, but this is not critical)"
+
+          - action: aws:runShellScript
+            name: CloneHTCGrid
+            inputs:
+              runCommand:
+                - |
+                  #!/bin/bash
+                  set -e
+
+                  # Source environment variables
+                  if [ -f /etc/environment ]; then source /etc/environment || echo "[WARN] Failed to source /etc/environment"; fi
+
+                  echo -e "========================================================"
+                  echo -e "                   Cloning HTC-Grid"
+                  echo -e "========================================================"
+
+                  export HTCGRID_HOME="/home/ec2-user/environment"
+                  cd "${HTCGRID_HOME}"
+
+                  # Check if htc-grid directory already exists
+                  if [ -e "htc-grid" ]; then
+                    export OLD_HTCGRID_DIR="htc-grid.$(date "+%F-%T" | sed 's|:|_|g')"
+                    mv htc-grid "${OLD_HTCGRID_DIR}"
+                    if [ $? -eq 0 ]; then
+                      echo -e "[WARN] Found existing htc-grid directory. Renaming to:\n${OLD_HTCGRID_DIR}"
+                    else
+                      echo -e "[ERROR] Found existing htc-grid directory, however failed to rename it as:\n${OLD_HTCGRID_DIR}"
+                      exit 1
+                    fi
+                  fi
+
+                  # Clone HTC Grid repository
+                  echo -e "[INFO] Cloning HTC Grid from repo:\n{{ htcGridRepo }}"
+                  if ! git clone "{{ htcGridRepo }}" htc-grid; then
+                    echo "[ERROR] Failed to clone HTC Grid repository" > /tmp/bootstrap_failed
+                    echo "[ERROR] Git clone operation failed" >&2
+                    exit 1
+                  fi
+
+                  cd htc-grid
+
+                  # Handle version/branch/tag selection
+                  if [ "{{ htcGridVersion }}" == "latest" ]; then
+                    export HTCGRID_VERSION="main"
+                    echo -e "[INFO] The value for HTCGRID_VERSION is 'latest'. Using main branch: ${HTCGRID_VERSION}"
+                    if ! git checkout "${HTCGRID_VERSION}"; then
+                      echo "[ERROR] Failed to checkout ${HTCGRID_VERSION}" > /tmp/bootstrap_failed
+                      echo "[ERROR] Git checkout operation failed for ${HTCGRID_VERSION}" >&2
+                      exit 1
+                    fi
+                  elif [ "{{ htcGridVersion }}" == "main" ]; then
+                    export HTCGRID_VERSION="main"
+                    echo -e "[INFO] Using main branch"
+                    if ! git checkout main; then
+                      echo "[ERROR] Failed to checkout main branch" > /tmp/bootstrap_failed
+                      echo "[ERROR] Git checkout operation failed for main branch" >&2
+                      exit 1
+                    fi
+                  else
+                    export HTCGRID_VERSION="{{ htcGridVersion }}"
+                    echo -e "[INFO] Checking out version: ${HTCGRID_VERSION}"
+                    if ! git checkout "${HTCGRID_VERSION}"; then
+                      echo "[ERROR] Failed to checkout ${HTCGRID_VERSION}" > /tmp/bootstrap_failed
+                      echo "[ERROR] Git checkout operation failed for ${HTCGRID_VERSION}" >&2
+                      exit 1
+                    fi
+                  fi
+
+                  # Set proper ownership for all ec2-user files
+                  chown -R ec2-user:ec2-user "/home/ec2-user"
+
+                  if [ $? -ne 0 ]; then
+                    echo -e "[ERROR] Failed to set ownership on /home/ec2-user"
+                    exit 1
+                  fi
+
+                  echo -e "[INFO] Successfully cloned HTC-Grid to [${HTCGRID_HOME}/htc-grid] with version: ${HTCGRID_VERSION}"
+
+          - action: aws:runShellScript
+            name: NotifyCloudFormation
+            inputs:
+              runCommand:
+                - |
+                  #!/bin/bash
+                  set -e
+
+                  # Source environment variables
+                  if [ -f /etc/environment ]; then source /etc/environment || echo "[WARN] Failed to source /etc/environment"; fi
+
+                  echo -e "========================================================"
+                  echo -e "            Notifying CloudFormation"
+                  echo -e "========================================================"
+
+                  # Generate a unique ID for the signal
+                  export UNIQUE_ID=$(uuidgen | sed 's/[-]//g')
+                  echo "[INFO] Generated unique ID: ${UNIQUE_ID}"
+
+                  # Debug: Check what created the failure file
+                  if [ -f "/tmp/bootstrap_failed" ]; then
+                    echo "[DEBUG] Found /tmp/bootstrap_failed file. Contents:"
+                    cat /tmp/bootstrap_failed
+                    echo "[DEBUG] File creation time:"
+                    ls -la /tmp/bootstrap_failed
+                  fi
+
+                  # Check if any previous steps failed
+                  if [ -f "/tmp/bootstrap_failed" ]; then
+                    echo "[ERROR] Previous bootstrap steps failed. Sending failure signal to CloudFormation."
+
+                    # Send failure signal to CloudFormation
+                    export CFN_RESPONSE_URL="{{ cfnResponseUrl }}"
+
+                    if [ -z "${CFN_RESPONSE_URL}" ]; then
+                      echo "[ERROR] CloudFormation response URL is empty"
+                      exit 1
+                    fi
+
+                    curl -v -X PUT -H 'Content-Type:' \
+                      --data-binary '{"Status":"FAILURE","Reason":"VSCode Server Setup Failed. Check SSM logs for details.","UniqueId":"'${UNIQUE_ID}'","Data":"VSCode Server setup failed"}' \
+                      "${CFN_RESPONSE_URL}"
+
+                    exit 1
+                  else
+                    # Send success signal to CloudFormation
+                    export CFN_RESPONSE_URL="{{ cfnResponseUrl }}"
+                    echo "[INFO] Sending success signal to CloudFormation"
+
+                    if [ -z "${CFN_RESPONSE_URL}" ]; then
+                      echo "[ERROR] CloudFormation response URL is empty"
+                      exit 1
+                    fi
+
+                    curl -v -X PUT -H 'Content-Type:' \
+                      --data-binary '{"Status":"SUCCESS","Reason":"VSCode Server Setup Complete","UniqueId":"'${UNIQUE_ID}'","Data":"VSCode Server is ready"}' \
+                      "${CFN_RESPONSE_URL}"
+
+                    if [ $? -eq 0 ]; then
+                      echo "[INFO] Successfully notified CloudFormation"
+                    else
+                      echo "[ERROR] Failed to notify CloudFormation"
+                      exit 1
+                    fi
+                  fi
+
+  VSCodeInstanceSSMAssociation:
+    Type: AWS::SSM::Association
+    Properties:
+      Name: !Ref VSCodeInstanceSSMDoc
+      Targets:
+        - Key: tag:SSMBootstrap
+          Values: 
+          - !FindInMap [ArchitectureMap, !FindInMap [InstanceTypeToArchitecture, !Ref VSCodeInstanceType, Architecture], EC2Arch]
+        - Key: tag:StackName
+          Values:
+          - !Ref 'AWS::StackName'
+      Parameters:
+        ec2Architecture: 
+        - !FindInMap [ArchitectureMap, !FindInMap [InstanceTypeToArchitecture, !Ref VSCodeInstanceType, Architecture], EC2Arch]
+        downloadArchitecture:
+        - !FindInMap [ArchitectureMap, !FindInMap [InstanceTypeToArchitecture, !Ref VSCodeInstanceType, Architecture], DownloadArch]
+
+        cfnResponseUrl:
+        - !Ref WaitForVSCodeStackCreationHandle
+        password:
+        - !GetAtt SecretPlaintext.password
+        terraformVersion:
+        - !Ref TerraformVersion
+        kubectlVersion:
+        - !Ref KubectlVersion
+        helmVersion:
+        - !Ref HelmVersion
+        htcGridVersion:
+        - !Ref HTCGridVersion
+        htcGridRepo:
+        - !Ref HTCGridRepo
+        pythonVersion:
+        - !Ref PythonVersion
+
+  ################## EC2 RESOURCES #################
+  VSCodeLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub ${AWS::StackName}-launch-template
+      LaunchTemplateData:
+        BlockDeviceMappings:
+          - Ebs:
+              VolumeSize: !Ref VSCodeInstanceVolumeSize
+              VolumeType: gp3
+              DeleteOnTermination: true
+              Encrypted: true
+            DeviceName: /dev/xvda
+        Monitoring: 
+          Enabled: true
+        ImageId: !Sub 
+          - '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-${AMISuffix}:1}}'
+          - AMISuffix: !FindInMap [ArchitectureMap, !FindInMap [InstanceTypeToArchitecture, !Ref VSCodeInstanceType, Architecture], AMISuffix]
+        InstanceType: !Ref VSCodeInstanceType
+        SecurityGroupIds:
+          - !Ref SecurityGroup
+        IamInstanceProfile: 
+          Name: !Ref VSCodeInstanceProfile
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            echo "Setting up VSCode Server"
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: SSMBootstrap
+                Value: !FindInMap [ArchitectureMap, !FindInMap [InstanceTypeToArchitecture, !Ref VSCodeInstanceType, Architecture], EC2Arch]
+              - Key: StackName
+                Value: !Ref 'AWS::StackName'
+              - Key: Name
+                Value: !Ref 'AWS::StackName'
+              - Key: Environment
+                Value: !Ref 'AWS::StackName'
+
+  AutoScalingGroupVSCode:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn:
+      - VSCodeInstanceSSMAssociation
+    Properties:
+      AutoScalingGroupName: !Sub ${AWS::StackName}-ASG
+      VPCZoneIdentifier:
+        - !Ref PublicSubnetOne
+        - !Ref PublicSubnetTwo
+      LaunchTemplate:
+        LaunchTemplateId: !Ref VSCodeLaunchTemplate
+        Version: !GetAtt VSCodeLaunchTemplate.LatestVersionNumber
+      TargetGroupARNs:
+        - !Ref TargetGroup
+      MinSize: 1
+      MaxSize: 1
+      DesiredCapacity: 1
+      HealthCheckType: EC2
+      HealthCheckGracePeriod: 300
+      Tags:
+        - Key: Name
+          Value: !Ref 'AWS::StackName'
+          PropagateAtLaunch: true
+        - Key: Environment
+          Value: !Ref 'AWS::StackName'
+          PropagateAtLaunch: true
+
+  ################## CLOUDFRONT RESOURCES #################
+  VSCodeInstanceCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        DefaultTTL: 86400
+        MaxTTL: 31536000
+        MinTTL: 1
+        Name: !Join ['-', ['VSCodeServer', !Select [4, !Split ['-', !Select [2, !Split ['/', !Ref AWS::StackId]]]]]]
+        ParametersInCacheKeyAndForwardedToOrigin:
+          CookiesConfig:
+            CookieBehavior: all
+          EnableAcceptEncodingGzip: False
+          HeadersConfig:
+            HeaderBehavior: whitelist
+            Headers:
+              - Accept-Charset
+              - Authorization
+              - Origin
+              - Accept
+              - Referer
+              - Host
+              - Accept-Language
+              - Accept-Encoding
+              - Accept-Datetime
+          QueryStringsConfig:
+            QueryStringBehavior: all
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: True
+        HttpVersion: http2
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+            - PUT
+            - PATCH
+            - POST
+            - DELETE
+          CachePolicyId: !Ref VSCodeInstanceCachePolicy
+          OriginRequestPolicyId: 216adef6-5c7f-47e4-b989-5492eafa07d3 # Managed-AllViewer
+          TargetOriginId: !Sub CloudFront-${AWS::StackName}
+          ViewerProtocolPolicy: allow-all
+        Origins:
+          - DomainName: !GetAtt ApplicationLoadBalancer.DNSName
+            Id: !Sub CloudFront-${AWS::StackName}
+            CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-CloudFront
+        - Key: Environment
+          Value: !Ref 'AWS::StackName'
+
+  ################## LOAD BALANCER RESOURCES #################
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${AWS::StackName}-alb
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref SecurityGroup
+      Subnets:
+        - !Ref PublicSubnetOne
+        - !Ref PublicSubnetTwo
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-ALB
+        - Key: Environment
+          Value: !Ref 'AWS::StackName'
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckPath: /
+      Name: !Sub ${AWS::StackName}-tg
+      Port: 80
+      Protocol: HTTP
+      TargetType: instance
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-TG
+        - Key: Environment
+          Value: !Ref 'AWS::StackName'
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn: !Ref TargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+Outputs:
+  VSCodeURL:
+    Description: VSCode Server URL
+    Value: !Sub https://${CloudFrontDistribution.DomainName}/?folder=/home/ec2-user/environment
+  VSCodePassword:
+    Description: VSCode Server Password
+    Value: !GetAtt SecretPlaintext.password

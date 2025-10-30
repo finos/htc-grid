@@ -1,0 +1,8 @@
+nav:
+  - creating_your_a_client.md
+  - monitoring.md
+  - pricing_engine_example.md
+  - configuring_priority_queues.md
+  - htcgrid_management.md
+  - cleanup.md
+  - troubleshooting.md

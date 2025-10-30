@@ -1,92 +1,274 @@
 # HTC-Grid Architecture
 
-This document outlines high level architecture and API of HTC-Grid.
+This document outlines the high-level architecture and API of HTC-Grid, a container-based cloud-native HPC/Grid environment designed for high-throughput computing workloads.
+
+## Design Tenets
+
+HTC-Grid's design tenets have been shaped by the requirements of early adopters and recurring themes in Grid computing:
+
+1. **Scale, High-Throughput**: Achieve provisioning capacity of >100,000s cores across multiple AWS regions to meet demanding FSI risk environments
+2. **Low Latency**: Support sustained compute task throughput of >10,000 TPS with low infrastructure latency (~0.1s) for efficient short-duration tasks (~1s) without batching
+3. **On-Demand**: Create dedicated services on-demand for overnight batch workloads or volatile intra-day workloads aligned to specific trading desks or individual power users
+4. **Modular**: Composable, extensible architecture with interchangeable data-plane and compute-plane implementations through Infrastructure as Code
+5. **Simplify Re-Platforming**: Support client APIs familiar to AWS customers
+6. **All Compute Looks Like Lambda**: Tasks APIs are Lambda-compatible regardless of backend compute resource (Lambda Service, Container, or EC2)
+7. **Cloud-Native**: Fully leverage operationally hardened AWS core services to optimize robustness and performance while minimizing operational management
 
 ## Definitions
 
 * **Client Application** - A software system that generates job requests and retrieves computation results from the grid system.
 
-* **Task** - a unit of work to be scheduled for an execution. A task may have an associated task input and produce an output. The interface of a task takes the same form as the interface of an AWS Lambda handler ([Python](https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html), [Go](https://docs.aws.amazon.com/lambda/latest/dg/golang-handler.html), [Java](https://docs.aws.amazon.com/lambda/latest/dg/java-handler.html), [C#](https://docs.aws.amazon.com/lambda/latest/dg/csharp-handler.html), etc). 
+* **Task** - A unit of work to be scheduled for execution. A task may have associated input and produce output. The interface follows AWS Lambda handler format ([Python](https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html), [Go](https://docs.aws.amazon.com/lambda/latest/dg/golang-handler.html), [Java](https://docs.aws.amazon.com/lambda/latest/dg/java-handler.html), [C#](https://docs.aws.amazon.com/lambda/latest/dg/csharp-handler.html), etc).
 
-* **Session** - a vector of tasks. For example, a job may define a series of scenarios and how they are sub-divided into a set of tasks. Such job can be submitted as a single session containing multiple tasks.
+* **Session** - A vector of tasks. For example, a job may define scenarios subdivided into tasks, submitted as a single session containing multiple tasks.
 
-* **Task Input** - the set of data which is required in addition to the job definition. Task Input is passed to Engines by reference, bypassing the scheduler itself.
+* **Task Input** - Data required in addition to the job definition, passed to Engines by reference, bypassing the scheduler.
 
-* **The Engine** - is a software component responsible for invoking the task execution.
+* **The Engine** - Software component responsible for invoking task execution.
 
 ## High Level Architecture
 
-This section outlines the high level modular architecture of the cloud native HTC-Grid
+HTC-Grid focuses on cloud-native serverless and fully managed services, performance & scalability, availability, cost optimization, and operational simplicity.
 
-HTC-Grid has been designed with strong focus on the following tenets: use of cloud native serverless and fully managed services, performance & scalability, availability, cost optimization, and operational simplicity.
+The grid system comprises 4 functional components:
 
-The grid system is composed of 4 functional components:
-1. HTC-Grid’s API provides entry point for Client Applications to interact with the grid,
-2. Data Plane facilitates storage, and I/O operations for submitting jobs’ definitions and retrieving computational results,
-3. Control Plane (i.e., scheduler) keeps track of the task's execution, grid’s scaling, and error handling
-4. A pool of Computing Resources that perform computational tasks.
+1. **HTC-Grid Connector Library**: Language-specific API providing entry point for Client Applications
+2. **Data Plane**: Configurable storage channel for job definitions, payload, and computational results
+3. **Control Plane**: Scheduler equivalent - tracks task execution, grid scaling, and error handling  
+4. **Compute Plane**: Pool of Computing Resources performing computational tasks
 
-Each component has a clearly defined role and operates strictly within that role. Inter module communication is implemented using standardized AWS API which facilitates independent development and provide further customization options.
+!!! note "Compute Plane Implementation"
+    Currently, HTC-Grid Compute Plane provides only EKS implementation. The HTC-Agent is designed to support migration to other compute planes.
 
-Internally, each of the 4 functional components (API, Data & Control Planes, and Compute Resources) are built using exclusively cloud native building blocks such as: serverless functions and fully managed services. These blocks require no human maintenance (zero administration), are highly available by design, and can scale horizontally in response to demand.
+Each component operates within clearly defined roles. Inter-module communication uses standardized AWS APIs, facilitating independent development and customization options.
 
+Internally, all 4 components use exclusively cloud-native building blocks: serverless functions and fully managed services requiring no human maintenance, highly available by design, and horizontally scalable.
 
-
-![Test](../images/high_level_architecture.png)
-
-
-
-
+![High Level Architecture](../images/high_level_architecture.png)
 
 ## API: Interacting with HTC-Grid
 
-Figure below demonstrates high level steps involved in the task submission and result retrieval.
+The following diagram demonstrates high-level steps for task submission and result retrieval:
 
-![Test](../images/job_submission_steps.png)
+![Job Submission Steps](../images/job_submission_steps.png)
 
+HTC-Grid allows client applications to submit sessions containing single tasks or task vectors. Each submission generates a system-wide unique session_id returned to the client. Successful session_id reception indicates all session tasks are in the system and will eventually execute.
 
-HTC-Grid allows client applications to submit a session (job) containing a single task, or a vector of tasks. Each submission generates a system-wide unique session_id which is associated with the submission, the session_id is returned to the client application. Successful reception of a session_id indicates that all the tasks of the job are in the system and eventually will be executed.
+Client applications use session_id to:
+- Inquire task states (pending, running, failed, completed, etc.)
+- Retrieve results once session tasks complete
+- Monitor session progress and performance
 
-Client applications can use session_id to inquire the state of the tasks within the session (e.g., pending, running, failed, completed, etc.) and subsequently retrieve results once all the tasks of the session are completed. A session is considered to be completed once all tasks of the session are completed. Additionally, if the session did not complete within specified timeout, the session is considered to be failed.
+A session completes when all tasks complete. Sessions failing to complete within specified timeout are considered failed.
 
-During a normal usage, client application would either (i) save the returned session object locally and submit more sessions (jobs) (in case of a batch of jobs) or will wait for the completion of the last submitted session. Note, each session can have a list of tasks associated with it. A multi session submission is also possible, in that case a list of session IDs is returned by the connection object.
+## Detailed Component Architecture
 
+### Control Plane
 
+The Control Plane acts as the system scheduler, managing:
 
-## Control Plane
+**Task Lifecycle Management:**
+- Task state transitions (submitted → queued → running → completed/failed)
+- Task retry logic and failure handling
+- Session management and coordination
 
-Control Plane performs the role of a job broker responsible for coordinating and scheduling jobs executions in the grid along with scaling Compute Resources in accordance with demand. Control Plane has built in failure detection and recovery mechanism which allows it to retry and report failed jobs.
+**Scaling Decisions:**
+- Monitor queue depth and processing capacity
+- Trigger compute resource scaling events
+- Optimize resource allocation based on workload patterns
 
-All building components of the Control Plane are fully managed AWS services (DynamoDB, Simple Queue Service, API Gateway) or serverless functions (i.e., Lambda) which minimizes management and simplifies design.
+**State Management:**
+- Persistent task and session state storage
+- Audit trails and execution history
+- Performance metrics collection
 
-### Failure Detection and Recover
+![Control Plane Architecture](../images/control-plane.png)
 
-Engines acquire tasks by pulling SQS queues, respecting the rank of priority. Once a task has been received by an Engine, the Engine performs an atomic write transaction in DynamoDB to change the status of the task from “pending” to “processing”. At this stage a task is associated with that Engine.
+### Data Plane
 
-Failure detection in HTC-Grid is implemented via heart beat mechanism. While the task is being processed, the Engine periodically emits heart-beat messages that update the row corresponding to the task in DynamoDB. These periodic updates indicate to the Control Plane that the Engine is alive and still processing the task.
+The Data Plane provides configurable storage and I/O operations:
 
-Failure recovery and state reconciliation is implemented using a scheduled Lambda function. This lambda function regularly queries DynamoDB for tasks that are in the processing state but did not receive heart beats from the associated Engines for too long. This indicates that the associated Engines have failed.
+**Storage Options:**
+- S3 for large payload and result storage
+- DynamoDB for task metadata and state
+- SQS for task queuing and messaging
+- Custom storage adapters for specific workload needs
 
-Depending on the job definition, failed tasks can be retried up to a fixed number of times (by being re-inserted into the queue) or permanently moved into a ‘failed’ SQS queue for later analysis, following a dead letter queue (https://en.wikipedia.org/wiki/Dead_letter_queue) pattern. All failure events are reported.
+**Data Flow Management:**
+- Input data staging and validation
+- Result collection and aggregation
+- Data lifecycle management
+- Security and access control
 
-When the task is completed, the Engine updates DynamoDB for the last time and sets task status to “completed”. Afterwards, the Engine tries to acquire a next task from an SQS queue.
+![Data Plane Architecture](../images/htc-grid-data-plane.png)
 
-![Test](../images/simplified-flow-failure.png)
+### Compute Plane
 
-## Data Plane
+The Compute Plane provides scalable task execution:
 
-The Data plane is responsible for data distribution across the grid system. Specifically it serves two purposes (i) stores tasks input data associated with jobs definitions (client-to-grid) and (ii) stores results of the computation (grid-to-client).
+**EKS-Based Implementation:**
+- Kubernetes pods running HTC-Agent containers
+- Lambda-compatible runtime environment
+- Horizontal pod autoscaling based on queue depth
+- Multi-AZ deployment for high availability
 
-HTC Grid can use S3 or Redis as back-end for the data plane depending on the requirements. Alternatively, existing interface can easily be extended to support other storage systems.
+**Task Execution:**
+- Lambda-compatible task interface
+- Isolated execution environments
+- Resource allocation and monitoring
+- Result capture and reporting
 
-## Compute Resources
+![Compute Plane Architecture](../images/compute-plane-eks.png)
 
-HTC-Grid utilizes Amazon Elastic Kubernetes Service (Amazon EKS) as a computational back-end. Each engine is a pod containing two containers an Agent and a Lambda. The Lambda container executes lambda locally within the container (there are no calls made to AWS lambda service, the execution is done within the node Lambda container). The agent provides a connectivity layer between the HTC-Grid and the Lambda container.  The Agent pulls new tasks from the task queues in the Control Plane, once a new task is acquired the agent invokes the Lambda container and passes the task definition. The Lambda container contains custom executable that perform the work. It is responsibility of the Lambda container to connect to the Data Plane and retrieve associated task payload. Once the task is complete, the results is uploaded to the Data Plane. The Grid Agent updates the task’s state to “completed” and pulls the next task from the Control Plane.
+## Task Lifecycle and State Management
 
-![Test](../images/worker.png)
+### Task State Transitions
 
-## Other Functions
+Tasks progress through defined states with automatic transitions:
 
-* Clients can be called from Step functions to automate complex application dependencies.
+![Task State Diagram](../images/htc-tasks-state-transition-diagram.png)
 
-* Multiple instances of the HTC-Grid can be deployed across multiple on the same account and same region or in multiple regions with the client application running either on AWS or on the cloud.
+**State Descriptions:**
+- **SUBMITTED**: Task received by the system
+- **QUEUED**: Task placed in execution queue
+- **RUNNING**: Task actively executing
+- **COMPLETED**: Task finished successfully
+- **FAILED**: Task execution failed
+- **RETRY**: Task marked for retry after failure
+- **CANCELLED**: Task cancelled by user or system
+
+### Failure Detection and Recovery
+
+HTC-Grid implements comprehensive failure handling:
+
+**Detection Mechanisms:**
+- Task timeout monitoring
+- Health check failures
+- Resource constraint detection
+- Network connectivity issues
+
+**Recovery Strategies:**
+- Automatic task retry with exponential backoff
+- Dead letter queue for persistent failures
+- Resource reallocation and scaling
+- Circuit breaker patterns for cascading failures
+
+![Failure Recovery Flow](../images/simplified-flow-failure.png)
+
+## Scaling Architecture
+
+### Dynamic Scaling
+
+HTC-Grid implements multi-level scaling:
+
+**Horizontal Scaling:**
+- EKS cluster node scaling based on resource demand
+- Pod scaling based on queue depth
+- Cross-AZ load distribution
+
+**Vertical Scaling:**
+- Task-specific resource allocation
+- Memory and CPU optimization per workload type
+- Storage scaling for large datasets
+
+### Scaling Triggers
+
+**Scale-Up Events:**
+- Queue depth exceeds thresholds
+- Task processing latency increases
+- Resource utilization reaches limits
+
+**Scale-Down Events:**
+- Queue depth decreases
+- Idle resource detection
+- Cost optimization triggers
+
+![Scale Up](../images/scale-up-pods.png)
+![Scale Down](../images/scale-down-pods.png)
+
+## Security Architecture
+
+### Multi-Layer Security
+
+**Network Security:**
+- VPC isolation with private subnets
+- Security groups and NACLs
+- TLS encryption for all communications
+
+**Identity and Access:**
+- IAM roles and policies for service authentication
+- Task-level access controls
+- Audit logging and compliance
+
+**Data Protection:**
+- Encryption at rest and in transit
+- Secure key management with KMS
+- Data isolation between tenants
+
+## Performance Optimization
+
+### Throughput Optimization
+
+**Queue Management:**
+- Multiple priority queues
+- Batch processing capabilities
+- Load balancing across compute resources
+
+**Resource Efficiency:**
+- Container image optimization
+- Warm container pools
+- Resource request right-sizing
+
+**Network Optimization:**
+- Regional deployment strategies
+- CDN integration for large datasets
+- Connection pooling and reuse
+
+## Monitoring and Observability
+
+### Built-in Monitoring
+
+**CloudWatch Integration:**
+- Custom metrics for task throughput
+- Resource utilization monitoring
+- Cost tracking and optimization
+
+**Prometheus and Grafana:**
+- Real-time performance dashboards
+- Custom alerting rules
+- Historical trend analysis
+
+**Container Insights:**
+- EKS cluster monitoring
+- Pod-level resource tracking
+- Application log aggregation
+
+For detailed monitoring setup, see [Monitoring Guide](../user_guide/monitoring.md).
+
+## Integration Patterns
+
+### Client Integration
+
+**SDK Support:**
+- Python, Java, and Go client libraries
+- REST API for language-agnostic access
+- Batch submission utilities
+
+**Workflow Integration:**
+- Step Functions integration
+- Event-driven architectures
+- CI/CD pipeline integration
+
+### External System Integration
+
+**Data Sources:**
+- S3 data lake integration
+- Database connectivity
+- Real-time streaming data
+
+**Result Destinations:**
+- Data warehouse integration
+- Notification systems
+- Downstream processing pipelines
+
+This architecture enables HTC-Grid to handle diverse high-throughput computing workloads while maintaining operational simplicity and cost efficiency.

@@ -1,52 +1,157 @@
-# Happy Path
+# Happy Path Deployment
 
+This guide provides a complete walkthrough for deploying HTC-Grid from start to finish.
 
-## Installing the HTC-Grid software
-Unpack the provided HTC-Grid software ZIP (i.e: `htc-grid-0.4.0.tar.gz`)  or clone the repository into a local directory of your choice; this directory referred in this documentation as `<project_root>`. Unless stated otherwise, all paths referenced in this documentation are relative to `<project_root>`.
+## Installing the HTC-Grid Software
 
-For first time users or Windows users, we do recommend the use of Cloud9 as the platform to deploy HTC-Grid. The installation process uses Terraform and also make to build up artifacts and environment. This project provides a CloudFormation Stack that creates a Cloud9 instance with all the prerequisites listed above installed and ready to deploy and develop HTC-Grid. Just follow the standard process in your account and deploy the **[Cloud9 CloudFormation Stack](/deployment/dev_environment_cloud9/cfn/cloud9-htc-grid.yaml)**. Once the CloudFormation Stack has been created, either open the **Output** section in CloudFormation and find the relevant link or go to **Cloud9** in your AWS console from where you can access the newly created Cloud9 environment.
+Unpack the provided HTC-Grid software ZIP (e.g., `htc-grid-0.4.0.tar.gz`) or clone the repository:
 
+```bash
+git clone https://github.com/finos/htc-grid.git
+cd htc-grid
+```
 
-## Define variables for deploying the infrastructure
-1. To simplify this installation we suggest that a unique <TAG> name (to be used later) is also used to prefix the different required resources. TAG needs to follow [S3 naming rules](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html).
-   ```bash
-      export TAG=<YourTag>
-   ```
-2. Define the region where HTC-Grid will be deployed:
-   ```bash
-      export HTCGRID_REGION=<YourRegion>
-   ```
-   `<YourRegion>` can be any AWS Region (the list below is not exhaustive):
-    - `eu-west-1`
-    - `eu-west-2`
-    - `eu-central-1`
-    - `us-east-1`
-    - `us-west-2`
-    - `ap-northeast-1`
-    - `ap-southeast-1`
+!!! tip "VSCode Server Users"
+    For first-time or Windows users, we recommend using VSCode Server. Deploy the **[VSCode Server CloudFormation Stack](../../../deployment/workshop/htc-grid-workshop.yaml)** which includes all prerequisites.
 
+## Define Deployment Variables
 
+Set up environment variables for your deployment:
 
-## Create the infrastructure for storing the state of the HTC Grid
-The following step creates 3 S3 buckets that will be needed during the installation:
-* 2 buckets will store the state of the different Terraform deployments (if `terraform` based deployment)
-* 1 bucket will store the HTC artifacts (the lambda to be executed by the agent)
+```bash
+export TAG=<YourTag>  # Must follow S3 naming rules
+export HTCGRID_REGION=<YourRegion>  # e.g., us-east-1, eu-west-1
+```
+
+Supported regions include:
+- `eu-west-1`, `eu-west-2`, `eu-central-1`
+- `us-east-1`, `us-west-2`
+- `ap-northeast-1`, `ap-southeast-1`
+
+## Create Infrastructure State Storage
+
+Create S3 buckets for Terraform state and HTC artifacts:
 
 ```bash
 make init-grid-state TAG=$TAG REGION=$HTCGRID_REGION
 ```
 
-To validate the creation of the S3 buckets, you can run
+This creates:
+- 2 buckets for Terraform state storage
+- 1 bucket for HTC artifacts (Lambda functions)
 
+Validate creation:
 ```bash
 aws cloudformation describe-stacks --stack-name $TAG --region $HTCGRID_REGION --query 'Stacks[0]'
 ```
 
-That will list the three S3 Buckets that were just created.
+## Deploy Container Images to ECR
 
+Pull dependencies and upload to your ECR:
 
-## Create and deploy HTC-Grid images
-The HTC-Grid project has external software dependencies that are deployed as container images. Instead of downloading each time from the public DockerHub repository, this step will pull those dependencies and upload into the your [Amazon Elastic Container Registry (ECR)](https://aws.amazon.com/ecr/).
+```bash
+# Initialize image repository
+make init-images TAG=$TAG REGION=$HTCGRID_REGION
+
+# Transfer images (10-15 minutes)
+make auto-transfer-images TAG=$TAG REGION=$HTCGRID_REGION
+```
+
+!!! warning "Docker Hub Rate Limits"
+    If you encounter rate limit errors, create a Docker Hub account and login locally, or retry the command after the throttling period.
+
+Verify ECR repositories:
+```bash
+aws ecr describe-repositories --query "repositories[*].repositoryUri" --region $HTCGRID_REGION
+```
+
+## Deploy HTC-Grid Infrastructure
+
+Initialize and deploy the main infrastructure:
+
+```bash
+# Initialize Terraform state
+make init-grid-deployment TAG=$TAG REGION=$HTCGRID_REGION
+
+# Deploy HTC-Grid with Grafana password
+make auto-apply-custom-runtime TAG=$TAG REGION=$HTCGRID_REGION GRAFANA_ADMIN_PASSWORD=<your_secure_password>
+```
+
+!!! info "Grafana Password"
+    Choose a secure password following [Cognito Default Policy](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-policies.html) requirements.
+
+## Validate Deployment
+
+After successful deployment, validate your setup:
+
+```bash
+cd ~/environment/htc-grid/deployment/grid/terraform
+
+# Set agent config for new terminals
+export AGENT_CONFIG_FILE=$(terraform output -raw agent_config)
+echo "export AGENT_CONFIG_FILE=$AGENT_CONFIG_FILE" >> ~/.bashrc
+
+# Check EKS nodes
+kubectl get nodes
+
+# Check HTC-Agent pods
+kubectl get pods
+
+# Check all deployments
+kubectl get pods --all-namespaces
+```
+
+!!! success "Deployment Complete"
+    All pods should be in "Running" state. This may take a few minutes to complete.
+
+## Submit Test Tasks
+
+Test your deployment with a simple task:
+
+### Monitor Logs (Optional)
+
+Open additional terminals to monitor components:
+
+```bash
+# Terminal 1: HTC-Agent logs
+kubectl logs deployment/htc-agent -c agent -f --tail 5
+
+# Terminal 2: Lambda container logs  
+kubectl logs deployment/htc-agent -c lambda -f --tail 5
+```
+
+### Submit Single Task
+
+```bash
+# Deploy test job
+kubectl apply -f ~/environment/htc-grid/generated/single-task-test.yaml
+
+# Monitor job logs
+kubectl logs job/single-task -f
+```
+
+### Verify in DynamoDB
+
+Check task execution in the AWS Console:
+1. Go to DynamoDB service
+2. Select table `htc_tasks_state_table-<TAG>`
+3. Click "Explore Table Items"
+4. View your task execution details
+
+### Clean Up Test Job
+
+```bash
+kubectl delete -f ~/environment/htc-grid/generated/single-task-test.yaml
+```
+
+## Next Steps
+
+- [Submit more complex workloads](../user_guide/creating_your_a_client.md)
+- [Monitor your deployment](../user_guide/monitoring.md)
+- [Configure priority queues](../user_guide/configuring_priority_queues.md)
+
+!!! warning "Cost Management"
+    Remember to clean up resources when not in use to avoid unnecessary charges.
 
 **Important Note:** HTC-Grid uses a few open source project with container images stored at [DockerHub](https://hub.docker.com/). DockerHub has a [download rate limit policy](https://docs.docker.com/docker-hub/download-rate-limit/). This may impact you when running this step as an anonymous user as you can get errors when running the commands below. To overcome those errors, you can re-run the `make transfer-images  TAG=$TAG REGION=$HTCGRID_REGION` command and wait until the throttling limit is lifted, or optionally you can create an account in [hub.docker.com](https://hub.docker.com/) and then use the credentials of the account using `docker login` locally to avoid anonymous throttling limitations.
 
