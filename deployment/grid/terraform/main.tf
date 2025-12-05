@@ -146,6 +146,7 @@ module "compute_plane" {
   cognito_userpool_id               = module.control_plane.cognito_userpool_id
   kms_key_admin_roles               = var.kms_key_admin_roles
   kms_deletion_window               = var.kms_deletion_window
+  sqs_queue_arn                     = module.control_plane.sqs_queue_arn
   # allowed_access_cidr_blocks        = local.allowed_access_cidr_blocks
 }
 
@@ -257,6 +258,7 @@ module "htc_agent" {
   test_agent_image_tag               = try(var.agent_configuration.test.tag, local.default_agent_configuration.test.tag)
   test_pull_policy                   = try(var.agent_configuration.test.pullPolicy, local.default_agent_configuration.test.pullPolicy)
   test_agent_image_repository        = try(var.agent_configuration.test.image, local.default_agent_configuration.test.image)
+  sqs_queue_url                      = module.control_plane.sqs_queue_url
 
   depends_on = [
     module.vpc,

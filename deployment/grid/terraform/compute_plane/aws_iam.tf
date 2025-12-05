@@ -34,11 +34,10 @@ resource "aws_iam_policy" "keda_permissions" {
   "Statement": [
     {
       "Action": [
-        "cloudwatch:GetMetricData",
-        "cloudwatch:GetMetricStatistics",
-        "cloudwatch:ListMetrics"
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl"
       ],
-      "Resource": "*",
+      "Resource": "${var.sqs_queue_arn}",
       "Effect": "Allow"
     }
   ]

@@ -111,6 +111,7 @@ testTolerations:
 testAffinity: {}
 
 hpa:
+  queueURL: ""
   metric:
     namespace: ""
     dimensionName: ""

@@ -66,3 +66,13 @@ output "cognito_userpool_client_id" {
   description = "Cognito User Pool Client ID"
   value       = aws_cognito_user_pool_client.user_data_client.id
 }
+
+output "sqs_queue_url" {
+  description = "The URL of the SQS queue"
+  value       = aws_sqs_queue.htc_task_queue["__0"].id
+}
+
+output "sqs_queue_arn" {
+  description = "The ARN of the SQS queue"
+  value       = aws_sqs_queue.htc_task_queue["__0"].arn
+}

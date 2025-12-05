@@ -202,6 +202,12 @@ variable "lambda_handler_function_name" {
   type        = string
 }
 
+variable "sqs_queue_url" {
+  description = "The URL of the SQS queue"
+  type        = string
+  default     = ""
+}
+
 variable "namespace_metrics" {
   description = "NameSpace for metrics"
   type        = string

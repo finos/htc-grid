@@ -155,6 +155,10 @@ module "htc-agent" {
     {
       name  = "hpa.minAgent"
       value = var.min_htc_agents
+    },
+    {
+      name  = "hpa.queueURL"
+      value = var.sqs_queue_url
     }
   ]
 
