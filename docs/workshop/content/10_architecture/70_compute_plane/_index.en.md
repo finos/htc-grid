@@ -13,7 +13,7 @@ EKS service configured with the default [Horizontal Pod Autoscaler](https://kube
 
 {{< img "compute-plane-eks.png"  "HTC-compute-plane-eks" >}}
 
-As HTC-Agents are treated as a [Kubernetes deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/), a fixed number of pods that will be guaranteed to run on an inactive cluster. Scaling behaviour is then controlled by the auto scaling lambda which regularly checks the depth of the task queue and triggers the appropriate adjustment to the number of nodes. The CloudWatch Adapter  exposes a Kubernetes API so the HPA can access metrics stored in Cloud Watch by the auto scaling Lambda. The Pod Autoscaler (using HPA) adds/removes pods based on these Cloud Watch metrics. Finally, the Node Autoscaler  , adds/removes EC2 instances based on the resource reservation or usage.
+As HTC-Agents are treated as a [Kubernetes deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/), a fixed number of pods are guaranteed to run on an inactive cluster. Scaling behaviour is managed by [KEDA](https://keda.sh/), which allows the Horizontal Pod Autoscaler (HPA) to scale the number of agent pods based on the number of messages in the AWS SQS queue. When the number of messages in the queue (the queue depth) increases, KEDA triggers the HPA to add more pods. Finally, the Kubernetes Cluster Autoscaler adds or removes EC2 instances based on the resource reservation or usage.
 
 {{< img "scale-up-pods.png"  "scale-up-pods" >}}
 
