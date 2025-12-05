@@ -124,3 +124,9 @@ variable "eks_node_volume_size" {
   type        = number
   default     = 50
 }
+
+variable "sqs_queue_arn" {
+  description = "The ARN of the SQS queue for KEDA"
+  type        = string
+  default     = ""
+}

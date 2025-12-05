@@ -17,17 +17,9 @@ spec:
   minReplicaCount: {{ .Values.hpa.minAgent }}
   maxReplicaCount: {{ .Values.hpa.maxAgent }}
   triggers:
-    - type: aws-cloudwatch
+    - type: aws-sqs-queue
       metadata:
-        identityOwner: operator
-        namespace: {{ .Values.hpa.metric.namespace }}
-        dimensionName: {{ .Values.hpa.metric.dimensionName }}
-        dimensionValue: {{ .Values.hpa.metric.dimensionValue }}
-        metricName: {{ .Values.hpa.metric.name }}
-        metricUnit: "Count"
-        metricStatPeriod: "30"
-        targetMetricValue: {{ .Values.hpa.metric.targetValue | quote}}
-        minMetricValue: "0"
+        queueURL: {{ .Values.hpa.queueURL | quote }}
+        queueLength: {{ .Values.hpa.metric.targetValue | quote }}
         awsRegion: {{ .Values.hpa.metric.region }}
-      # authenticationRef:
-      #   name: htc-agent-scaler-auth
+        identityOwner: operator
