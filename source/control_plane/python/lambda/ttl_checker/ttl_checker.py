@@ -14,9 +14,6 @@ from utils.performance_tracker import EventsCounter, performance_tracker_initial
 from utils import grid_error_logger as errlog
 
 from utils.state_table_common import (
-    TASK_STATE_RETRYING,
-    TASK_STATE_INCONSISTENT,
-    TASK_STATE_FAILED,
     StateTableException,
 )
 from api.queue_manager import queue_manager
@@ -55,9 +52,7 @@ dlq = queue_manager(
 cw_client = boto3.client("cloudwatch")
 
 TTL_LAMBDA_ID = "TTL_LAMBDA"
-TTL_LAMBDA_TMP_STATE = TASK_STATE_RETRYING
-TTL_LAMBDA_FAILED_STATE = TASK_STATE_FAILED
-TTL_LAMBDA_INCONSISTENT_STATE = TASK_STATE_INCONSISTENT
+
 MAX_RETRIES = 5
 RETRIEVE_EXPIRED_TASKS_LIMIT = 200
 
