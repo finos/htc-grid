@@ -1,4 +1,4 @@
-# Copyright 2024 Amazon.com, Inc. or its affiliates. 
+# Copyright 2024 Amazon.com, Inc. or its affiliates.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
@@ -169,8 +169,6 @@ class NxHtcDagContainer(BaseDAG):
 
         logger.debug(f"Found {len(ready_tasks)} ready tasks: {ready_tasks}")
         return ready_tasks
-
-
 
     def _is_task_ready(self, task_id: str) -> bool:
         """Check if a task is ready for execution
@@ -359,7 +357,7 @@ class NxHtcDagContainer(BaseDAG):
             lines.append("=" * 50)
 
             # Status summary
-            lines.append(f"📊 Status Summary:")
+            lines.append("📊 Status Summary:")
             for status, count in sorted(status_counts.items()):
                 symbol = status_symbols.get(status, '❓')
                 lines.append(f"   {symbol} {status.capitalize()}: {count}")
@@ -391,7 +389,7 @@ class NxHtcDagContainer(BaseDAG):
         return "\n".join(lines)
 
     def _build_reverse_tree_visualization(self, node_id: str, lines: List[str], visited: Set[str],
-                                        ready_tasks: Set[str], status_symbols: Dict[str, str], prefix: str):
+                                          ready_tasks: Set[str], status_symbols: Dict[str, str], prefix: str):
         """Recursively build tree visualization showing execution flow from leaves to root
 
         Args:
@@ -414,9 +412,6 @@ class NxHtcDagContainer(BaseDAG):
 
         symbol = status_symbols.get(status, '❓')
 
-        # Get node info
-        node_data = self.dag.nodes[node_id]
-
         # Format node line (removed misleading timing information)
         node_line = f"{prefix}└── {symbol} {node_id}"
         lines.append(node_line)
@@ -432,7 +427,7 @@ class NxHtcDagContainer(BaseDAG):
             self._build_reverse_tree_visualization(parent, lines, visited, ready_tasks, status_symbols, parent_prefix)
 
     def _build_tree_visualization(self, node_id: str, lines: List[str], visited: Set[str],
-                                ready_tasks: Set[str], status_symbols: Dict[str, str], prefix: str):
+                                  ready_tasks: Set[str], status_symbols: Dict[str, str], prefix: str):
         """Recursively build tree visualization for a node and its children
 
         Args:
@@ -457,7 +452,6 @@ class NxHtcDagContainer(BaseDAG):
 
         # Get node info
         node_data = self.dag.nodes[node_id]
-        task_type = node_data.get('task_type', 'unknown')
 
         # Add execution time if available
         exec_time = ""

@@ -1,4 +1,4 @@
-# Copyright 2024 Amazon.com, Inc. or its affiliates. 
+# Copyright 2024 Amazon.com, Inc. or its affiliates.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
@@ -13,6 +13,7 @@ import random
 from typing import Dict, Any
 
 logger = logging.getLogger("DAGGenerator")
+
 
 class DAGGenerator:
     """Generates test DAGs with variable depth and breadth"""
@@ -141,9 +142,9 @@ class DAGGenerator:
         try:
             # Count node types
             compute_nodes = sum(1 for _, data in dag.nodes(data=True)
-                              if data.get('task_type') == 'compute')
+                                if data.get('task_type') == 'compute')
             aggregation_nodes = sum(1 for _, data in dag.nodes(data=True)
-                                  if data.get('task_type') == 'aggregation')
+                                    if data.get('task_type') == 'aggregation')
 
             # Calculate depth (longest path)
             if dag.nodes():
@@ -162,7 +163,7 @@ class DAGGenerator:
             else:
                 max_depth = 0
 
-            logger.info(f"DAG Statistics:")
+            logger.info("DAG Statistics:")
             logger.info(f"  Total nodes: {len(dag.nodes())}")
             logger.info(f"  Total edges: {len(dag.edges())}")
             logger.info(f"  Compute nodes: {compute_nodes}")
@@ -200,12 +201,12 @@ class DAGGenerator:
         # Show the tree structure from root down (logical structure)
         if root_nodes:
             root_node = root_nodes[0]  # Should be level_0_node_0
-            print(f"🌱 DAG Tree (Root → Leaves):")
+            print("🌱 DAG Tree (Root → Leaves):")
             visited = set()
             self._print_dependency_tree(dag, root_node, "", True, visited)
             print()
 
-        print(f"⚡ Execution Order (leaf nodes execute first):")
+        print("⚡ Execution Order (leaf nodes execute first):")
         # Group nodes by level for execution order display
         levels = self._get_execution_levels(dag)
         for level_num, level_nodes in enumerate(levels):
@@ -346,7 +347,7 @@ class DAGGenerator:
 
             # Add edge from previous task
             if i > 0:
-                dag.add_edge(f"task_{i-1}", task_id)
+                dag.add_edge(f"task_{i - 1}", task_id)
 
         logger.info(f"Generated linear DAG with {len(dag.nodes())} nodes and {len(dag.edges())} edges")
         return dag

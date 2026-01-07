@@ -44,6 +44,11 @@ class SessionState:
     # and avoid pushing the same node_id into _results
     remaining_grid_task_ids: Set[str]
 
+    # Mapping from DAG node IDs back to their task definitions for requeueing.
+    task_definitions_by_node: Dict[Hashable, Dict[str, Any]]
+
+    poll_failures: int = 0
+
 
 @dataclass(frozen=True)
 class WorkerError:
@@ -60,46 +65,56 @@ class GridConnectorDagAdapter:
         self,
         config: Dict[str, Any],
         logger: logging.Logger,
-        grid_connector: Any = None,
         connector_factory: Optional[BaseGridConnectorFactory] = None,
     ) -> None:
         self._logger = logger
         self.config = config
-        self.grid_connector = grid_connector
         self._connector_factory: BaseGridConnectorFactory = connector_factory or GridConnectorFactory(
             config=self.config,
-            prototype_connector=self.grid_connector,
         )
 
         self.retry_attempts = int(config.get("retry_attempts", 3))
+        if self.retry_attempts <= 0:
+            raise ValueError(f"retry_attempts must be > 0 (got {self.retry_attempts})")
 
-        self.num_worker_threads = int(config.get("num_worker_threads", config.get("num_connector_threads", 2)))
+        self.num_worker_threads = int(config.get("num_connector_threads", 2))
         if self.num_worker_threads <= 0:
             raise ValueError(f"num_worker_threads must be > 0 (got {self.num_worker_threads})")
         self.max_dequeue_per_loop = int(config.get("max_dequeue_per_loop", 100))
         if self.max_dequeue_per_loop <= 0:
             raise ValueError(f"max_dequeue_per_loop must be > 0 (got {self.max_dequeue_per_loop})")
         self.poll_timeout_sec = float(config.get("poll_timeout_sec", 0.01))
-        self.poll_interval_sec = float(config.get("poll_interval_sec", 0.05))
+        if self.poll_timeout_sec < 0:
+            raise ValueError(f"poll_timeout_sec must be >= 0 (got {self.poll_timeout_sec})")
+        self.poll_interval_sec = float(config.get("poll_interval_sec", 0.1))
+        if self.poll_interval_sec < 0:
+            raise ValueError(f"poll_interval_sec must be >= 0 (got {self.poll_interval_sec})")
 
-        self._stop_event = threading.Event()
+        self.max_poll_failures = int(config.get("max_poll_failures", 3))
+        if self.max_poll_failures <= 0:
+            raise ValueError(f"max_poll_failures must be > 0 (got {self.max_poll_failures})")
 
-        self._tasks: Deque[QueuedTask] = deque()
-        self._results: Deque[Hashable] = deque()
+        errors_maxlen = int(config.get("errors_maxlen", 1000))
+        if errors_maxlen < 0:
+            raise ValueError(f"errors_maxlen must be >= 0 (got {errors_maxlen})")
+        self._stop_event = threading.Event()  # signals worker shutdown
 
-        self._tasks_condition = threading.Condition()
-        self._results_condition = threading.Condition()
+        self._threads: List[threading.Thread] = []  # worker thread handles
 
-        self._queued_or_inflight: Set[Hashable] = set()
+        self._tasks: Deque[QueuedTask] = deque()  # pending task queue
+        self._results: Deque[Hashable] = deque()  # completed DAG node IDs
+        self._tasks_condition = threading.Condition()  # protects task queue
+        self._results_condition = threading.Condition()  # protects results queue
+        self._queued_or_inflight: Set[Hashable] = set()  # de-dup guard for node IDs
 
-        self._active_sessions_count = 0
-        self._active_sessions_lock = threading.Lock()
+        self._active_sessions_count = 0  # global active session count
+        self._active_sessions_lock = threading.Lock()  # protects active count
 
-        self._errors: Deque[WorkerError] = deque()
-        self._errors_lock = threading.Lock()
-        self._fatal_error: Optional[WorkerError] = None
+        self._errors_maxlen = errors_maxlen  # cap for stored worker errors
+        self._errors: Deque[WorkerError] = deque(maxlen=self._errors_maxlen)  # recent errors
+        self._errors_lock = threading.Lock()  # protects error deque
+        self._fatal_error: Optional[WorkerError] = None  # first fatal error
 
-        self._threads: List[threading.Thread] = []
         self._start_workers()
 
         self._logger.info(
@@ -219,6 +234,24 @@ class GridConnectorDagAdapter:
             self._errors.append(err)
             if stage in {"worker_crash"} and self._fatal_error is None:
                 self._fatal_error = err
+
+    def _requeue_session_tasks(self, thread_id: int, session_obj: SessionState) -> None:
+        remaining_node_ids = [
+            session_obj.grid_to_dag[grid_tid]
+            for grid_tid in session_obj.remaining_grid_task_ids
+            if grid_tid in session_obj.grid_to_dag
+        ]
+        if not remaining_node_ids:
+            return
+
+        with self._tasks_condition:
+            for node_id in remaining_node_ids:
+                task_definition = session_obj.task_definitions_by_node.get(node_id)
+                if task_definition is None:
+                    self._record_error(thread_id, "missing_task_definition", KeyError(node_id))
+                    continue
+                self._tasks.append(QueuedTask(node_id=node_id, task_definition=task_definition))
+            self._tasks_condition.notify_all()
 
     @staticmethod
     def _extract_task_ids(submission_resp: Any) -> List[str]:
@@ -378,6 +411,7 @@ class GridConnectorDagAdapter:
                         continue
 
                     grid_to_dag: Dict[str, Hashable] = {}
+                    task_definitions_by_node = {t.node_id: t.task_definition for t in batch}
                     for node_id, grid_tid in zip(node_ids, task_ids):
                         grid_to_dag[str(grid_tid)] = node_id
 
@@ -387,6 +421,7 @@ class GridConnectorDagAdapter:
                         submission_handle=submission_handle,
                         grid_to_dag=grid_to_dag,
                         remaining_grid_task_ids=remaining,
+                        task_definitions_by_node=task_definitions_by_node,
                     )
 
                     with self._active_sessions_lock:
@@ -400,7 +435,20 @@ class GridConnectorDagAdapter:
                         results = connector.get_results(session_obj.submission_handle, timeout_sec=self.poll_timeout_sec)
                     except Exception as e:
                         self._record_error(thread_id, "get_results", e)
+                        session_obj.poll_failures += 1
+                        if session_obj.poll_failures >= self.max_poll_failures:
+                            logger.error(
+                                "Thread %s: session %s exceeded poll failure limit; requeueing remaining tasks",
+                                thread_id,
+                                session_id,
+                            )
+                            self._requeue_session_tasks(thread_id, session_obj)
+                            del active_sessions[session_id]
+                            with self._active_sessions_lock:
+                                self._active_sessions_count = max(0, self._active_sessions_count - 1)
                         continue
+                    else:
+                        session_obj.poll_failures = 0
 
                     finished_grid_task_ids = self._extract_finished_task_ids(results)
                     if not finished_grid_task_ids:

@@ -12,7 +12,8 @@ from typing import Any, Dict, Protocol
 
 
 class BaseGridConnectorFactory(Protocol):
-    def create(self, thread_id: int, logger: logging.Logger) -> Any: ...
+    def create(self, thread_id: int, logger: logging.Logger) -> Any:
+        ...
 
 
 class GridConnectorFactory:
@@ -55,4 +56,3 @@ class GridConnectorFactory:
         connector.authenticate()
         logger.debug(f"Thread {thread_id}: connector authenticated")
         return connector
-

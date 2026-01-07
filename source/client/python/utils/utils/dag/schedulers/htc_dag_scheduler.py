@@ -49,30 +49,24 @@ class HTCDagScheduler:
                 # <2.> Find nodes that have no dependencies or all dependencies have been computed
                 t21 = time.perf_counter()
                 ready_nodes = self.dcon.get_ready_tasks()
-                t22  = time.perf_counter()
+                t22 = time.perf_counter()
 
-
-                # <3.> Submit nodes to the grid for computation
                 t31 = time.perf_counter()
                 if ready_nodes:
                     self.logger.debug(f"# nodes/tasks about to be submitted for processing: {len(ready_nodes)}")
                     self.grid_connector_adapter.submit_tasks(ready_nodes, self.dcon)
                 t32 = time.perf_counter()
 
-
                 # <4.> Check if any of the previously submitted tasks have completed
                 t41 = time.perf_counter()
                 completed_dag_ids = list(self.grid_connector_adapter.poll_completed())
                 t42 = time.perf_counter()
-
 
                 # <5.> Update DAG mark newly completed tasks as completed!
                 t51 = time.perf_counter()
                 for dag_tid in completed_dag_ids:
                     self.dcon.mark_task_complete(dag_tid)
                 t52 = time.perf_counter()
-
-
                 # Calculate completed tasks this iteration
                 completed_count = self.dcon.get_completed_task_count()
                 completed_tasks_this_iteration = completed_count - previous_completed_count
