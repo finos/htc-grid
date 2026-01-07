@@ -15,7 +15,7 @@ setuptools.setup(
     description="Utilities for testing and profiling the HTC-grid",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_namespace_packages(include=['utils*']), 
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",

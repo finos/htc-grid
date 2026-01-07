@@ -1,5 +1,5 @@
 ARG HTCGRID_ECR_REPO
-FROM ${HTCGRID_ECR_REPO}/ecr-public/docker/library/python:3.8-slim
+FROM ${HTCGRID_ECR_REPO}/ecr-public/docker/library/python:3.9-slim
 
 # Run as user nobody:nogroup
 ARG USER=65534 #nobody
@@ -11,12 +11,22 @@ RUN apt-get update && \
       gcc && \
     mkdir -p /dist/python/ /app/py_connector
 
+# Copy Python wheels and application code
 COPY ./dist/python/* /dist/python/
-COPY ./examples/client/python/* /app/py_connector/
+COPY ./examples/client/python/ /app/py_connector/
 
 WORKDIR /app/py_connector
+
+# Install packages: wheels first, then requirements
 RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir /dist/python/*.whl && \
     pip install --no-cache-dir -r requirements.txt && \
+    # Create temporary directories for multiprocessing
+    mkdir -p /app/tmp /tmp && \
+    chmod 1777 /app/tmp /tmp && \
     chown -R $USER:$GROUP /app /dist
+
+# Set TMPDIR environment variable to use our writable temp directory
+ENV TMPDIR=/app/tmp
 
 USER ${USER}:${GROUP}
