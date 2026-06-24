@@ -1,0 +1,31 @@
+{
+  "scheduler": {
+    "type": "default"
+  },
+  "logging": {
+    "console_enabled": true,
+    "file_path": "/tmp/orb/logs/orb.log"
+  },
+  "provider": {
+    "providers": [
+      {
+        "name": "aws_instance-profile_default",
+        "type": "aws",
+        "enabled": true,
+        "config": {
+          "profile": "",
+          "storage": {
+            "dynamodb": {
+              "profile": ""
+            }
+          }
+        },
+        "template_defaults": {}
+      }
+    ],
+    "default_provider_instance": "aws_instance-profile_default"
+  },
+  "storage": {
+    "strategy": "dynamodb"
+  }
+}

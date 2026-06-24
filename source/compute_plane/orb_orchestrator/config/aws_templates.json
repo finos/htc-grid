@@ -1,0 +1,91 @@
+{
+  "scheduler_type": "default",
+  "templates": [
+    {
+      "template_id": "EC2Fleet-Instant-ABIS",
+      "name": "EC2 Fleet Instant - Attribute-Based Instance Selection",
+      "description": "EC2 Fleet (instant) that lets AWS pick any instance type matching a vCPU/memory range. Capacity is counted in vCPUs (TargetCapacityUnitType=vcpu), so the controller's vCPU math works without per-type weights.",
+      "max_instances": 10,
+      "subnet_ids": [],
+      "security_group_ids": [],
+      "price_type": "ondemand",
+      "allocation_strategy": "lowestPrice",
+      "abisInstanceRequirements": {
+        "vcpu_count": { "min": 2, "max": 32 },
+        "memory_mib": { "min": 4096, "max": 16384 },
+        "cpu_manufacturers": ["intel", "amd"],
+        "instance_generations": ["current"],
+        "burstable_performance": "excluded"
+      },
+      "network_zones": [],
+      "volume_type": "gp3",
+      "tags": { "Environment": "htc-grid" },
+      "metadata": { "fleet_type": "instant" },
+      "provider_data": {},
+      "provider_type": "aws",
+      "provider_api": "EC2Fleet",
+      "provider_api_spec": {
+        "TargetCapacitySpecification": { "TargetCapacityUnitType": "vcpu" }
+      },
+      "is_active": true,
+      "fleet_type": "instant"
+    },
+    {
+      "template_id": "EC2Fleet-Instant-OnDemand",
+      "name": "EC2 Fleet Instant - On-Demand (enumerated types)",
+      "description": "EC2 Fleet (instant) over an explicit list of on-demand instance types. machine_types weights are each type's REAL vCPU count, so they agree with TargetCapacityUnitType=vcpu (ORB stamps WeightedCapacity from these values).",
+      "max_instances": 10,
+      "subnet_ids": [],
+      "security_group_ids": [],
+      "price_type": "ondemand",
+      "allocation_strategy": "lowestPrice",
+      "machine_types": {
+        "m6i.large": 2,
+        "m6i.xlarge": 4
+      },
+      "machine_types_ondemand": {},
+      "machine_types_priority": {},
+      "network_zones": [],
+      "volume_type": "gp3",
+      "tags": { "Environment": "htc-grid" },
+      "metadata": { "fleet_type": "instant" },
+      "provider_data": {},
+      "provider_type": "aws",
+      "provider_api": "EC2Fleet",
+      "provider_api_spec": {
+        "TargetCapacitySpecification": { "TargetCapacityUnitType": "vcpu" }
+      },
+      "is_active": true,
+      "fleet_type": "instant"
+    },
+    {
+      "template_id": "EC2Fleet-Instant-Spot",
+      "name": "EC2 Fleet Instant - Spot (enumerated types)",
+      "description": "EC2 Fleet (instant) over an explicit list of spot instance types, capacity-optimized. machine_types weights are each type's REAL vCPU count to agree with TargetCapacityUnitType=vcpu. Spot has not yet been proven end-to-end on this branch.",
+      "max_instances": 10,
+      "subnet_ids": [],
+      "security_group_ids": [],
+      "price_type": "spot",
+      "allocation_strategy": "capacityOptimized",
+      "machine_types": {
+        "m6i.large": 2,
+        "m6i.xlarge": 4,
+        "m5.large": 2
+      },
+      "machine_types_ondemand": {},
+      "machine_types_priority": {},
+      "network_zones": [],
+      "volume_type": "gp3",
+      "tags": { "Environment": "htc-grid" },
+      "metadata": { "fleet_type": "instant" },
+      "provider_data": {},
+      "provider_type": "aws",
+      "provider_api": "EC2Fleet",
+      "provider_api_spec": {
+        "TargetCapacitySpecification": { "TargetCapacityUnitType": "vcpu" }
+      },
+      "is_active": true,
+      "fleet_type": "instant"
+    }
+  ]
+}
