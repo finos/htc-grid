@@ -23,7 +23,7 @@ BUILD_TYPE?=Release
 PACKAGE_DIR := ./dist
 PYTHON_PACKAGE_DIR := ./dist/python
 PACKAGES    := $(wildcard $(PYTHON_PACKAGE_DIR)/*.whl)
-.PHONY: all utils api lambda submitter  packages test test-api test-utils test-agent lambda-init config-c++
+.PHONY: all utils api lambda submitter  packages test test-api test-utils test-agent lambda-init config-c++ config-ec2
 
 all: utils api lambda submitter lambda-init k8s-jobs
 
@@ -230,6 +230,9 @@ upload-python-ql: config-python
 
 config-c++:
 	@$(MAKE) -C ./examples/configurations generated-c++
+
+config-ec2:
+	@$(MAKE) -C ./examples/configurations generated-ec2
 
 config-python:
 	@$(MAKE) -C ./examples/configurations generated-python FILE_HANDLER="mock_compute_engine.lambda_handler" FUNCTION_HANDLER=lambda_handler
