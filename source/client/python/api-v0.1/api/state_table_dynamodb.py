@@ -79,29 +79,31 @@ class StateTableDDB:
             for x in range(0, len(entries), self.MAX_WRITE_BATCHS_SIZE)
         ]
         for ddb_batch in tasks_batches:
-            with self.state_table.batch_writer() as batch:  # batch_writer is flushed when exiting this block
-                for entry in ddb_batch:
-                    try:
+            try:
+                # batch_writer buffers items and flushes on block exit; the exit flush must be
+                # inside this try so a throttle on the final <25 items is classified, not escaped.
+                with self.state_table.batch_writer() as batch:
+                    for entry in ddb_batch:
                         batch.put_item(Item=entry)
 
-                    except ClientError as e:
-                        if e.response["Error"]["Code"] in [
-                            "ThrottlingException",
-                            "ProvisionedThroughputExceededException",
-                        ]:
-                            msg = f"DynamoDB Batch Write Failed from DynamoDB, Throttling Exception [{e}] [{traceback.format_exc()}]"
-                            logging.warning(msg)
-                            raise StateTableException(e, msg, caused_by_throttling=True)
+            except ClientError as e:
+                if e.response["Error"]["Code"] in [
+                    "ThrottlingException",
+                    "ProvisionedThroughputExceededException",
+                ]:
+                    msg = f"DynamoDB Batch Write Failed from DynamoDB, Throttling Exception [{e}] [{traceback.format_exc()}]"
+                    logging.warning(msg)
+                    raise StateTableException(e, msg, caused_by_throttling=True)
 
-                        else:
-                            msg = f"DynamoDB Batch Write Failed from DynamoDB Exception [{e}] [{traceback.format_exc()}]"
-                            logging.error(msg)
-                            raise Exception(e)
+                else:
+                    msg = f"DynamoDB Batch Write Failed from DynamoDB Exception [{e}] [{traceback.format_exc()}]"
+                    logging.error(msg)
+                    raise Exception(e)
 
-                    except Exception as e:
-                        msg = f"DynamoDB Batch Write Failed from DynamoDB Exception [{e}] [{traceback.format_exc()}]"
-                        logging.error(msg)
-                        raise Exception(e)
+            except Exception as e:
+                msg = f"DynamoDB Batch Write Failed from DynamoDB Exception [{e}] [{traceback.format_exc()}]"
+                logging.error(msg)
+                raise Exception(e)
 
     def get_task_by_id(self, task_id, consistent_read=False):
         """
@@ -187,11 +189,17 @@ class StateTableDDB:
                 Limit=self.RETRIEVE_EXPIRED_TASKS_LIMIT,
             )
 
-            print(
-                "Partition: {} expired tasks: {}".format(
-                    state_partition, response["Items"]
+            n = len(response["Items"])
+            if n == self.RETRIEVE_EXPIRED_TASKS_LIMIT:
+                # By design we only take one page per tick (expired tasks drain across ticks),
+                # but surface when we hit the cap so a TTL-checker-can't-keep-up backlog is
+                # visible in CloudWatch instead of silently truncated.
+                logging.warning(
+                    "Partition %s hit the %d expired-task cap; remaining deferred to a later tick",
+                    state_partition,
+                    self.RETRIEVE_EXPIRED_TASKS_LIMIT,
                 )
-            )
+            logging.debug("Partition: %s expired tasks: %d", state_partition, n)
 
             return response["Items"]
 
@@ -210,9 +218,81 @@ class StateTableDDB:
                 raise Exception(e)
 
         except Exception as e:
-            msg = f"{__name__} Failed. Exception: [{e.response['Error']}]"
+            msg = f"{__name__} Failed. Exception: [{e}] {traceback.format_exc()}"
             logging.error(msg)
-            raise e
+            raise
+
+    def query_live_tasks(self):
+        """
+        Generator. Mirror of query_expired_tasks(): for each state partition returns the
+        tasks that are currently being processed AND whose heartbeat has NOT yet expired
+        (heartbeat_expiration_timestamp > now), i.e. work that is actively in flight right now.
+
+        Used by the EC2 capacity controller to find which workers are busy before scaling
+        them down: a task_owner of "<instance-id>-pair-N" maps the live task back to the EC2
+        instance running it. Reuses the same gsi_ttl_index and 32-partition fan-out as the
+        TTL checker, just with the opposite heartbeat comparison.
+        """
+        count = 0
+        starting_state_id = random.randint(0, self.MAX_STATE_PARTITIONS - 1)
+        while count < self.MAX_STATE_PARTITIONS:
+            partition_to_check = self.__get_state_partition_at_index(
+                starting_state_id % self.MAX_STATE_PARTITIONS
+            )
+
+            yield self.__get_live_tasks_for_partition(partition_to_check)
+
+            count += 1
+            starting_state_id += 1
+
+    def __get_live_tasks_for_partition(self, state_partition):
+        try:
+            now = int(time.time())
+            key_expression = Key("task_status").eq(
+                self.__make_task_state_from_state_and_partition(
+                    TASK_STATE_PROCESSING, state_partition
+                )
+            ) & Key("heartbeat_expiration_timestamp").gt(now)
+
+            # Paginate: the busy set must be COMPLETE. A truncated page could leave a live task
+            # out, so the controller would mis-read a busy instance as idle and cordon it
+            # mid-work. (Unlike the expired path, which is allowed to drain across ticks, so no
+            # Limit here — DynamoDB's 1 MB page bound still applies and we follow it.)
+            items = []
+            query_kwargs = {
+                "IndexName": "gsi_ttl_index",
+                "KeyConditionExpression": key_expression,
+            }
+            last_evaluated_key = None
+            while True:
+                if last_evaluated_key:
+                    query_kwargs["ExclusiveStartKey"] = last_evaluated_key
+                response = self.state_table.query(**query_kwargs)
+                items += response["Items"]
+                last_evaluated_key = response.get("LastEvaluatedKey")
+                if not last_evaluated_key:
+                    break
+
+            return items
+
+        except ClientError as e:
+            if e.response["Error"]["Code"] in [
+                "ThrottlingException",
+                "ProvisionedThroughputExceededException",
+            ]:
+                msg = f"{__name__} Failed. Throttling."
+                logging.warning(msg)
+                raise StateTableException(e, msg, caused_by_throttling=True)
+
+            else:
+                msg = f"{__name__} Failed. Exception: [{e.response['Error']}]"
+                logging.error(msg)
+                raise Exception(e)
+
+        except Exception as e:
+            msg = f"{__name__} Failed. Exception: [{e}] {traceback.format_exc()}"
+            logging.error(msg)
+            raise
 
     def retry_task(self, task_id, new_retry_count):
         """
@@ -270,9 +350,9 @@ class StateTableDDB:
                 raise Exception(e)
 
         except Exception as e:
-            msg = f"{__name__} Failed. Exception: [{e.response['Error']}]"
+            msg = f"{__name__} Failed. Exception: [{e}] {traceback.format_exc()}"
             logging.error(msg)
-            raise e
+            raise
 
     # ---------------------------------------------------------------------------------------------
     # Methods used by Agent -----------------------------------------------------------------------
