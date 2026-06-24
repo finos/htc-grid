@@ -59,7 +59,7 @@ Resources:
   HTCStateS3KeyAlias:
     Type: AWS::KMS::Alias
     Properties:
-      AliasName: alias/htc/htc-state-s3
+      AliasName: !Sub 'alias/htc/${BucketTag}-htc-state-s3'
       TargetKeyId:
         Ref: HTCStateS3Key
 

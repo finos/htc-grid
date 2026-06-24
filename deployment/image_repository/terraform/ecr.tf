@@ -45,7 +45,7 @@ module "ecr_kms_key" {
     }
   ]
 
-  aliases = ["ecr/htc"]
+  aliases = ["ecr/${var.tag}-htc"]
 }
 
 
