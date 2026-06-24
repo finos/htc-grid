@@ -8,6 +8,97 @@ variable "region" {
   default     = "eu-west-1"
 }
 
+#######################################
+# Worker-plane backend selection (EKS vs EC2)
+#######################################
+
+variable "worker_backend" {
+  description = "Which worker plane to deploy: 'eks' (Helm/KEDA, default) or 'ec2' (Docker Compose pairs scaled by ORB)."
+  type        = string
+  default     = "eks"
+
+  validation {
+    condition     = contains(["eks", "ec2"], var.worker_backend)
+    error_message = "worker_backend must be either \"eks\" or \"ec2\"."
+  }
+}
+
+# Worker instance TYPES are chosen by the selected ORB template (orb_template_id) — either an ABIS
+# range or an enumerated machine_types list — not by a single type here. These two knobs are the
+# only per-instance sizing inputs: they set the per-pair budget that each instance uses at boot to
+# auto-pack NUM_PAIRS = floor(min(vCPU/ec2_worker_vcpus, mem_mb/ec2_worker_memory_mb)). The capacity
+# controller scales the fleet in vCPUs using the same ec2_worker_vcpus, so the two stay consistent.
+variable "ec2_worker_vcpus" {
+  description = "vCPU budget per worker pair, used by the boot-time NUM_PAIRS auto-compute (ec2 backend)."
+  type        = number
+  default     = 1
+}
+
+variable "ec2_worker_memory_mb" {
+  description = "Memory budget (MB) per worker pair, used by the boot-time NUM_PAIRS auto-compute (ec2 backend)."
+  type        = number
+  default     = 2048
+}
+
+variable "ec2_compose_plugin_version" {
+  description = "docker-compose plugin version staged to S3 for worker instances (ec2 backend)."
+  type        = string
+  default     = "v2.29.7"
+}
+
+variable "orb_max_instances" {
+  description = "ORB per-template max_instances cap, an upper bound on the fleet's instance count (ec2 backend)."
+  type        = number
+  default     = 5
+}
+
+# The capacity controller scales in vCPUs (EC2 Fleet TargetCapacityUnitType=vcpu): each pair needs
+# ec2_worker_vcpus vCPUs, and AWS packs instances until the vCPU target is met. These knobs are in
+# vCPUs / pairs, NOT instances (a heterogeneous fleet has no single "per instance" number).
+variable "orb_target_pending_per_pair" {
+  description = "Target pending tasks per worker pair; the controller sizes desired pairs = ceil(backlog / this). Tune by load test (ec2 backend)."
+  type        = number
+  default     = 4
+}
+
+variable "orb_min_vcpus" {
+  description = "Minimum total fleet vCPUs the capacity controller keeps (ec2 backend; floor of the vCPU target)."
+  type        = number
+  default     = 0
+}
+
+variable "orb_max_vcpus" {
+  description = "Maximum total fleet vCPUs the capacity controller may request (ec2 backend; ceiling of the vCPU target)."
+  type        = number
+  default     = 64
+}
+
+variable "orb_control_interval" {
+  description = "Capacity-controller reconcile interval in seconds (ec2 backend)."
+  type        = number
+  default     = 60
+}
+
+# Which prebuilt ORB template to use (ec2 backend). The catalog lives in
+# source/compute_plane/orb_orchestrator/config/aws_templates.json; every template is an EC2 Fleet
+# (instant) with TargetCapacityUnitType=vcpu, differing only in instance selection (ABIS / enumerated
+# / spot). Terraform grid-completes the selected one (subnet/SG/profile/AMI/user_data) and bakes it.
+# Default is the enumerated EC2Fleet-Instant-OnDemand: orb-py's _validate_prerequisites
+# (base_handler.py) rejects ABIS-only templates ("machine_types must be specified") because it never
+# consults abis_instance_requirements, so EC2Fleet-Instant-ABIS cannot create until that upstream
+# validator is fixed. The enumerated template carries machine_types and passes.
+variable "orb_template_id" {
+  description = "Prebuilt ORB template id to use for worker launches (ec2 backend); see config/aws_templates.json. EC2Fleet-Instant-ABIS is currently unusable (orb-py validator rejects ABIS-only templates)."
+  type        = string
+  default     = "EC2Fleet-Instant-OnDemand"
+}
+
+variable "ec2_drain_deadline_sec" {
+  description = "Seconds a cordoned worker may finish in-flight work before being force-terminated on graceful scale-down (ec2 backend; ≈ worker compose stop_grace_period)."
+  type        = number
+  default     = 1500
+}
+
 variable "input_role" {
   description = "Additional IAM roles to add to the aws-auth configmap."
   type = list(object({
@@ -430,6 +521,12 @@ variable "allowed_access_cidr_blocks" {
   description = "List of CIDR blocks which are allowed ingress/egress access from/to the VPC"
   type        = list(string)
   default     = []
+}
+
+variable "grafana_allowed_cidrs" {
+  description = "CIDR blocks allowed to reach the internet-facing Grafana ALB (frontend SG inbound). Default is a deny placeholder; override per deploy."
+  type        = list(string)
+  default     = ["127.0.0.1/32"]
 }
 
 variable "eks_node_volume_size" {

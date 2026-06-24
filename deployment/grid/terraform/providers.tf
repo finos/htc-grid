@@ -67,9 +67,13 @@ provider "aws" {
 
 provider "archive" {}
 
+# NOTE: kubernetes/helm providers are configured from compute_plane outputs, which is a
+# counted module (count=0 when worker_backend="ec2"). The try(...) fallbacks let the providers
+# configure to harmless values on the ec2 path, where no kubernetes/helm resource or data source
+# is ever instantiated, so the providers are declared-but-never-invoked.
 provider "kubernetes" {
-  host                   = module.compute_plane.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.compute_plane.certificate_authority)
+  host                   = try(module.compute_plane[0].cluster_endpoint, "https://localhost")
+  cluster_ca_certificate = try(base64decode(module.compute_plane[0].certificate_authority), "")
 
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
@@ -81,7 +85,7 @@ provider "kubernetes" {
       "eks",
       "get-token",
       "--cluster-name",
-      module.compute_plane.cluster_name,
+      try(module.compute_plane[0].cluster_name, "none"),
     ]
   }
 }
@@ -90,8 +94,8 @@ provider "kubernetes" {
 provider "helm" {
   helm_driver = "configmap"
   kubernetes {
-    host                   = module.compute_plane.cluster_endpoint
-    cluster_ca_certificate = base64decode(module.compute_plane.certificate_authority)
+    host                   = try(module.compute_plane[0].cluster_endpoint, "https://localhost")
+    cluster_ca_certificate = try(base64decode(module.compute_plane[0].certificate_authority), "")
 
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
@@ -103,7 +107,7 @@ provider "helm" {
         "eks",
         "get-token",
         "--cluster-name",
-        module.compute_plane.cluster_name,
+        try(module.compute_plane[0].cluster_name, "none"),
       ]
     }
   }

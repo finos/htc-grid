@@ -1,0 +1,192 @@
+#!/bin/bash
+# HTC-Grid EC2 worker bootstrap (AL2023), rendered by Terraform templatefile().
+# Terraform values are injected as bare interpolations; shell variables that must survive
+# templating are written as plain $VAR, and literal braces in compose are escaped.
+set -euxo pipefail
+exec > >(tee /var/log/htc-bootstrap.log) 2>&1
+
+# ---- Terraform-injected deployment facts ----
+REGION="${region}"
+ECR="${ecr}"
+AGENT_IMAGE="${agent_image}"
+RIE_IMAGE="${rie_image}"
+GETLAYER_IMAGE="${getlayer_image}"
+LAMBDA_FUNCTION_NAME="${lambda_function_name}"
+HANDLER="${handler}"
+S3_SOURCE="${s3_source}"
+SSM_CONFIG_PARAM="${ssm_config_param}"
+COMPOSE_S3="${compose_s3}"
+LOG_GROUP="${log_group}"
+PAIR_CPU="${pair_cpu}"
+PAIR_MEMORY="${pair_memory}"
+
+export AWS_DEFAULT_REGION="$REGION"
+
+# ---- instance identity (IMDSv2) ----
+TOKEN=$(curl -sS -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 600")
+INSTANCE_ID=$(curl -sS -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+
+# ---- bootstrap-log observability (stream this script to CloudWatch) ----
+# The worker containers ship to CloudWatch via the compose `awslogs` driver, but that only starts
+# once `docker compose up` runs below. Anything that fails BEFORE that (docker/compose install, SSM
+# config fetch, ECR login) would otherwise live only in the local /var/log/htc-bootstrap.log and be
+# lost when the failed instance is reaped. Install the CloudWatch agent first and have it tail the
+# bootstrap log into a "<instance-id>-bootstrap" stream of the existing worker log group, so a
+# pre-compose-up failure is visible in CloudWatch without SSM-ing into a dying box. The agent reads
+# the file from the beginning, so lines written before it starts are still captured. Best-effort:
+# the telemetry agent must never abort the actual worker bootstrap, hence `|| echo` (not set -e).
+setup_bootstrap_log_streaming() {
+  dnf install -y amazon-cloudwatch-agent || return 1
+  cat > /opt/aws/amazon-cloudwatch-agent/etc/bootstrap-logs.json <<CWAGENT
+{
+  "agent": { "region": "$REGION", "run_as_user": "root" },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/htc-bootstrap.log",
+            "log_group_name": "$LOG_GROUP",
+            "log_stream_name": "$INSTANCE_ID-bootstrap"
+          }
+        ]
+      }
+    }
+  }
+}
+CWAGENT
+  /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+    -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/etc/bootstrap-logs.json
+}
+setup_bootstrap_log_streaming \
+  || echo "WARNING: bootstrap-log CloudWatch streaming setup failed; continuing (container logs unaffected)"
+
+# ---- compute NUM_PAIRS: floor(full instance capacity / per-pair budget) ----
+# Always auto-packed from this instance's real vCPU/memory. The capacity controller scales the
+# fleet in vCPUs and accounts each instance as floor(vCPU / PAIR_CPU) pairs, so the boot-time pair
+# count MUST match that formula — there is deliberately no fixed-override knob (it would desync the
+# controller's vCPU accounting on a heterogeneous fleet).
+VCPU=$(nproc)
+MEM_MB=$(awk '/MemTotal/ {printf "%d", $2/1024}' /proc/meminfo)
+BY_CPU=$(( VCPU / PAIR_CPU ))
+BY_MEM=$(( MEM_MB / PAIR_MEMORY ))
+NUM_PAIRS=$BY_CPU
+[ "$BY_MEM" -lt "$NUM_PAIRS" ] && NUM_PAIRS=$BY_MEM
+[ "$NUM_PAIRS" -lt 1 ] && NUM_PAIRS=1
+echo "NUM_PAIRS=$NUM_PAIRS (cpu/pair=$PAIR_CPU mem/pair=$PAIR_MEMORY vcpu=$VCPU mem_mb=$MEM_MB)"
+
+# ---- Docker + compose plugin (plugin from S3; github is unreachable on private subnets) ----
+dnf install -y docker
+systemctl enable --now docker
+mkdir -p /usr/libexec/docker/cli-plugins
+aws s3 cp "$COMPOSE_S3" /usr/libexec/docker/cli-plugins/docker-compose --region "$REGION"
+chmod +x /usr/libexec/docker/cli-plugins/docker-compose
+docker compose version
+
+# ---- working dirs (RIE/get-layer run as uid 99 and must write /var/task) ----
+mkdir -p /opt/htc/agent-config /opt/htc/compose
+for i in $(seq 0 $(( NUM_PAIRS - 1 ))); do
+  mkdir -p /opt/htc/task-$i
+  chmod 777 /opt/htc/task-$i
+done
+
+# ---- pull agent config from SSM (SecureString) ----
+aws ssm get-parameter --name "$SSM_CONFIG_PARAM" --with-decryption --region "$REGION" \
+  --query 'Parameter.Value' --output text > /opt/htc/agent-config/Agent_config.tfvars.json
+chmod 644 /opt/htc/agent-config/Agent_config.tfvars.json
+
+# ---- ECR login ----
+aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$ECR"
+
+# ---- render .env ----
+cat > /opt/htc/compose/.env <<ENV
+ECR=$ECR
+AGENT_IMAGE=$AGENT_IMAGE
+RIE_IMAGE=$RIE_IMAGE
+GETLAYER_IMAGE=$GETLAYER_IMAGE
+REGION=$REGION
+LAMBDA_FUNCTION_NAME=$LAMBDA_FUNCTION_NAME
+HANDLER=$HANDLER
+S3_SOURCE=$S3_SOURCE
+INSTANCE_ID=$INSTANCE_ID
+ENV
+
+# ---- render docker-compose.yml for NUM_PAIRS pairs ----
+COMPOSE=/opt/htc/compose/docker-compose.yml
+echo "services:" > $COMPOSE
+for i in $(seq 0 $(( NUM_PAIRS - 1 ))); do
+cat >> $COMPOSE <<PAIR
+  getlayer-$i:
+    image: "$${ECR}/$${GETLAYER_IMAGE}"
+    command: ["./download-layer.sh", "-s", "$${S3_SOURCE}", "-r", "$${REGION}", "-d", "/var/task", "--storage", "S3"]
+    environment:
+      AWS_STS_REGIONAL_ENDPOINTS: regional
+      AWS_REGION: "$${REGION}"
+    volumes:
+      - "/opt/htc/task-$i:/var/task"
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: "$${REGION}"
+        awslogs-group: "$LOG_GROUP"
+        awslogs-stream: "$${INSTANCE_ID}-pair-$i-getlayer"
+    restart: "no"
+  rie-$i:
+    image: "$${ECR}/$${RIE_IMAGE}"
+    command: ["$${HANDLER}"]
+    cpus: ${rie_cpus}
+    mem_limit: "${rie_memory}"
+    environment:
+      AWS_LAMBDA_FUNCTION_TIMEOUT: "86400"
+      AWS_LAMBDA_GRACEFUL_TERMINATION_DELAY: "1500"
+      AWS_LAMBDA_FUNCTION_HANDLER: "$${HANDLER}"
+      INTRA_VPC: "1"
+      AWS_REGION: "$${REGION}"
+    volumes:
+      - "/opt/htc/task-$i:/var/task"
+      - "/opt/htc/agent-config:/etc/agent:ro"
+    depends_on:
+      getlayer-$i:
+        condition: service_completed_successfully
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: "$${REGION}"
+        awslogs-group: "$LOG_GROUP"
+        awslogs-stream: "$${INSTANCE_ID}-pair-$i-rie"
+    restart: on-failure
+    stop_grace_period: 1500s
+  agent-$i:
+    image: "$${ECR}/$${AGENT_IMAGE}"
+    network_mode: "service:rie-$i"
+    pid: "service:rie-$i"
+    cpus: ${agent_cpus}
+    mem_limit: "${agent_memory}"
+    environment:
+      MY_POD_NAME: "$${INSTANCE_ID}-pair-$i"
+      LAMBDA_ENDPOINT_URL: "http://localhost:8080"
+      LAMBDA_FONCTION_NAME: "$${LAMBDA_FUNCTION_NAME}"
+      AGENT_CONFIG_FILE: "/etc/agent/Agent_config.tfvars.json"
+      INTRA_VPC: "1"
+      AWS_STS_REGIONAL_ENDPOINTS: regional
+      AWS_REGION: "$${REGION}"
+    volumes:
+      - "/opt/htc/agent-config:/etc/agent:ro"
+    depends_on:
+      rie-$i:
+        condition: service_started
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: "$${REGION}"
+        awslogs-group: "$LOG_GROUP"
+        awslogs-stream: "$${INSTANCE_ID}-pair-$i-agent"
+    restart: on-failure
+    stop_grace_period: 1500s
+PAIR
+done
+
+cd /opt/htc/compose
+docker compose --project-name htc-workers up -d
+
+echo "HTC EC2 worker bootstrap complete: $NUM_PAIRS pairs for $INSTANCE_ID"

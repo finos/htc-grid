@@ -104,6 +104,12 @@ variable "node_drainer_lambda_role_arn" {
 #   type        = list(string)
 # }
 
+variable "grafana_allowed_cidrs" {
+  description = "CIDR blocks allowed to reach the internet-facing Grafana ALB (frontend SG inbound). Default is a deny placeholder; override per deploy."
+  type        = list(string)
+  default     = ["127.0.0.1/32"]
+}
+
 variable "cognito_domain_name" {
   description = "Cognito Domain Name"
   type        = string

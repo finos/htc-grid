@@ -6,6 +6,7 @@
 module "node_drainer_cloudwatch_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"
+  count   = local.node_drainer_enabled
 
   description             = "CMK KMS Key used to encrypt node_drainer CloudWatch Logs"
   deletion_window_in_days = var.kms_deletion_window
@@ -52,6 +53,7 @@ module "node_drainer_cloudwatch_kms_key" {
 module "node_drainer" {
   source  = "terraform-aws-modules/lambda/aws"
   version = "~> 5.0"
+  count   = local.node_drainer_enabled
 
   source_path     = "../../../source/compute_plane/python/lambda/drainer"
   function_name   = var.lambda_name_node_drainer
@@ -72,11 +74,11 @@ module "node_drainer" {
   attach_policies    = true
   number_of_policies = 1
   policies = [
-    aws_iam_policy.node_drainer_data_policy.arn
+    aws_iam_policy.node_drainer_data_policy[0].arn
   ]
 
   attach_cloudwatch_logs_policy = true
-  cloudwatch_logs_kms_key_id    = module.node_drainer_cloudwatch_kms_key.key_arn
+  cloudwatch_logs_kms_key_id    = module.node_drainer_cloudwatch_kms_key[0].key_arn
 
   attach_tracing_policy = true
   tracing_mode          = "Active"
@@ -133,7 +135,7 @@ resource "aws_cloudwatch_event_target" "terminate_instance_event" {
 
   rule      = "event-lifecyclehook-${each.key}-${local.suffix}"
   target_id = "lambda"
-  arn       = module.node_drainer.lambda_function_arn
+  arn       = module.node_drainer[0].lambda_function_arn
 
   depends_on = [
     aws_cloudwatch_event_rule.lifecycle_hook_event_rule,
@@ -146,13 +148,14 @@ resource "aws_lambda_permission" "allow_cloudwatch_to_call_node_drainer" {
 
   statement_id  = "AllowDrainerExecutionFromCloudWatch-${each.key}"
   action        = "lambda:InvokeFunction"
-  function_name = module.node_drainer.lambda_function_name
+  function_name = module.node_drainer[0].lambda_function_name
   principal     = "events.${local.dns_suffix}"
   source_arn    = each.value.arn
 }
 
 
 resource "aws_iam_policy" "node_drainer_data_policy" {
+  count       = local.node_drainer_enabled
   name        = "lambda-drainer-${local.suffix}-data"
   path        = "/"
   description = "Policy for draining nodes of an EKS cluster"

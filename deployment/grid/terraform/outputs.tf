@@ -33,8 +33,8 @@ output "user_pool_client_id" {
 }
 
 output "grafana_ingress_domain" {
-  description = "Ingress Domain for Grafana"
-  value       = module.compute_plane.grafana_ingress_domain
+  description = "Ingress Domain for Grafana (eks backend only)"
+  value       = try(module.compute_plane[0].grafana_ingress_domain, null)
 }
 
 output "grafana_admin_password" {

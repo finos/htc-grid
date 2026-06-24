@@ -17,6 +17,16 @@ output "htc_data_bucket_key_arn" {
   value       = module.htc_data_bucket_kms_key.key_arn
 }
 
+output "htc_dynamodb_table_key_arn" {
+  description = "HTC DynamoDB state-table KMS Key ARN (needed by readers of the encrypted table)"
+  value       = module.htc_dynamodb_table_kms_key.key_arn
+}
+
+output "htc_task_queue_key_arn" {
+  description = "HTC SQS task-queue KMS Key ARN (needed by readers of the encrypted queue attributes)"
+  value       = module.htc_task_queue_kms_key.key_arn
+}
+
 output "public_api_gateway_url" {
   value = aws_api_gateway_stage.htc_public_api_stage.invoke_url
 }
@@ -39,7 +49,7 @@ output "ecr_pull_through_cache_policy_arn" {
 }
 
 output "node_drainer_lambda_role_arn" {
-  value = module.node_drainer.lambda_role_arn
+  value = try(module.node_drainer[0].lambda_role_arn, null)
 }
 
 output "htc_data_cache_password" {

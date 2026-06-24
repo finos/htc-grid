@@ -7,6 +7,10 @@ REGION?=eu-west-1
 GRID_TFSTATE_BUCKET:=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`GridTFStateBucketID`].OutputValue' --output text)
 S3_KMS_KEY_ARN:=$(shell aws cloudformation describe-stacks --stack-name $(TAG) --region $(REGION) --query 'Stacks[0].Outputs[?OutputKey==`HTCStateS3KeyAlias`].OutputValue' --output text)
 export GRAFANA_ADMIN_PASSWORD?=$(shell uuidgen)
+# CIDR allowlist for the internet-facing Grafana ALB (frontend SG inbound).
+# JSON list, e.g. GRAFANA_ALLOWED_CIDRS='["203.0.113.7/32","198.51.100.0/24"]'.
+# Defaults to a deny placeholder (Grafana unreachable until overridden).
+export GRAFANA_ALLOWED_CIDRS?=["127.0.0.1/32"]
 TF_SRCS:=$(wildcard *.tf)
 
 all:
@@ -22,7 +26,7 @@ init:
 # execute terraform with confirmation
 #########################################
 apply: $(TF_SRCS) $(GRID_CONFIG)
-	terraform apply -var-file $(GRID_CONFIG) -var="grafana_admin_password=$(GRAFANA_ADMIN_PASSWORD)"
+	terraform apply -var-file $(GRID_CONFIG) -var="grafana_admin_password=$(GRAFANA_ADMIN_PASSWORD)" -var='grafana_allowed_cidrs=$(GRAFANA_ALLOWED_CIDRS)'
 
 destroy:
 	terraform destroy  -var-file $(GRID_CONFIG)
@@ -31,7 +35,7 @@ destroy:
 # execute terraform without confirmation
 #########################################
 auto-apply: $(TF_SRCS) $(GRID_CONFIG)
-	terraform apply -auto-approve -no-color -var-file $(GRID_CONFIG) -var="grafana_admin_password=$(GRAFANA_ADMIN_PASSWORD)"
+	terraform apply -auto-approve -no-color -var-file $(GRID_CONFIG) -var="grafana_admin_password=$(GRAFANA_ADMIN_PASSWORD)" -var='grafana_allowed_cidrs=$(GRAFANA_ALLOWED_CIDRS)'
 auto-destroy:
 	terraform destroy -auto-approve -no-color -var-file $(GRID_CONFIG)
 #########################################

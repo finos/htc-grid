@@ -123,6 +123,7 @@ module "vpc" {
 
 module "compute_plane" {
   source = "./compute_plane"
+  count  = var.worker_backend == "eks" ? 1 : 0
 
   vpc_id                            = module.vpc.vpc_id
   vpc_private_subnet_ids            = module.vpc.private_subnet_ids
@@ -146,6 +147,7 @@ module "compute_plane" {
   cognito_userpool_id               = module.control_plane.cognito_userpool_id
   kms_key_admin_roles               = var.kms_key_admin_roles
   kms_deletion_window               = var.kms_deletion_window
+  grafana_allowed_cidrs             = var.grafana_allowed_cidrs
   # allowed_access_cidr_blocks        = local.allowed_access_cidr_blocks
 }
 
@@ -156,28 +158,30 @@ module "control_plane" {
   vpc_id                 = module.vpc.vpc_id
   vpc_private_subnet_ids = module.vpc.private_subnet_ids
   # vpc_public_subnet_ids                         = module.vpc.public_subnet_ids
-  vpc_default_security_group_id                 = module.vpc.default_security_group_id
-  vpc_cidr                                      = module.vpc.vpc_cidr_block
-  allowed_access_cidr_blocks                    = local.allowed_access_cidr_blocks
-  suffix                                        = local.project_name
-  region                                        = var.region
-  lambda_runtime                                = var.lambda_runtime
-  aws_htc_ecr                                   = local.aws_htc_ecr
-  ddb_state_table                               = local.ddb_state_table
-  sqs_queue                                     = local.sqs_queue
-  sqs_dlq                                       = local.sqs_dlq
-  s3_bucket                                     = local.s3_bucket
-  grid_storage_service                          = var.grid_storage_service
-  task_queue_service                            = var.task_queue_service
-  task_queue_config                             = var.task_queue_config
-  state_table_service                           = var.state_table_service
-  state_table_config                            = var.state_table_config
-  task_input_passed_via_external_storage        = var.task_input_passed_via_external_storage
-  lambda_name_ttl_checker                       = local.lambda_name_ttl_checker
-  lambda_name_submit_tasks                      = local.lambda_name_submit_tasks
-  lambda_name_get_results                       = local.lambda_name_get_results
-  lambda_name_cancel_tasks                      = local.lambda_name_cancel_tasks
-  metrics_are_enabled                           = var.metrics_are_enabled
+  vpc_default_security_group_id          = module.vpc.default_security_group_id
+  vpc_cidr                               = module.vpc.vpc_cidr_block
+  allowed_access_cidr_blocks             = local.allowed_access_cidr_blocks
+  suffix                                 = local.project_name
+  region                                 = var.region
+  lambda_runtime                         = var.lambda_runtime
+  aws_htc_ecr                            = local.aws_htc_ecr
+  ddb_state_table                        = local.ddb_state_table
+  sqs_queue                              = local.sqs_queue
+  sqs_dlq                                = local.sqs_dlq
+  s3_bucket                              = local.s3_bucket
+  grid_storage_service                   = var.grid_storage_service
+  task_queue_service                     = var.task_queue_service
+  task_queue_config                      = var.task_queue_config
+  state_table_service                    = var.state_table_service
+  state_table_config                     = var.state_table_config
+  task_input_passed_via_external_storage = var.task_input_passed_via_external_storage
+  lambda_name_ttl_checker                = local.lambda_name_ttl_checker
+  lambda_name_submit_tasks               = local.lambda_name_submit_tasks
+  lambda_name_get_results                = local.lambda_name_get_results
+  lambda_name_cancel_tasks               = local.lambda_name_cancel_tasks
+  # ec2 backend has no in-cluster InfluxDB; the control-plane Lambdas must also run with
+  # metrics off or they crash at import initializing the InfluxDB perf tracker (502).
+  metrics_are_enabled                           = local.metrics_are_enabled_effective
   metrics_submit_tasks_lambda_connection_string = var.metrics_submit_tasks_lambda_connection_string
   metrics_get_results_lambda_connection_string  = var.metrics_get_results_lambda_connection_string
   metrics_cancel_tasks_lambda_connection_string = var.metrics_cancel_tasks_lambda_connection_string
@@ -192,10 +196,12 @@ module "control_plane" {
   dynamodb_gsi_index_table_read_capacity        = var.dynamodb_default_read_capacity
   dynamodb_gsi_ttl_table_write_capacity         = var.dynamodb_default_write_capacity
   dynamodb_gsi_ttl_table_read_capacity          = var.dynamodb_default_read_capacity
-  nlb_influxdb                                  = module.compute_plane.nlb_influxdb
+  nlb_influxdb                                  = try(module.compute_plane[0].nlb_influxdb, "")
   cluster_name                                  = local.cluster_name
   api_gateway_version                           = var.api_gateway_version
-  eks_managed_node_groups                       = module.compute_plane.eks_managed_node_groups
+  eks_managed_node_groups                       = try(module.compute_plane[0].eks_managed_node_groups, {})
+  enable_node_drainer                           = var.worker_backend == "eks"
+  enable_scaling_metrics                        = var.worker_backend == "eks"
   tasks_queue_name                              = local.tasks_queue_name
   namespace_metrics                             = var.namespace_metrics
   dimension_name_metrics                        = var.dimension_name_metrics
@@ -219,13 +225,14 @@ module "control_plane" {
 
 module "htc_agent" {
   source                             = "./htc-agent"
+  count                              = var.worker_backend == "eks" ? 1 : 0
   region                             = var.region
   agent_chart_url                    = lookup(var.agent_configuration, "agent_chart_url", local.default_agent_configuration.agent_chart_url)
   termination_grace_period           = var.graceful_termination_delay
   suffix                             = local.project_name
   agent_name                         = var.htc_agent_name
   htc_agent_permissions_policy_arn   = module.control_plane.htc_agent_permissions_policy_arn
-  eks_oidc_provider_arn              = module.compute_plane.oidc_provider_arn
+  eks_oidc_provider_arn              = try(module.compute_plane[0].oidc_provider_arn, "")
   max_htc_agents                     = var.max_htc_agents
   min_htc_agents                     = var.min_htc_agents
   htc_agent_target_value             = var.htc_agent_target_value
@@ -264,4 +271,164 @@ module "htc_agent" {
     module.control_plane,
     kubernetes_config_map.htcagentconfig
   ]
+}
+
+
+# ===========================================================================
+# EC2 worker backend (worker_backend = "ec2")
+# ===========================================================================
+
+# Agent runtime config delivered to EC2 workers via SSM SecureString (the EKS path
+# uses the kubernetes_config_map instead). metrics are forced off for ec2 (no InfluxDB).
+resource "aws_ssm_parameter" "agent_config" {
+  count = var.worker_backend == "ec2" ? 1 : 0
+
+  name   = "/htc/${local.project_name}/agent_config"
+  type   = "SecureString"
+  tier   = "Advanced" # the ~45-key blob can exceed the 4 KB standard-tier limit
+  key_id = module.control_plane.htc_data_bucket_key_arn
+  value  = local.agent_config
+}
+
+# Stage the docker-compose plugin binary in S3 (private-subnet instances cannot reach
+# github). The apply host needs internet for the curl; the data bucket is readable by the
+# instance profile (agent policy grants s3:GetObject + kms:Decrypt on it).
+resource "null_resource" "fetch_compose_plugin" {
+  count = var.worker_backend == "ec2" ? 1 : 0
+
+  triggers = {
+    version = var.ec2_compose_plugin_version
+  }
+
+  provisioner "local-exec" {
+    command = "mkdir -p '${path.module}/.cache' && curl -sSL 'https://github.com/docker/compose/releases/download/${var.ec2_compose_plugin_version}/docker-compose-linux-x86_64' -o '${path.module}/.cache/docker-compose'"
+  }
+}
+
+resource "aws_s3_object" "compose_plugin" {
+  count = var.worker_backend == "ec2" ? 1 : 0
+
+  bucket     = module.control_plane.htc_data_bucket_name
+  key        = "ec2-worker/docker-compose"
+  source     = "${path.module}/.cache/docker-compose"
+  kms_key_id = module.control_plane.htc_data_bucket_key_arn
+
+  depends_on = [null_resource.fetch_compose_plugin]
+}
+
+module "compute_plane_ec2" {
+  source = "./compute_plane_ec2"
+  count  = var.worker_backend == "ec2" ? 1 : 0
+
+  region                           = var.region
+  suffix                           = local.project_name
+  cluster_name                     = local.cluster_name
+  aws_htc_ecr                      = local.aws_htc_ecr
+  image_tag                        = local.project_name
+  vpc_id                           = module.vpc.vpc_id
+  vpc_private_subnet_ids           = module.vpc.private_subnet_ids
+  htc_agent_permissions_policy_arn = module.control_plane.htc_agent_permissions_policy_arn
+  ssm_config_parameter_arn         = aws_ssm_parameter.agent_config[0].arn
+  ssm_config_parameter_name        = aws_ssm_parameter.agent_config[0].name
+  ssm_config_kms_key_arn           = module.control_plane.htc_data_bucket_key_arn
+  lambda_configuration_s3_source   = try(var.agent_configuration.lambda.s3_source, local.default_agent_configuration.lambda.s3_source)
+  compose_plugin_s3_uri            = "s3://${module.control_plane.htc_data_bucket_name}/ec2-worker/docker-compose"
+  pair_cpu                         = var.ec2_worker_vcpus
+  pair_memory                      = var.ec2_worker_memory_mb
+  kms_key_admin_arns               = [data.aws_caller_identity.current.arn]
+
+  # Per-container hard limits come from the SAME agent_configuration source as the EKS
+  # (htc-agent) backend, so resources are defined in one place for both backends.
+  agent_max_cpu     = try(var.agent_configuration.agent.maxCPU, local.default_agent_configuration.agent.maxCPU)
+  agent_max_memory  = try(var.agent_configuration.agent.maxMemory, local.default_agent_configuration.agent.maxMemory)
+  lambda_max_cpu    = try(var.agent_configuration.lambda.maxCPU, local.default_agent_configuration.lambda.maxCPU)
+  lambda_max_memory = try(var.agent_configuration.lambda.maxMemory, local.default_agent_configuration.lambda.maxMemory)
+
+  depends_on = [
+    module.vpc,
+    module.control_plane,
+    aws_s3_object.compose_plugin,
+  ]
+}
+
+# ORB orchestrator: the fleet-scaling orchestrator (create/status/terminate EC2 capacity).
+# The worker cloud-init is no longer delivered via SSM: the orchestrator module bakes it (and the
+# subnet/SG/profile/AMI + instance selection) into the rendered ORB template at deploy time.
+module "orb_orchestrator" {
+  source = "./orb_orchestrator"
+  count  = var.worker_backend == "ec2" ? 1 : 0
+
+  region                      = var.region
+  suffix                      = local.project_name
+  aws_htc_ecr                 = local.aws_htc_ecr
+  lambda_runtime              = var.lambda_runtime
+  table_prefix                = "orb-${local.project_name}"
+  worker_instance_role_arn    = module.compute_plane_ec2[0].instance_role_arn
+  worker_instance_profile_arn = module.compute_plane_ec2[0].instance_profile_arn
+  worker_subnet_ids           = module.vpc.private_subnet_ids
+  worker_security_group_id    = module.compute_plane_ec2[0].worker_security_group_id
+  worker_ami_id               = module.compute_plane_ec2[0].worker_ami_id
+  worker_user_data_plain      = module.compute_plane_ec2[0].worker_user_data_plain
+  orb_template_id             = var.orb_template_id
+  pair_cpu                    = var.ec2_worker_vcpus
+  pair_memory                 = var.ec2_worker_memory_mb
+  max_instances               = var.orb_max_instances
+  kms_key_admin_arns          = [data.aws_caller_identity.current.arn]
+  kms_deletion_window         = var.kms_deletion_window
+}
+
+# Capacity controller: EventBridge-scheduled reconciler that drives the orchestrator from backlog.
+module "capacity_controller" {
+  source = "./capacity_controller"
+  count  = var.worker_backend == "ec2" ? 1 : 0
+
+  region                     = var.region
+  suffix                     = local.project_name
+  lambda_runtime             = var.lambda_runtime
+  aws_htc_ecr                = local.aws_htc_ecr
+  orchestrator_function_name = module.orb_orchestrator[0].function_name
+  orchestrator_function_arn  = module.orb_orchestrator[0].function_arn
+  orb_template_id            = var.orb_template_id
+  task_queue_service         = var.task_queue_service
+  task_queue_config          = var.task_queue_config
+  tasks_queue_name           = local.tasks_queue_name
+  sqs_queue                  = local.sqs_queue
+  sqs_kms_key_arn            = module.control_plane.htc_task_queue_key_arn
+  error_log_group            = local.error_log_group
+  error_logging_stream       = local.error_logging_stream
+  pair_cpu                   = var.ec2_worker_vcpus
+  pair_memory                = var.ec2_worker_memory_mb
+  min_vcpus                  = var.orb_min_vcpus
+  max_vcpus                  = var.orb_max_vcpus
+  target_pending_per_pair    = var.orb_target_pending_per_pair
+  control_interval           = var.orb_control_interval
+  drain_deadline_sec         = var.ec2_drain_deadline_sec
+  state_table_name           = local.ddb_state_table
+  state_table_arn            = "arn:${data.aws_partition.current.partition}:dynamodb:${var.region}:${local.account_id}:table/${local.ddb_state_table}"
+  state_table_kms_key_arn    = module.control_plane.htc_dynamodb_table_key_arn
+  state_table_service        = var.state_table_service
+  state_table_config         = var.state_table_config
+  kms_key_admin_arns         = [data.aws_caller_identity.current.arn]
+  kms_deletion_window        = var.kms_deletion_window
+}
+
+
+# ---------------------------------------------------------------------------
+# State moves: compute_plane and htc_agent became counted modules (count=1 on
+# the eks backend). These moved{} blocks keep an existing EKS state from
+# planning a destroy/recreate when upgrading to the selectable-backend layout.
+# ---------------------------------------------------------------------------
+moved {
+  from = module.compute_plane
+  to   = module.compute_plane[0]
+}
+
+moved {
+  from = module.htc_agent
+  to   = module.htc_agent[0]
+}
+
+moved {
+  from = kubernetes_config_map.htcagentconfig
+  to   = kubernetes_config_map.htcagentconfig[0]
 }

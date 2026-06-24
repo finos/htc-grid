@@ -4,6 +4,10 @@
 
 
 locals {
+  # On the ec2 backend there is no in-cluster InfluxDB; the agent must run with metrics
+  # disabled or it crash-loops trying to reach influxdb.influxdb:8086 (see ec2-worker-asbuilt §6.2).
+  metrics_are_enabled_effective = var.worker_backend == "ec2" ? 0 : var.metrics_are_enabled
+
   agent_config = <<EOF
 {
   "region": "${var.region}",
@@ -36,7 +40,7 @@ locals {
   "htc_path_logs" : "${var.htc_path_logs}",
   "error_log_group" : "${local.error_log_group}",
   "error_logging_stream" : "${local.error_logging_stream}",
-  "metrics_are_enabled": "${var.metrics_are_enabled}",
+  "metrics_are_enabled": "${local.metrics_are_enabled_effective}",
   "metrics_grafana_private_ip": "influxdb.influxdb",
   "metrics_submit_tasks_lambda_connection_string": "${var.metrics_submit_tasks_lambda_connection_string}",
   "metrics_cancel_tasks_lambda_connection_string": "${var.metrics_cancel_tasks_lambda_connection_string}",
@@ -56,8 +60,10 @@ EOF
 }
 
 
-#configmap with all the variables
+#configmap with all the variables (eks backend only; ec2 delivers this via SSM)
 resource "kubernetes_config_map" "htcagentconfig" {
+  count = var.worker_backend == "eks" ? 1 : 0
+
   metadata {
     name      = "agent-configmap"
     namespace = var.htc_agent_namespace

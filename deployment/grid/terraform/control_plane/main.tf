@@ -11,6 +11,17 @@ locals {
   partition            = data.aws_partition.current.partition
   lambda_build_runtime = "${var.aws_htc_ecr}/ecr-public/sam/build-${var.lambda_runtime}:1"
 
+  # node_drainer drains EKS managed-node-group instances on ASG scale-in. It is EKS-only:
+  # on the ec2 backend eks_managed_node_groups is empty, and its data policy would render an
+  # empty "Resource": [] which IAM rejects. Gate it on the explicit backend flag (a static,
+  # plan-time-known value) rather than on eks_managed_node_groups, which is a compute_plane
+  # output and would create a module dependency cycle / unknown-count at plan time.
+  node_drainer_enabled = var.enable_node_drainer ? 1 : 0
+
+  # scaling_metrics publishes the backlog to CloudWatch for KEDA on the eks backend only;
+  # the ec2 capacity_controller reads SQS directly and does not need it.
+  scaling_metrics_enabled = var.enable_scaling_metrics ? 1 : 0
+
   default_kms_key_admin_arns = [
     data.aws_caller_identity.current.arn,
     "arn:${local.partition}:iam::${local.account_id}:root"
