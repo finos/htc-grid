@@ -64,7 +64,7 @@ variable "orb_target_pending_per_pair" {
 variable "orb_min_vcpus" {
   description = "Minimum total fleet vCPUs the capacity controller keeps (ec2 backend; floor of the vCPU target)."
   type        = number
-  default     = 0
+  default     = 1
 }
 
 variable "orb_max_vcpus" {
