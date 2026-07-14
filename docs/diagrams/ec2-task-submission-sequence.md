@@ -72,7 +72,7 @@ sequenceDiagram
     Note over SH,WK: precheck (warm worker → instant)
     SH->>SSM: SendCommand grep 'bootstrap complete' /var/log/htc-bootstrap.log
     SSM->>WK: run grep
-    WK-->>SSM: count > 0
+    WK-->>SSM: count above 0
     SSM-->>SH: bootstrap complete
 
     SH->>SSM: SendCommand (ECR login + docker run client.py --do_print --log warning)

@@ -30,7 +30,7 @@ sequenceDiagram
 
     ORB->>EC2: RunInstances (worker template: AL2023 AMI,<br/>instance profile, SG, IMDSv2 hop=3, gp3, user_data)
     EC2->>CI: boot, run user-data as root
-    CI->>CI: IMDSv2 token, INSTANCE_ID; compute NUM_PAIRS
+    CI->>CI: IMDSv2 token, INSTANCE_ID, compute NUM_PAIRS
     CI->>CMP: docker compose up -d (getlayer, rie, agent per pair)
     CMP->>Q: each agent long-polls for tasks
     Note over CMP,Q: instance is now processing work
@@ -54,11 +54,11 @@ sequenceDiagram
         participant CW as CloudWatch Logs
     end
 
-    Note over CI: set -euxo pipefail; tee to /var/log/htc-bootstrap.log
+    Note over CI: set -euxo pipefail, tee to /var/log/htc-bootstrap.log
 
     CI->>IMDS: PUT token (TTL 600), GET instance-id
     Note over CI: NUM_PAIRS = override if set, else<br/>min(floor(vCPU per PAIR_CPU), floor(memMB per PAIR_MEMORY)), min 1
-    CI->>OS: dnf install -y docker; systemctl enable --now docker
+    CI->>OS: dnf install -y docker, systemctl enable --now docker
     CI->>S3: aws s3 cp COMPOSE_S3 to /usr/libexec/docker/cli-plugins/docker-compose
     Note over CI: github/pypi unreachable on private subnets:<br/>compose plugin staged via S3, not curled
     CI->>CI: mkdir /opt/htc agent-config, compose, and task-i per pair (chmod 777)

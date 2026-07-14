@@ -34,12 +34,12 @@ sequenceDiagram
     SQSQ-->>CTL: ApproximateNumberOfMessages
     CTL->>ORB: status (how many live?)
     ORB-->>CTL: live machines
-    Note over CTL: desired_vcpus = clamp(ceil(backlog / target_per_pair) * pair_cpu, min, max)<br/>current_vcpus = Σ vcpus(active); deficit = desired_vcpus - current_vcpus
-    alt deficit > 0
+    Note over CTL: desired_vcpus = clamp(ceil(backlog / target_per_pair) * pair_cpu, min, max)<br/>current_vcpus = Σ vcpus(active), deficit = desired_vcpus - current_vcpus
+    alt deficit positive
         Note over CTL: first reclaim any draining instances (uncordon),<br/>then create the remaining vCPU deficit
         CTL->>ORB: create (vCPU target = remaining deficit)
         ORB->>EC2: launch worker(s) (EC2 Fleet packs to the vCPU target)
-    else deficit <= 0
+    else deficit zero or negative
         Note over CTL: no scale-up<br/>(surplus is handled by scale-down - see down doc)
     end
 ```
@@ -75,23 +75,23 @@ sequenceDiagram
     ORB->>DDB: list machines (filter live)
     DDB-->>ORB: live machines
     ORB-->>CTL: machines (with machine_id)
-    Note over CTL: read EC2 drain tags → split live into active vs draining<br/>desired_vcpus = clamp(ceil(backlog / target_per_pair) * pair_cpu, min, max)<br/>current_vcpus = Σ vcpus(active); deficit = desired_vcpus - current_vcpus
+    Note over CTL: read EC2 drain tags → split live into active vs draining<br/>desired_vcpus = clamp(ceil(backlog / target_per_pair) * pair_cpu, min, max)<br/>current_vcpus = Σ vcpus(active), deficit = desired_vcpus - current_vcpus
 
-    alt deficit > 0  (scale up)
+    alt deficit positive  (scale up)
         Note over CTL: Stage 1 - sweep: reclaim draining instances first
         opt some instances are draining
             CTL->>EC2: uncordon (clear drain tags + SSM `compose start`)
             Note over CTL,EC2: each reclaimed instance consumes its vCPUs from the deficit
         end
         Note over CTL: Stage 2 - create the vCPU deficit that remains after reclaim
-        opt deficit still > 0
+        opt deficit still positive
             CTL->>ORB: invoke {"action":"create","template_id":"EC2Fleet-Instant-OnDemand","count":Δvcpus}
             ORB->>DDB: record request
-            ORB->>EC2: CreateFleet (TargetCapacityUnitType=vcpu; ABIS or enumerated types)
+            ORB->>EC2: CreateFleet (TargetCapacityUnitType=vcpu, ABIS or enumerated types)
             Note over EC2: cloud-init: SSM config → ECR login →<br/>NUM_PAIRS = min(vCPU/pair_cpu, mem/pair_mem) →<br/>docker compose up -d (N agent+RIE pairs)
             EC2->>SQS: long-poll, claim, run, write results
         end
-    else deficit <= 0
+    else deficit zero or negative
         Note over CTL: no scale-up - surplus (if any) is cordoned by scale-down<br/>(see ec2-scaling-down-sequence.md)
     end
 ```

@@ -74,10 +74,10 @@ sequenceDiagram
     EC2-->>CTL: drain state per instance
     CTL->>DDB: query live tasks (processing AND heartbeat in future)
     DDB-->>CTL: task_owner per live task, mapped to busy instance set
-    Note over CTL: busy set read every tick (sweep needs it too);<br/>None if state table throttling
+    Note over CTL: busy set read every tick (sweep needs it too),<br/>None if state table throttling
     Note over CTL: desired = clamp(ceil(backlog / target), min, max)<br/>active = live minus draining
 
-    alt desired < active  (surplus, pick victims)
+    alt desired below active  (surplus, pick victims)
         Note over CTL: victims = active minus desired, idle first then oldest
         CTL->>EC2: CreateTags lifecycle=draining, drain_deadline
         CTL->>SSM: SendCommand docker compose stop
@@ -112,7 +112,7 @@ sequenceDiagram
     Note over CTL: busy set is None if the state table is throttling
 
     loop each draining instance (oldest first)
-        alt backlog rebounded (deficit > 0)
+        alt backlog rebounded (deficit positive)
             Note over CTL: reclaim instead of launching new
             CTL->>SSM: docker compose start
             CTL->>EC2: DeleteTags (clear draining)
@@ -124,7 +124,7 @@ sequenceDiagram
             Note over CTL: re-issue compose stop (idempotent), check again next tick
             CTL->>SSM: SendCommand docker compose stop
         else busy unknown (state table throttling) AND not past deadline
-            Note over CTL: cannot tell if idle; leave tagged, re-evaluate next tick<br/>(deadline still forces eventual termination)
+            Note over CTL: cannot tell if idle, leave tagged, re-evaluate next tick<br/>(deadline still forces eventual termination)
         end
     end
 ```
