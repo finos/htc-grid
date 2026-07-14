@@ -48,7 +48,7 @@ jobs:
           sarif_file: "${{ env.TRIVY_REPORT_FILE }}"
 
       - name: Save report results as an artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.TRIVY_REPORT_FILE }}
           path: ${{ env.TRIVY_REPORT_FILE }}
@@ -82,7 +82,7 @@ jobs:
           sarif_file: "${{ env.CHECKOV_REPORT_FILE }}"
 
       - name: Save report results as an artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.CHECKOV_REPORT_FILE }}
           path: ${{ env.CHECKOV_REPORT_FILE }}
@@ -129,7 +129,7 @@ jobs:
           sarif_file: "${{ env.TFLINT_REPORT_FILE }}"
 
       - name: Save report results as an artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.TFLINT_REPORT_FILE }}
           path: ${{ env.TFLINT_REPORT_FILE }}
