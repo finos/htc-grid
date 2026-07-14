@@ -1,0 +1,21 @@
+{
+    "use_mock_grid": false,
+    "polling_interval_seconds": 2,
+    "max_dequeue_per_loop": 500,
+    "task_timeout_sec": 300,
+    "max_concurrent_submissions": 5,
+    "retry_attempts": 3,
+    "num_connector_threads": 2,
+    "log_level": "INFO",
+    "show_dag_visualization": false,
+    "mock_tasks_sleep_time_ms": 100,
+    "poll_timeout_sec": 0.01,
+    "poll_interval_sec": 0.1,
+
+
+    "htc_grid": {
+        "client_config_file": "/etc/agent/Agent_config.tfvars.json",
+        "username": "",
+        "password": ""
+    }
+}

@@ -33,5 +33,9 @@ generated:
 
 	mkdir -p $(GENERATED) && cat cancel-one-long-task-test.yaml.tpl | sed "s/{{account_id}}/$(ACCOUNT_ID)/;s/{{region}}/$(REGION)/;s/{{image_name}}/$(SUBMITTER_IMAGE_NAME)/;s/{{image_tag}}/$(TAG)/" > $(GENERATED)/cancel-one-long-task-test.yaml
 
+	mkdir -p $(GENERATED) && cat dag-workload-generated.yaml.tpl | sed "s/{{account_id}}/$(ACCOUNT_ID)/;s/{{region}}/$(REGION)/;s/{{image_name}}/$(SUBMITTER_IMAGE_NAME)/;s/{{image_tag}}/$(TAG)/" > $(GENERATED)/dag-workload-generated.yaml
+
+	mkdir -p $(GENERATED) && cat dag-workload-from-file.yaml.tpl | sed "s/{{account_id}}/$(ACCOUNT_ID)/;s/{{region}}/$(REGION)/;s/{{image_name}}/$(SUBMITTER_IMAGE_NAME)/;s/{{image_tag}}/$(TAG)/" > $(GENERATED)/dag-workload-from-file.yaml
+
 clean:
 	rm -rf $(GENERATED)

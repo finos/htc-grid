@@ -15,6 +15,7 @@ from api.in_out_manager import in_out_manager
 from utils.state_table_common import TASK_STATE_FINISHED
 from warrant_lite import WarrantLite
 from apscheduler.schedulers.background import BackgroundScheduler
+from api.connector_interface import GridConnectorInterface
 
 if os.environ.get("INTRA_VPC"):
     from privateapi import Configuration, ApiClient, ApiException
@@ -51,7 +52,7 @@ def get_safe_session_id():
     return str(uuid.uuid1())
 
 
-class AWSConnector:
+class AWSConnector(GridConnectorInterface):
     """This class implements the API for managing jobs"""
 
     in_out_manager = None

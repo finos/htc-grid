@@ -1,4 +1,4 @@
-# Copyright 2024 Amazon.com, Inc. or its affiliates. 
+# Copyright 2024 Amazon.com, Inc. or its affiliates.
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 https://aws.amazon.com/apache-2-0/
 
@@ -15,7 +15,7 @@ setuptools.setup(
     description="Utilities for testing and profiling the HTC-grid",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_namespace_packages(include=['utils*']),
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
