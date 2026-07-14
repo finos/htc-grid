@@ -5,7 +5,7 @@
 
 module "htc-agent" {
   source  = "aws-ia/eks-blueprints-addon/aws"
-  version = "~>1.0"
+  version = "~> 1.1.0"
 
   name             = "htc-agent"
   chart            = "agent-htc-lambda"
