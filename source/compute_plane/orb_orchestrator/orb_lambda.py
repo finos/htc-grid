@@ -9,21 +9,15 @@ Invoked synchronously (e.g. `aws lambda invoke`) with an event of the shape:
     {"action": "terminate", "machine_ids": ["i-..."]}     # explicit ids
     {"action": "terminate", "all": true}                  # every LIVE machine (gated)
 
-ORB state lives in DynamoDB (tables created/used per the bundled config). The
-handler is stateless: it opens a fresh ORB SDK client per invocation.
+ORB state lives in DynamoDB. The handler is stateless: fresh ORB SDK client per invocation.
 
-Two safety behaviours matter for the HTC-Grid integration, where an automated
-controller (not just a human operator) drives this handler:
+Two safety behaviours matter, since an automated controller (not just a human) drives this:
 
-  * `status` and `terminate {"all": true}` count only LIVE machines by default.
-    ORB's `list_machines()` returns every machine it ever managed, including
-    terminated ones, so a naive "count machines" over-reports capacity and a
-    naive "terminate all" re-issues terminate against already-dead instances.
-    We filter to LIVE_STATES so the controller reasons over real capacity.
-  * `terminate {"all": true}` is a fleet-wide kill switch that BYPASSES the
-    graceful drain path. It is gated behind ORB_ALLOW_TERMINATE_ALL=1, left
-    unset in the HTC-Grid deployment, so a stray invocation cannot wipe a live
-    worker fleet mid-task.
+  * `status` and `terminate {"all": true}` count only LIVE machines. `list_machines()`
+    returns terminated ones too, so counting them over-reports capacity and re-terminates
+    dead instances; we filter out TERMINAL_MACHINE_STATES.
+  * `terminate {"all": true}` bypasses graceful drain, so it's gated behind
+    ORB_ALLOW_TERMINATE_ALL=1 (unset in this deployment) to prevent a stray fleet-wide kill.
 """
 
 from __future__ import annotations
@@ -37,39 +31,35 @@ from aws_lambda_powertools import Logger
 
 logger = Logger(service=os.environ.get("POWERTOOLS_SERVICE_NAME", "orb_orchestrator"))
 
-# orb-py is installed unmodified by `pip_requirements` (its native wheels match the runtime).
-# As of orb-py 1.7.0 the DynamoDB storage backend works out of the box, so there is no
-# cold-start monkey-patch step anymore (earlier builds copied orb -> /tmp and applied 4
-# DynamoDB fixes; those are now upstream).
+# orb-py is installed unmodified; as of 1.7.0 its DynamoDB backend needs no cold-start patch.
 
-# Machine statuses that count as live capacity. ORB persists terminated machines
-# in its state table, so anything outside this set is historical and must not be
-# counted as capacity or re-terminated.
-LIVE_STATES = {"pending", "running", "stopping", "shutting-down"}
+# Terminal machine states: mirrors orb-py's MachineStatus.is_terminal. Kept as a DENYLIST
+# (everything else is "live") rather than an allowlist, which had drifted and dropped
+# `launching`/`stopped` — under-counting capacity and leaking them past `terminate all`.
+# A denylist treats any future transient state as live: safe for both counting and the kill switch.
+TERMINAL_MACHINE_STATES = {"terminated", "failed", "returned"}
 
-# Request states that are final. get_request_status can never advance these, so syncing one
-# during reconcile just wastes a slow round-trip and makes ORB log a transition ERROR
-# ("Cannot transition request from failed to complete"). Skip them in _reconcile_requests.
-# Both spellings of cancelled are included since the exact orb-py value is unconfirmed.
+# Final request states: syncing one in reconcile can't advance it and makes ORB log a
+# transition ERROR, so _reconcile_requests skips them. Both cancelled spellings kept defensively.
 TERMINAL_REQUEST_STATES = {"complete", "completed", "failed", "cancelled", "canceled"}
 
 
 def _live_machines(machines: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Filter ORB's machine list down to live (non-terminated) machines."""
-    return [m for m in machines if m.get("status") in LIVE_STATES]
+    """Filter ORB's machine list down to live (non-terminal) machines.
+
+    Assumes the default scheduler's wire format (lowercase `status`). HostFactory emits
+    `str(enum)` ("MachineStatus.TERMINATED") instead, which this denylist never matches —
+    revisit here and in the capacity controller if scheduler.type changes from default.
+    """
+    return [m for m in machines if m.get("status") not in TERMINAL_MACHINE_STATES]
 
 
 def _enable_aws_wire_logs() -> None:
-    """Opt-in: surface botocore's raw AWS request/response DEBUG logs to CloudWatch.
+    """Opt-in (ORB_DEBUG_AWS=1): raise boto3/botocore/urllib3 to DEBUG for raw AWS wire logs.
 
-    orb-py's setup_logging() (run during orb() client init) hard-pins boto3/botocore/urllib3
-    to WARNING, so even with orb at DEBUG the raw AWS wire dumps never reach the handlers.
-    When ORB_DEBUG_AWS=1, re-raise those loggers to DEBUG. Call this AFTER the orb client is
-    opened, otherwise setup_logging runs later and clamps them back to WARNING.
-
-    Off by default on purpose: botocore DEBUG is very noisy (every header + full response
-    body -> CloudWatch volume/cost) and can log sensitive data (auth headers, payloads).
-    Use it for a targeted debug run, then unset the env var.
+    orb-py's setup_logging() pins those loggers to WARNING, so call this AFTER the orb client
+    is opened or setup_logging clamps them back. Off by default: DEBUG is noisy (CloudWatch
+    cost) and can log secrets (auth headers, payloads).
     """
     if os.environ.get("ORB_DEBUG_AWS") != "1":
         return
@@ -83,24 +73,16 @@ def _enable_aws_wire_logs() -> None:
 async def _reconcile_requests(client: Any) -> None:
     """Best-effort: refresh ORB's stored machine state from live cloud state.
 
-    ``list_machines()`` reads DynamoDB, which is a cache of provider state. The stored
-    machine status only advances (pending->running) when ORB reconciles a request against
-    live EC2. Normally the capacity-controller tick drives that; when the tick is paused
-    (e.g. the manual submit script disables it so it can't reap the worker mid-test),
-    ``status`` would report stale state forever and callers polling for "running" hang.
+    ``list_machines()`` reads a DynamoDB cache whose status only advances when ORB reconciles a
+    request against live EC2 — normally driven by the capacity-controller tick. When that's
+    paused, status would be stale forever and callers polling for "running" hang. So poll each
+    request's status first: ``get_request_status`` does a read-through sync into the read model.
 
-    So before reading machines, enumerate ORB's requests and poll each one's status.
-    ``get_request_status`` performs a read-through sync (fetch live provider machines ->
-    reconcile -> persist refreshed status to DynamoDB), so this pulls reality into the read
-    model before we read it.
-
-    Never raises: a sync failure must not turn a status call into an error. The capacity
-    controller calls status every tick and must keep working even if reconcile fails.
+    Never raises: reconcile is best-effort, so a failure must not turn status into an error.
     """
     def _is_terminal(r: dict[str, Any]) -> bool:
-        # Read defensively: orb-py's exact field name/values are unconfirmed, so accept either
-        # status/state and fall back to syncing (return False) when absent/unknown. A wrong guess
-        # is then a no-op, not a regression.
+        # orb-py's field name is unconfirmed: accept status or state, and sync (return False)
+        # when absent/unknown so a wrong guess is a no-op, not a regression.
         st = r.get("status") or r.get("state") or ""
         return isinstance(st, str) and st.lower() in TERMINAL_REQUEST_STATES
 
@@ -124,9 +106,8 @@ async def _reconcile_requests(client: Any) -> None:
         skipped_terminal=skipped_terminal,
     )
 
-# ORB wants writable work/log/cache/scripts/health dirs. In Lambda only /tmp is
-# writable, so the env points there (see CDK / Dockerfile); ensure they exist
-# before ORB initializes.
+# ORB needs writable work/log/cache/scripts/health dirs; env points them at /tmp (only
+# writable path in Lambda). Create them before ORB initializes.
 for _var in (
     "ORB_WORK_DIR",
     "ORB_LOG_DIR",
@@ -140,23 +121,12 @@ for _var in (
 
 
 def _assert_grid_config() -> None:
-    """Assert the grid's DynamoDB table prefix is set; the templates are baked at deploy time.
+    """Fail loud at cold start if the DynamoDB table prefix env var is missing.
 
-    The orb_orchestrator Terraform module now RENDERS a grid-complete aws_templates.json at apply
-    time (subnet / SG / instance-profile / AMI / user_data + the EC2Fleet vCPU-unit native spec all
-    filled in) and bakes it into the zip under /var/task/orb-config. So there is nothing to
-    materialize at cold start — ORB reads the bundled, read-only config directly (ORB_CONFIG_DIR
-    stays /var/task/orb-config; ORB only ever reads the templates on the create/status/terminate
-    path, never writes them).
-
-    Region + DynamoDB table prefix are still driven by ORB's OWN env-var layer: orb-py's
-    AWSProviderConfig is a pydantic-settings BaseSettings (env_prefix="ORB_AWS_",
-    env_nested_delimiter="__"), so it reads ORB_AWS_REGION and ORB_AWS_STORAGE__DYNAMODB__* directly
-    and the bundled config.json deliberately leaves those unset.
-
-    We only fail loud if the table prefix is missing: orb-py's DynamodbStrategyConfig defaults
-    table_prefix to "hostfactory", so an unset env var would SILENTLY point ORB at the wrong (or
-    non-existent) tables. In the Terraform deployment the module always sets it.
+    Templates are baked into the zip at apply time (nothing to materialize at cold start).
+    Region + table prefix come from orb-py's own env layer (ORB_AWS_*), which the bundled
+    config.json leaves unset. We only guard table prefix: orb-py defaults it to "hostfactory",
+    so an unset var would SILENTLY point ORB at the wrong tables. The Terraform module sets it.
     """
     if not os.environ.get("ORB_CONFIG_DIR"):
         return  # no bundled config dir (e.g. local test use of the baked config)
@@ -185,8 +155,7 @@ async def _dispatch(event: dict[str, Any]) -> dict[str, Any]:
         )
 
     async with orb(provider="aws") as client:
-        # orb's setup_logging (run during client init above) clamps the AWS SDK loggers to
-        # WARNING; re-raise them here if ORB_DEBUG_AWS=1 so raw wire logs reach CloudWatch.
+        # Must run after client init: setup_logging clamps the AWS loggers there.
         _enable_aws_wire_logs()
         if action == "create":
             template_id = event.get("template_id", "EC2Fleet-Instant-OnDemand")
@@ -201,13 +170,11 @@ async def _dispatch(event: dict[str, Any]) -> dict[str, Any]:
             if request_id:
                 result = await client.get_request_status([request_id])
                 return {"action": "status", "result": result}
-            # Refresh the read model from live cloud state before listing, so callers
-            # (e.g. a submit script polling for "running") don't see stale DynamoDB state
-            # when the capacity-controller tick that normally drives reconcile is paused.
+            # Refresh the read model from live cloud state before listing (see
+            # _reconcile_requests), so callers polling for "running" don't see stale state.
             await _reconcile_requests(client)
-            # Machine list. Default to live machines only so a controller's
-            # capacity count is accurate; include_terminated=true returns the
-            # full history.
+            # Default to live machines for an accurate capacity count; include_terminated
+            # returns the full history.
             result = await client.list_machines()
             machines = result.get("machines", [])
             if not event.get("include_terminated"):

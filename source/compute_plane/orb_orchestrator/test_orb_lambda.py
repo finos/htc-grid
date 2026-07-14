@@ -306,6 +306,82 @@ class StatusReconcileTests(unittest.TestCase):
         )
 
 
+class LiveMachineFilterTests(unittest.TestCase):
+    """_live_machines / TERMINAL_MACHINE_STATES: the live filter must mirror orb-py's
+    MachineStatus.is_terminal as a denylist, not a hand-maintained allowlist of live states.
+    Regression guard for the bug where `launching` and `stopped` were silently dropped, so
+    real capacity was under-counted and those instances leaked past `terminate all`.
+    """
+
+    def test_launching_and_stopped_count_as_live(self):
+        # `launching` is a normal pending->launching->running bring-up state; `stopped` still
+        # exists (and bills). Both must survive the live filter (previously dropped).
+        machines = [
+            {"machine_id": "i-pending", "status": "pending"},
+            {"machine_id": "i-launching", "status": "launching"},
+            {"machine_id": "i-running", "status": "running"},
+            {"machine_id": "i-stopping", "status": "stopping"},
+            {"machine_id": "i-stopped", "status": "stopped"},
+            {"machine_id": "i-shutting", "status": "shutting-down"},
+        ]
+        kept = {m["machine_id"] for m in orb_lambda._live_machines(machines)}
+        self.assertEqual(
+            kept,
+            {"i-pending", "i-launching", "i-running", "i-stopping", "i-stopped", "i-shutting"},
+        )
+
+    def test_terminal_states_are_filtered(self):
+        # terminated / failed / returned are terminal: never counted as capacity.
+        machines = [
+            {"machine_id": "i-live", "status": "running"},
+            {"machine_id": "i-term", "status": "terminated"},
+            {"machine_id": "i-failed", "status": "failed"},
+            {"machine_id": "i-returned", "status": "returned"},
+        ]
+        kept = {m["machine_id"] for m in orb_lambda._live_machines(machines)}
+        self.assertEqual(kept, {"i-live"})
+
+    def test_unknown_status_treated_as_live(self):
+        # A status orb-py may add in future (or 'unknown') is live by default — the safe
+        # direction for both a capacity count and the terminate-all kill switch.
+        machines = [{"machine_id": "i-x", "status": "unknown"}]
+        self.assertEqual(len(orb_lambda._live_machines(machines)), 1)
+
+    def test_missing_status_treated_as_live(self):
+        # A record with no status field at all (m.get('status') is None) is kept — the
+        # fail-safe direction: don't drop a machine (which would under-count capacity and
+        # leak it past terminate-all) just because its status is malformed/absent. orb-py's
+        # MachineDTO makes status a required field, so this should not occur on the deployed
+        # path, but the filter must not silently discard such a record if it ever does.
+        machines = [{"machine_id": "i-nostatus"}]
+        self.assertEqual(len(orb_lambda._live_machines(machines)), 1)
+
+    def test_status_reconcile_keeps_launching_in_count(self):
+        # End-to-end through _dispatch: a launching machine must appear in the live count.
+        client = FakeClient(
+            requests=[],
+            machines=[
+                {"machine_id": "i-1", "status": "launching"},
+                {"machine_id": "i-2", "status": "terminated"},
+            ],
+        )
+        with _patch_orb(client):
+            out = asyncio.run(orb_lambda._dispatch({"action": "status"}))
+        self.assertEqual(out["result"]["count"], 1)
+        self.assertEqual(out["result"]["machines"][0]["machine_id"], "i-1")
+
+    def test_denylist_matches_orb_py_is_terminal_if_importable(self):
+        # Anti-drift guard: if orb-py is importable, our TERMINAL_MACHINE_STATES must equal the
+        # string values of MachineStatus.is_terminal's members. Skips cleanly in dev where orb-py
+        # is not installed (the whole point of the sys.modules stubs above).
+        try:
+            from orb.domain.machine.machine_status import MachineStatus  # type: ignore
+        except Exception:  # noqa: BLE001 - orb-py not installed in this env; nothing to check
+            self.skipTest("orb-py not importable in this environment")
+        terminal = {s.value for s in MachineStatus if s.is_terminal}
+        self.assertEqual(orb_lambda.TERMINAL_MACHINE_STATES, terminal)
+
+
 class AssertGridConfigTests(unittest.TestCase):
     """_assert_grid_config: templates are baked at deploy time, so cold start only asserts the
     DynamoDB table prefix is set (orb-py would otherwise silently use its 'hostfactory' default).

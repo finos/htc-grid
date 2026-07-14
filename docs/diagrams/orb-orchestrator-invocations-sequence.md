@@ -89,7 +89,7 @@ sequenceDiagram
         Note over H: terminal (complete/failed/cancelled) skipped -<br/>can't advance, avoids slow sync + transition ERROR
         H->>ORB: list_machines()
         ORB->>DDB: read machines (cache)
-        Note over H: _live_machines filter unless include_terminated=true<br/>LIVE_STATES = pending/running/stopping/shutting-down
+        Note over H: _live_machines filter unless include_terminated=true<br/>drops TERMINAL_MACHINE_STATES = terminated/failed/returned (keeps pending/launching/running/stopping/stopped/shutting-down)
         H-->>CTL: 200 {machines[], count}
     end
 
