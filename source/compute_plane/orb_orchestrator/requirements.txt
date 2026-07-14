@@ -1,0 +1,2 @@
+orb-py==1.7.0
+aws-lambda-powertools>=2.0

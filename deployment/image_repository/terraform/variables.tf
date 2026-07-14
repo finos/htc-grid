@@ -47,3 +47,9 @@ variable "kms_key_admin_roles" {
   type        = list(string)
   default     = []
 }
+
+variable "tag" {
+  description = "Unique tag to prefix resource names and avoid collisions across deployments"
+  type        = string
+  default     = ""
+}

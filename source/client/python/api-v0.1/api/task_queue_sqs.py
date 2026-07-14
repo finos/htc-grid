@@ -145,5 +145,11 @@ class QueueSQS:
         return None
 
     def get_queue_length(self) -> int:
+        # boto3's Queue resource lazy-loads .attributes once and caches them for the life of the
+        # object. A long-lived caller (e.g. the capacity_controller's module-level queue in a warm
+        # Lambda) would otherwise read the backlog captured at first access forever — reporting 0
+        # for a queue that has since filled, so scaling never triggers. reload() re-fetches the
+        # live attributes from SQS before each read.
+        self.sqs_queue.reload()
         queue_length = int(self.sqs_queue.attributes.get("ApproximateNumberOfMessages"))
         return queue_length

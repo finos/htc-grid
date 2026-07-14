@@ -1,0 +1,3 @@
+# Deploy-time-rendered ORB config (grid-specific subnet/SG/AMI/user_data); never committed.
+# The dir itself is kept (.gitkeep) so the lambda module's source_path resolves at first plan.
+.orb-config-staging/*.json

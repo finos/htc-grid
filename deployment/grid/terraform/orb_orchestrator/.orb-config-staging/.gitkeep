@@ -1,0 +1,3 @@
+# Keeps the staging dir present so the orb_orchestrator lambda module's config source_path
+# resolves at the first `terraform plan` (before local_file.aws_templates is written at apply).
+# The rendered *.json files here are gitignored.

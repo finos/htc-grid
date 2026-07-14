@@ -4,6 +4,7 @@
 
 
 module "scaling_metrics_cloudwatch_kms_key" {
+  count   = local.scaling_metrics_enabled
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 2.0"
 
@@ -49,6 +50,7 @@ module "scaling_metrics_cloudwatch_kms_key" {
 
 
 module "scaling_metrics" {
+  count   = local.scaling_metrics_enabled
   source  = "terraform-aws-modules/lambda/aws"
   version = "~> 5.0"
 
@@ -94,11 +96,11 @@ module "scaling_metrics" {
   number_of_policies = 2
   policies = [
     aws_iam_policy.lambda_data_policy.arn,
-    aws_iam_policy.scaling_metrics_cloudwatch_policy.arn
+    aws_iam_policy.scaling_metrics_cloudwatch_policy[0].arn
   ]
 
   attach_cloudwatch_logs_policy = true
-  cloudwatch_logs_kms_key_id    = module.scaling_metrics_cloudwatch_kms_key.key_arn
+  cloudwatch_logs_kms_key_id    = module.scaling_metrics_cloudwatch_kms_key[0].key_arn
 
   attach_tracing_policy = true
   tracing_mode          = "Active"
@@ -126,6 +128,7 @@ module "scaling_metrics" {
 
 
 resource "aws_cloudwatch_event_rule" "scaling_metrics_event_rule" {
+  count               = local.scaling_metrics_enabled
   name                = "scaling_metrics_event_rule_${local.suffix}"
   description         = "Fires event rule to put metrics"
   schedule_expression = var.metrics_event_rule_time
@@ -133,22 +136,25 @@ resource "aws_cloudwatch_event_rule" "scaling_metrics_event_rule" {
 
 
 resource "aws_cloudwatch_event_target" "check_scaling_metrics_lambda" {
-  rule      = aws_cloudwatch_event_rule.scaling_metrics_event_rule.name
+  count     = local.scaling_metrics_enabled
+  rule      = aws_cloudwatch_event_rule.scaling_metrics_event_rule[0].name
   target_id = "lambda"
-  arn       = module.scaling_metrics.lambda_function_arn
+  arn       = module.scaling_metrics[0].lambda_function_arn
 }
 
 
 resource "aws_lambda_permission" "allow_cloudwatch_to_call_scaling_metrics_lambda" {
+  count         = local.scaling_metrics_enabled
   statement_id  = "AllowExecutionFromCloudWatch"
   action        = "lambda:InvokeFunction"
-  function_name = module.scaling_metrics.lambda_function_name
+  function_name = module.scaling_metrics[0].lambda_function_name
   principal     = "events.${local.dns_suffix}"
-  source_arn    = aws_cloudwatch_event_rule.scaling_metrics_event_rule.arn
+  source_arn    = aws_cloudwatch_event_rule.scaling_metrics_event_rule[0].arn
 }
 
 
 resource "aws_iam_policy" "scaling_metrics_cloudwatch_policy" {
+  count       = local.scaling_metrics_enabled
   name        = "scaling_metrics_data_policy_${local.suffix}"
   path        = "/"
   description = "IAM policy for publishing CloudWatch Metrics from Scaling Metrics Lambda"
