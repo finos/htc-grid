@@ -41,7 +41,7 @@ jobs:
           sarif_file: "${{ env.BANDIT_REPORT_FILE }}"
 
       - name: Save report results as an artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.BANDIT_REPORT_FILE }}
           path: ${{ env.BANDIT_REPORT_FILE }}
@@ -75,7 +75,7 @@ jobs:
           sarif_file: "${{ env.FLAKE8_REPORT_FILE }}"
 
       - name: Save report results as an artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.FLAKE8_REPORT_FILE }}
           path: ${{ env.FLAKE8_REPORT_FILE }}
