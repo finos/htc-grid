@@ -6,10 +6,10 @@ This file lists the maintainers of this repository.
 
 | GitHub Username | Name | Organization | Email |
 |----------------|------|--------------|-------|
-| @adamcwtest | *please add name* | *please add organization* | *please add email* |
-| @clementrey-dev | *please add name* | *please add organization* | *please add email* |
-| @fgogolli | Flamur Gogolli | Amazon Web Services (AWS) | *please add email* |
-| @kirillsc | Kirill Bogdanov | AWS | *please add email* |
+| @adamcwtest | *please add name* | Amazon Web Services (AWS) | *please add email* |
+| @clementrey-dev | Clement Rey | Amazon Web Services (AWS) | *please add email* |
+| @fgogolli | Flamur Gogolli | Amazon Web Services (AWS) |  *please add email* |
+| @kirillsc | Kirill Bogdanov | Amazon Web Services (AWS) | *please add email* |
 
 For information about maintainer responsibilities and resources, see the [FINOS Maintainers Cheatsheet](https://community.finos.org/docs/finos-maintainers-cheatsheet).
 
